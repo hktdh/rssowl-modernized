@@ -51,12 +51,15 @@ import org.rssowl.ui.internal.editors.feed.NewsBrowserLabelProvider;
 import org.rssowl.ui.internal.editors.feed.NewsBrowserViewer;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.BindException;
+import java.nio.charset.StandardCharsets;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -513,6 +516,50 @@ public class ApplicationServer {
       fHandshakeHandler.handle(message);
   }
 
+  /**
+   * @param path the bundle relative path of the resource.
+   * @return the bytes of the resource, or <code>null</code> if there is none.
+   */
+  private byte[] readResource(String path) {
+    InputStream inS = OwlUI.class.getResourceAsStream(path);
+    if (inS == null)
+      return null;
+
+    /* Read it whole: the length has to go into the Content-Length header */
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    CoreUtils.copy(inS, buffer);
+
+    return buffer.toByteArray();
+  }
+
+  /**
+   * @param path the bundle relative path of the resource.
+   * @return the media type to announce for the resource.
+   */
+  private String contentTypeOf(String path) {
+    String lower = path.toLowerCase();
+
+    if (lower.endsWith(".gif")) //$NON-NLS-1$
+      return "image/gif"; //$NON-NLS-1$
+
+    if (lower.endsWith(".png")) //$NON-NLS-1$
+      return "image/png"; //$NON-NLS-1$
+
+    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) //$NON-NLS-1$ //$NON-NLS-2$
+      return "image/jpeg"; //$NON-NLS-1$
+
+    if (lower.endsWith(".ico")) //$NON-NLS-1$
+      return "image/x-icon"; //$NON-NLS-1$
+
+    if (lower.endsWith(".css")) //$NON-NLS-1$
+      return "text/css"; //$NON-NLS-1$
+
+    if (lower.endsWith(".js")) //$NON-NLS-1$
+      return "text/javascript"; //$NON-NLS-1$
+
+    return "application/octet-stream"; //$NON-NLS-1$
+  }
+
   private void processResourceOperation(Socket socket, String message) {
 
     /* Substring to get the Parameters String */
@@ -520,11 +567,33 @@ public class ApplicationServer {
     int end = message.indexOf(' ', start);
     String parameter = message.substring(start, end);
 
-    /* Write HTML to the Receiver */
+    /* Write the resource to the Receiver */
     BufferedOutputStream outS = null;
     try {
       outS = new BufferedOutputStream(socket.getOutputStream());
-      CoreUtils.copy(OwlUI.class.getResourceAsStream(parameter), outS);
+
+      /*
+       * Send a real HTTP response. This used to copy the bytes straight onto
+       * the socket with no status line and no headers at all. Internet Explorer
+       * accepted that, but the Edge (Chromium) browser SWT creates now rejects
+       * the reply, which is why every button in the news viewer turned into a
+       * broken image icon.
+       */
+      byte[] resource = readResource(parameter);
+      if (resource == null) {
+        outS.write(("HTTP/1.1 404 Not Found" + CRLF + "Content-Length: 0" + CRLF + "Connection: close" + CRLF + CRLF).getBytes(StandardCharsets.UTF_8)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      } else {
+        StringBuilder header = new StringBuilder();
+        header.append("HTTP/1.1 200 OK").append(CRLF); //$NON-NLS-1$
+        header.append("Content-Type: ").append(contentTypeOf(parameter)).append(CRLF); //$NON-NLS-1$
+        header.append("Content-Length: ").append(resource.length).append(CRLF); //$NON-NLS-1$
+        header.append("Connection: close").append(CRLF).append(CRLF); //$NON-NLS-1$
+
+        outS.write(header.toString().getBytes(StandardCharsets.UTF_8));
+        outS.write(resource);
+      }
+
+      outS.flush();
     } catch (IOException e) {
       /* Ignore */
     }
