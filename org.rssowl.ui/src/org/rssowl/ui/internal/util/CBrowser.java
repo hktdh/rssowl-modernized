@@ -200,7 +200,7 @@ public class CBrowser {
     /* Disable IE Navigation Sound (Windows Only) */
     Method method = null;
     if (!fgNavigationSoundsDisabled) {
-      method = callCoInternetSetFeatureEnabled(method, FEATURE_DISABLE_NAVIGATION_SOUNDS, SET_FEATURE_ON_PROCESS, true);
+      method = callCoInternetSetFeatureEnabled(browser, method, FEATURE_DISABLE_NAVIGATION_SOUNDS, SET_FEATURE_ON_PROCESS, true);
       fgNavigationSoundsDisabled = true;
     }
 
@@ -208,8 +208,8 @@ public class CBrowser {
     if (Application.IS_WINDOWS) {
       boolean prefEnablePopupBlocker = fPreferences.getBoolean(DefaultPreferences.ENABLE_IE_POPUP_BLOCKER);
       if (prefEnablePopupBlocker != fgPopupBlockerEnabled) {
-        method = callCoInternetSetFeatureEnabled(method, FEATURE_WEBOC_POPUPMANAGEMENT, SET_FEATURE_ON_PROCESS, prefEnablePopupBlocker);
-        callCoInternetSetFeatureEnabled(method, FEATURE_SECURITYBAND, SET_FEATURE_ON_PROCESS, prefEnablePopupBlocker);
+        method = callCoInternetSetFeatureEnabled(browser, method, FEATURE_WEBOC_POPUPMANAGEMENT, SET_FEATURE_ON_PROCESS, prefEnablePopupBlocker);
+        callCoInternetSetFeatureEnabled(browser, method, FEATURE_SECURITYBAND, SET_FEATURE_ON_PROCESS, prefEnablePopupBlocker);
         fgPopupBlockerEnabled = prefEnablePopupBlocker;
       }
     }
@@ -252,9 +252,14 @@ public class CBrowser {
     }
   }
 
-  private Method callCoInternetSetFeatureEnabled(Method method, int feature, int scope, boolean enable) {
+  /*
+   * Takes the browser to configure rather than reading the field: this runs
+   * while createBrowser is still assembling the browser, so fBrowser has not
+   * been assigned yet.
+   */
+  private Method callCoInternetSetFeatureEnabled(Browser browser, Method method, int feature, int scope, boolean enable) {
     /* CoInternetSetFeatureEnabled configures IE, so only call it for IE. */
-    if (!fgCoInternetSetFeatureError && isIE()) {
+    if (!fgCoInternetSetFeatureError && isIE(browser)) {
       try {
         Class<?> clazz = Class.forName("org.eclipse.swt.internal.win32.OS"); //$NON-NLS-1$
 
@@ -575,6 +580,15 @@ public class CBrowser {
    * otherwise.
    */
   public boolean isIE() {
+    return isIE(fBrowser);
+  }
+
+  /**
+   * @param browser the browser to check, may be <code>null</code> while one is
+   * still being created.
+   * @return <code>true</code> if the given browser is IE.
+   */
+  private static boolean isIE(Browser browser) {
     /*
      * Ask the widget which backend it actually created. The old test was
      * "on Windows and not Mozilla", which reported IE for every Windows
@@ -582,7 +596,7 @@ public class CBrowser {
      * callers feed IE quirks to a Chromium engine - document.body.scrollTop is
      * always 0 there, so remembering the scroll position silently did nothing.
      */
-    return !fBrowser.isDisposed() && "ie".equals(fBrowser.getBrowserType()); //$NON-NLS-1$
+    return browser != null && !browser.isDisposed() && "ie".equals(browser.getBrowserType()); //$NON-NLS-1$
   }
 
   /**
