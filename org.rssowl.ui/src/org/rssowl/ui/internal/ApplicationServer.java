@@ -587,6 +587,14 @@ public class ApplicationServer {
         header.append("HTTP/1.1 200 OK").append(CRLF); //$NON-NLS-1$
         header.append("Content-Type: ").append(contentTypeOf(parameter)).append(CRLF); //$NON-NLS-1$
         header.append("Content-Length: ").append(resource.length).append(CRLF); //$NON-NLS-1$
+
+        /*
+         * These are icons shipped inside the bundle, so they cannot change
+         * while the application runs. Saying so keeps the browser from asking
+         * again for every one of them on every news item it renders, which is
+         * a socket, a bundle read and a full buffer each time.
+         */
+        header.append("Cache-Control: public, max-age=31536000, immutable").append(CRLF); //$NON-NLS-1$
         header.append("Connection: close").append(CRLF).append(CRLF); //$NON-NLS-1$
 
         outS.write(header.toString().getBytes(StandardCharsets.UTF_8));
@@ -742,7 +750,12 @@ public class ApplicationServer {
     BufferedWriter writer = null;
     try {
       boolean portable = Controller.getDefault().isPortable();
-      writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+      /*
+       * Name the charset rather than taking the platform default: the header
+       * below promises UTF-8, and a JVM started with another default would
+       * write bytes that do not match that promise.
+       */
+      writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
 
       if (Application.IS_WINDOWS && portable)
         writer.append("HTTP/1.1 205 OK").append(CRLF); //$NON-NLS-1$
