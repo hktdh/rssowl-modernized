@@ -1392,9 +1392,9 @@ public class CoolBarAdvisor {
         MenuManager manager = new MenuManager();
 
         /* Load all news bins and sort by name */
-        List<INewsBin> newsbins = new ArrayList<INewsBin>(DynamicDAO.loadAll(INewsBin.class));
+        List<INewsBin> newsbins = new ArrayList<>(DynamicDAO.loadAll(INewsBin.class));
 
-        Comparator<INewsBin> comparator = new Comparator<INewsBin>() {
+        Comparator<INewsBin> comparator = new Comparator<>() {
           public int compare(INewsBin o1, INewsBin o2) {
             return o1.getName().compareTo(o2.getName());
           };

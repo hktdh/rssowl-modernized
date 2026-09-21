@@ -160,7 +160,7 @@ public class LabelDialog extends Dialog {
       JobRunner.runInBackgroundThread(100, new Runnable() {
         public void run() {
           if (!fNameInput.isDisposed()) {
-            Set<String> values = new TreeSet<String>(new Comparator<String>() {
+            Set<String> values = new TreeSet<>(new Comparator<String>() {
               public int compare(String o1, String o2) {
                 return o1.compareToIgnoreCase(o2);
               }

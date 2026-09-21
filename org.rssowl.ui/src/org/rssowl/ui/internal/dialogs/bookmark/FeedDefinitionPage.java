@@ -82,7 +82,7 @@ public class FeedDefinitionPage extends WizardPage {
   private String fInitialLink;
   private IPreferenceScope fGlobalScope = Owl.getPreferenceService().getGlobalScope();
   private boolean fIsAutoCompleteKeywordHooked;
-  private Map<String, IBookMark> fExistingFeeds = new HashMap<String, IBookMark>();
+  private Map<String, IBookMark> fExistingFeeds = new HashMap<>();
 
   /**
    * @param pageName
@@ -312,7 +312,7 @@ public class FeedDefinitionPage extends WizardPage {
     JobRunner.runInBackgroundThread(new Runnable() {
       public void run() {
         if (!fKeywordInput.isDisposed()) {
-          Set<String> values = new TreeSet<String>(new Comparator<String>() {
+          Set<String> values = new TreeSet<>(new Comparator<String>() {
             public int compare(String o1, String o2) {
               return o1.compareToIgnoreCase(o2);
             }

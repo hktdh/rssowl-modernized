@@ -60,7 +60,7 @@ public final class CachingBookMarkDAO extends CachingDAO<BookMarkDAOImpl, IBookM
     else {
       IFolderDAO folderDAO = InternalOwl.getDefault().getPersistenceService().getDAOService().getFolderDAO();
       Collection<IFolder> roots = folderDAO.loadRoots();
-      Set<IBookMark> bookmarks = new HashSet<IBookMark>();
+      Set<IBookMark> bookmarks = new HashSet<>();
       CoreUtils.fillBookMarks(bookmarks, roots);
       for (IBookMark bookmark : bookmarks) {
         getCache().put(bookmark.getId(), bookmark);
@@ -96,7 +96,7 @@ public final class CachingBookMarkDAO extends CachingDAO<BookMarkDAOImpl, IBookM
    * .reference.FeedLinkReference)
    */
   public Collection<IBookMark> loadAll(FeedLinkReference feedRef) {
-    Set<IBookMark> marks = new HashSet<IBookMark>(1);
+    Set<IBookMark> marks = new HashSet<>(1);
     for (IBookMark mark : getCache().values()) {
       if (mark.getFeedLinkReference().equals(feedRef))
         marks.add(mark);

@@ -93,9 +93,9 @@ public final class DAOServiceImpl extends DAOService {
   private final ILabelDAO fLabelDAO = new CachingLabelDAO();
 
   /* Mapping */
-  private final Map<Class<?>, Object> fEntityInterfacesToDaosMap = new HashMap<Class<?>, Object>();
-  private final Map<Class<?>, Object> fEntityDaoClassesToDaosMap = new HashMap<Class<?>, Object>();
-  private final Map<Class<?>, Object> fEntityClassesToDaosMap = new HashMap<Class<?>, Object>();
+  private final Map<Class<?>, Object> fEntityInterfacesToDaosMap = new HashMap<>();
+  private final Map<Class<?>, Object> fEntityDaoClassesToDaosMap = new HashMap<>();
+  private final Map<Class<?>, Object> fEntityClassesToDaosMap = new HashMap<>();
 
   public DAOServiceImpl() {
 

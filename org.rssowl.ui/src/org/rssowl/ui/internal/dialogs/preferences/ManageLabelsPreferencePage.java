@@ -248,7 +248,7 @@ public class ManageLabelsPreferencePage extends PreferencePage implements IWorkb
 
   private void onMove(boolean up) {
     TreeItem[] items = fViewer.getTree().getItems();
-    List<ILabel> sortedLabels = new ArrayList<ILabel>(items.length);
+    List<ILabel> sortedLabels = new ArrayList<>(items.length);
     for (TreeItem item : items) {
       sortedLabels.add((ILabel) item.getData());
     }
@@ -372,7 +372,7 @@ public class ManageLabelsPreferencePage extends PreferencePage implements IWorkb
       public void run(IProgressMonitor monitor) {
         monitor.beginTask(Messages.ManageLabelsPreferencePage_WAIT_UPDATE, IProgressMonitor.UNKNOWN);
         try {
-          List<SyncItem> syncItems = new ArrayList<SyncItem>();
+          List<SyncItem> syncItems = new ArrayList<>();
 
           ISearchField labelField = Owl.getModelFactory().createSearchField(INews.LABEL, INews.class.getName());
           ISearchField feedField = Owl.getModelFactory().createSearchField(INews.FEED, INews.class.getName());
@@ -457,7 +457,7 @@ public class ManageLabelsPreferencePage extends PreferencePage implements IWorkb
             /* Chunkify */
             List<List<SearchHit<NewsReference>>> chunks = CoreUtils.toChunks(labeledNews, LABELS_CHUNK_SIZE);
             for (List<SearchHit<NewsReference>> chunk : chunks) {
-              List<INews> newsToSave = new ArrayList<INews>(chunk.size());
+              List<INews> newsToSave = new ArrayList<>(chunk.size());
 
               /* For each item in chunk */
               for (SearchHit<NewsReference> hit : chunk) {
@@ -532,7 +532,7 @@ public class ManageLabelsPreferencePage extends PreferencePage implements IWorkb
   }
 
   private List<SearchHit<NewsReference>> findLabeledNews(List<ILabel> selectedLabels) {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(selectedLabels.size());
+    List<ISearchCondition> conditions = new ArrayList<>(selectedLabels.size());
     ISearchField labelField = Owl.getModelFactory().createSearchField(INews.LABEL, INews.class.getName());
     for (ILabel label : selectedLabels) {
       ISearchCondition condition = Owl.getModelFactory().createSearchCondition(labelField, SearchSpecifier.IS, label.getName());
@@ -544,7 +544,7 @@ public class ManageLabelsPreferencePage extends PreferencePage implements IWorkb
 
   /* Ensure that after Delete, the orders are in sync again */
   private void fixOrderAfterDelete() {
-    List<ILabel> labelsToSave = new ArrayList<ILabel>();
+    List<ILabel> labelsToSave = new ArrayList<>();
 
     TreeItem[] items = fViewer.getTree().getItems();
     for (int i = 0; i < items.length; i++) {

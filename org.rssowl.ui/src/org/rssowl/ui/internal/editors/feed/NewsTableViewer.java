@@ -100,7 +100,7 @@ public class NewsTableViewer extends TreeViewer {
     }
 
     /* Remember the actual selected Objects to determine if a selection needs to be restored */
-    List<Object> oldSelectionObjects = new ArrayList<Object>(oldSelection.length);
+    List<Object> oldSelectionObjects = new ArrayList<>(oldSelection.length);
     for (TreeItem item : oldSelection) {
       oldSelectionObjects.add(item.getData());
     }

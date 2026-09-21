@@ -114,7 +114,7 @@ public class DownloadService {
   private static final List<String> HTML_CONTENT_TYPES = Arrays.asList(new String[] { "text/html", "application/xhtml+xml" }); //$NON-NLS-1$ //$NON-NLS-2$
 
   private DownloadJobQueue fDownloadQueue;
-  private Map<OutputStream, OutputStream> fOutputStreamMap = new ConcurrentHashMap<OutputStream, OutputStream>();
+  private Map<OutputStream, OutputStream> fOutputStreamMap = new ConcurrentHashMap<>();
   private IPreferenceScope fPreferences = Owl.getPreferenceService().getGlobalScope();
 
   /* Task for a Download */
@@ -257,7 +257,7 @@ public class DownloadService {
     try {
       IProtocolHandler handler = Owl.getConnectionService().getHandler(request.getLink());
       if (handler != null) {
-        Map<Object, Object> properties = new HashMap<Object, Object>();
+        Map<Object, Object> properties = new HashMap<>();
         properties.put(IConnectionPropertyConstants.CON_TIMEOUT, DEFAULT_CON_TIMEOUT);
 
         /* Check for Cancellation and Shutdown */

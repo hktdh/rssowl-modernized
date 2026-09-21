@@ -64,11 +64,11 @@ public class StickyOperation implements IUndoOperation {
   }
 
   private Map<Boolean, List<NewsReference>> toStickyMap(Collection<INews> news) {
-    Map<Boolean, List<NewsReference>> map = new HashMap<Boolean, List<NewsReference>>();
+    Map<Boolean, List<NewsReference>> map = new HashMap<>();
     for (INews newsitem : news) {
       List<NewsReference> newsrefs = map.get(newsitem.isFlagged());
       if (newsrefs == null) {
-        newsrefs = new ArrayList<NewsReference>();
+        newsrefs = new ArrayList<>();
         map.put(newsitem.isFlagged(), newsrefs);
       }
 
@@ -94,7 +94,7 @@ public class StickyOperation implements IUndoOperation {
       boolean oldSticky = entry.getKey();
       List<NewsReference> newsRefs = entry.getValue();
 
-      List<INews> resolvedNews = new ArrayList<INews>(newsRefs.size());
+      List<INews> resolvedNews = new ArrayList<>(newsRefs.size());
       for (NewsReference newsRef : newsRefs) {
         INews news = newsRef.resolve();
         if (news != null) {
@@ -117,7 +117,7 @@ public class StickyOperation implements IUndoOperation {
   public void redo() {
 
     /* Resolve News */
-    List<INews> resolvedNews = new ArrayList<INews>(fNewsCount);
+    List<INews> resolvedNews = new ArrayList<>(fNewsCount);
     Collection<List<NewsReference>> newsRefLists = fOldStickyStates.values();
     for (List<NewsReference> newsRefList : newsRefLists) {
       for (NewsReference newsRef : newsRefList) {

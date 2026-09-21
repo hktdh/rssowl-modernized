@@ -49,14 +49,14 @@ import java.util.Set;
  * @author bpasero
  */
 public class NewsBrowserViewModel {
-  private final List<Item> fItemList = new ArrayList<NewsBrowserViewModel.Item>();
-  private final Map<Long, Item> fNewsMap = new HashMap<Long, NewsBrowserViewModel.Item>();
-  private final Map<Long, Group> fGroupMap = new HashMap<Long, NewsBrowserViewModel.Group>();
-  private final Map<Long, List<Long>> fEntityGroupToNewsMap = new HashMap<Long, List<Long>>();
-  private final Set<Long> fExpandedNews = new HashSet<Long>();
-  private final Set<Long> fCollapsedGroups = new HashSet<Long>();
-  private final Set<Long> fHiddenNews = new HashSet<Long>();
-  private final Set<Long> fHiddenGroups = new HashSet<Long>();
+  private final List<Item> fItemList = new ArrayList<>();
+  private final Map<Long, Item> fNewsMap = new HashMap<>();
+  private final Map<Long, Group> fGroupMap = new HashMap<>();
+  private final Map<Long, List<Long>> fEntityGroupToNewsMap = new HashMap<>();
+  private final Set<Long> fExpandedNews = new HashSet<>();
+  private final Set<Long> fCollapsedGroups = new HashSet<>();
+  private final Set<Long> fHiddenNews = new HashSet<>();
+  private final Set<Long> fHiddenGroups = new HashSet<>();
   private final Object fLock = new Object();
   private final NewsBrowserViewer fViewer;
 
@@ -146,7 +146,7 @@ public class NewsBrowserViewModel {
             entry = new Group(group.getId());
             fGroupMap.put(entry.getId(), (Group) entry);
 
-            currentGroupEntryList = new ArrayList<Long>();
+            currentGroupEntryList = new ArrayList<>();
             fEntityGroupToNewsMap.put(group.getId(), currentGroupEntryList);
 
             /*
@@ -184,7 +184,7 @@ public class NewsBrowserViewModel {
    */
   public Map<Long, List<Long>> getGroups() {
     synchronized (fLock) {
-      return new HashMap<Long, List<Long>>(fEntityGroupToNewsMap);
+      return new HashMap<>(fEntityGroupToNewsMap);
     }
   }
 
@@ -230,7 +230,7 @@ public class NewsBrowserViewModel {
   public List<Long> getNewsIds(long groupId) {
     synchronized (fLock) {
       List<Long> newsIds = fEntityGroupToNewsMap.get(groupId);
-      return newsIds != null ? new ArrayList<Long>(newsIds) : Collections.EMPTY_LIST;
+      return newsIds != null ? new ArrayList<>(newsIds) : Collections.EMPTY_LIST;
     }
   }
 
@@ -456,7 +456,7 @@ public class NewsBrowserViewModel {
    * @return a list of ids of news that are unread and visible.
    */
   public List<Long> getVisibleUnreadNews() {
-    List<Long> visibleUnreadNewsIds = new ArrayList<Long>();
+    List<Long> visibleUnreadNewsIds = new ArrayList<>();
     synchronized (fLock) {
       for (Item item : fItemList) {
         if (item instanceof Group)
@@ -688,8 +688,8 @@ public class NewsBrowserViewModel {
    * groups revealed and the second the list of news identifiers.
    */
   public Pair<List<Long> /* Groups */, List<Long> /* News Items */> getNextPage(int pageSize) {
-    List<Long> groups = new ArrayList<Long>(1);
-    List<Long> news = new ArrayList<Long>(pageSize);
+    List<Long> groups = new ArrayList<>(1);
+    List<Long> news = new ArrayList<>(pageSize);
 
     /* Get the next page if paging is enabled */
     if (pageSize != 0) {
@@ -732,8 +732,8 @@ public class NewsBrowserViewModel {
    * groups revealed and the second the list of news identifiers.
    */
   public Pair<List<Long> /* Groups */, List<Long> /* News Items */> revealPage(long newsId, int pageSize) {
-    List<Long> groups = new ArrayList<Long>(1);
-    List<Long> news = new ArrayList<Long>();
+    List<Long> groups = new ArrayList<>(1);
+    List<Long> news = new ArrayList<>();
 
     /* Find all pages until target news is found */
     if (pageSize != 0) {

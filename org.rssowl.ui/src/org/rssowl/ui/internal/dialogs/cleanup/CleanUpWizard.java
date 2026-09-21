@@ -150,7 +150,7 @@ public class CleanUpWizard extends Wizard {
         monitor.beginTask(Messages.CleanUpWizard_WAIT_CLEANUP, IProgressMonitor.UNKNOWN);
 
         /* Perform Tasks */
-        List<IBookMark> bookmarks = new ArrayList<IBookMark>();
+        List<IBookMark> bookmarks = new ArrayList<>();
         for (CleanUpTask task : tasks) {
 
           /* Delete Bookmark Task */
@@ -160,7 +160,7 @@ public class CleanUpWizard extends Wizard {
           /* Delete News Task */
           else if (task instanceof NewsTask) {
             Collection<NewsReference> news = ((NewsTask) task).getNews();
-            List<INews> resolvedNews = new ArrayList<INews>(news.size());
+            List<INews> resolvedNews = new ArrayList<>(news.size());
             for (NewsReference newsRef : news) {
               INews resolvedNewsItem = newsRef.resolve();
               if (resolvedNewsItem != null && resolvedNewsItem.isVisible())

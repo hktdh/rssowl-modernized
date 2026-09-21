@@ -417,7 +417,7 @@ public class NewsFilter extends ViewerFilter {
   }
 
   private Set<Long> cacheMatchingNews(String pattern) {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(2);
+    List<ISearchCondition> conditions = new ArrayList<>(2);
     ISearchCondition locationCondition = null;
     ISearchCondition textCondition = null;
 
@@ -484,7 +484,7 @@ public class NewsFilter extends ViewerFilter {
       result = Owl.getPersistenceService().getModelSearch().searchNews(conditions, true);
     }
 
-    Set<Long> resultSet = new HashSet<Long>(result.size());
+    Set<Long> resultSet = new HashSet<>(result.size());
     for (SearchHit<NewsReference> hit : result) {
       resultSet.add(hit.getResult().getId());
     }

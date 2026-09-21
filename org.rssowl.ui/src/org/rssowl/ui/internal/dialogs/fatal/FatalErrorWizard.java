@@ -64,8 +64,8 @@ public class FatalErrorWizard extends Wizard {
   private RecreateSearchIndexPage fReindexSearchPage;
   private final IStatus fErrorStatus;
   private int fReturnCode = IApplication.EXIT_OK;
-  private final List<File> fProfileBackups = new ArrayList<File>();
-  private final List<File> fOPMLBackups = new ArrayList<File>();
+  private final List<File> fProfileBackups = new ArrayList<>();
+  private final List<File> fOPMLBackups = new ArrayList<>();
   private boolean fOfferRestorePages;
 
   public FatalErrorWizard(IStatus errorStatus) {

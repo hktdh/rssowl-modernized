@@ -416,7 +416,7 @@ public class ImportSourcePage extends WizardPage {
     dialog.setText(Messages.ImportSourcePage_CHOOSE_FILE);
 
     /* Set Export Formats also for Import (we assume this is supported) */
-    List<String> filterExtensions = new ArrayList<String>();
+    List<String> filterExtensions = new ArrayList<>();
     filterExtensions.add("*.opml"); //$NON-NLS-1$
     filterExtensions.add("*.xml"); //$NON-NLS-1$
 
@@ -507,7 +507,7 @@ public class ImportSourcePage extends WizardPage {
   private void saveComboSettings(String valueToAdd, String prefKey) {
 
     /* First fill current as new one */
-    List<String> newValues = new ArrayList<String>();
+    List<String> newValues = new ArrayList<>();
     if (StringUtils.isSet(valueToAdd))
       newValues.add(valueToAdd);
 
@@ -542,7 +542,7 @@ public class ImportSourcePage extends WizardPage {
     JobRunner.runInBackgroundThread(delay ? 100 : 0, new Runnable() {
       public void run() {
         if (!fKeywordInput.isDisposed()) {
-          Set<String> values = new TreeSet<String>(new Comparator<String>() {
+          Set<String> values = new TreeSet<>(new Comparator<String>() {
             public int compare(String o1, String o2) {
               return o1.compareToIgnoreCase(o2);
             }

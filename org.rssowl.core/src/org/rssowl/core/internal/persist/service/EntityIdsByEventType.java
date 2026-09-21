@@ -106,7 +106,7 @@ public final class EntityIdsByEventType extends Persistable implements IPersista
   }
 
   private static List<NewsReference> getEntityIds(LongArrayList list) {
-    List<NewsReference> newsRef = new ArrayList<NewsReference>(list.size());
+    List<NewsReference> newsRef = new ArrayList<>(list.size());
     for (int i = 0, c = list.size(); i < c; ++i) {
       newsRef.add(new NewsReference(list.get(i)));
     }

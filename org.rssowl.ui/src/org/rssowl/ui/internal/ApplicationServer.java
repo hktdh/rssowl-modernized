@@ -118,7 +118,7 @@ public class ApplicationServer {
   private static final String CRLF = "\r\n"; //$NON-NLS-1$
 
   /* Registry of known Viewer */
-  private static Map<String, ContentViewer> fRegistry = new ConcurrentHashMap<String, ContentViewer>();
+  private static Map<String, ContentViewer> fRegistry = new ConcurrentHashMap<>();
 
   /* Supported Operations */
   private static final String OP_DISPLAY_FOLDER = "displayFolder="; //$NON-NLS-1$
@@ -227,7 +227,7 @@ public class ApplicationServer {
   private ServerSocket createServerSocket(boolean usePortRange) throws IOException {
 
     /* Ports to try */
-    List<Integer> ports = new ArrayList<Integer>();
+    List<Integer> ports = new ArrayList<>();
     ports.add(SOCKET_PORT);
 
     /* Try up to 10 different ports if set */
@@ -348,11 +348,11 @@ public class ApplicationServer {
       input = new Object[] { input };
 
     /* Input is an Array of Objects */
-    List<Long> news = new ArrayList<Long>();
-    List<Long> bookmarks = new ArrayList<Long>();
-    List<Long> newsbins = new ArrayList<Long>();
-    List<Long> searchmarks = new ArrayList<Long>();
-    List<Long> folders = new ArrayList<Long>();
+    List<Long> news = new ArrayList<>();
+    List<Long> bookmarks = new ArrayList<>();
+    List<Long> newsbins = new ArrayList<>();
+    List<Long> searchmarks = new ArrayList<>();
+    List<Long> folders = new ArrayList<>();
 
     /* Split into BookMarks, NewsBins, SearchMarks and News */
     for (Object obj : (Object[]) input) {
@@ -543,7 +543,7 @@ public class ApplicationServer {
 
   /* Process Message by looking for operations */
   private void processDisplayOperation(Socket socket, String message) {
-    List<Object> elements = new ArrayList<Object>();
+    List<Object> elements = new ArrayList<>();
 
     /* Substring to get the Parameters String */
     int start = message.indexOf('/');

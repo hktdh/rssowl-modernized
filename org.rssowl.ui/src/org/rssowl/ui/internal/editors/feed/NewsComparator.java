@@ -61,8 +61,8 @@ public class NewsComparator extends ViewerComparator implements Comparator<INews
   private boolean fAscending;
 
   /* A cache for the Location Column */
-  private Map<Long, String> fMapBinIdToLocation = new HashMap<Long, String>();
-  private Map<String, String> fMapFeedLinkToLocation = new HashMap<String, String>();
+  private Map<Long, String> fMapBinIdToLocation = new HashMap<>();
+  private Map<String, String> fMapFeedLinkToLocation = new HashMap<>();
 
   /**
    * @return Returns the ascending.

@@ -586,7 +586,7 @@ public class SearchNewsDialog extends TitleAreaDialog {
 
   private static List<ISearchCondition> toSearchConditions(List<IFolderChild> searchScope) {
     IModelFactory factory = Owl.getModelFactory();
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(2);
+    List<ISearchCondition> conditions = new ArrayList<>(2);
 
     /* Add scope as condition if provided */
     if (!searchScope.isEmpty()) {
@@ -1598,7 +1598,7 @@ public class SearchNewsDialog extends TitleAreaDialog {
   /* Convert Selection to INews */
   private ISelection convertToNews(StructuredSelection selection) {
     List<?> selectedElements = selection.toList();
-    List<INews> selectedNews = new ArrayList<INews>();
+    List<INews> selectedNews = new ArrayList<>();
     for (Object selectedElement : selectedElements) {
       ScoredNews scoredNews = (ScoredNews) selectedElement;
       selectedNews.add(scoredNews.getNews());
@@ -1702,7 +1702,7 @@ public class SearchNewsDialog extends TitleAreaDialog {
                 fUpdatedScoredNews.add(scoredNews);
 
                 if (fUpdatedNewsEvents == null)
-                  fUpdatedNewsEvents = new HashSet<NewsEvent>();
+                  fUpdatedNewsEvents = new HashSet<>();
                 fUpdatedNewsEvents.add(event);
               }
             }
@@ -1777,7 +1777,7 @@ public class SearchNewsDialog extends TitleAreaDialog {
       if (data instanceof ScoredNews) {
         INews news = ((ScoredNews) data).getNews();
         INews.State newState = (news.getState() == INews.State.READ) ? INews.State.UNREAD : INews.State.READ;
-        setNewsState(new ArrayList<INews>(Arrays.asList(new INews[] { news })), newState);
+        setNewsState(new ArrayList<>(Arrays.asList(new INews[] { news })), newState);
         fLastColumnActionInvokedMillies = System.currentTimeMillis();
       }
     }
@@ -1855,7 +1855,7 @@ public class SearchNewsDialog extends TitleAreaDialog {
 
       /* Convert Selection to INews */
       List<?> selectedElements = selection.toList();
-      List<INews> selectedNews = new ArrayList<INews>();
+      List<INews> selectedNews = new ArrayList<>();
       for (Object selectedElement : selectedElements) {
         ScoredNews scoredNews = (ScoredNews) selectedElement;
         selectedNews.add(scoredNews.getNews());
@@ -1921,9 +1921,9 @@ public class SearchNewsDialog extends TitleAreaDialog {
           manager.add(new Separator("movecopy")); //$NON-NLS-1$
 
           /* Load all news bins and sort by name */
-          List<INewsBin> newsbins = new ArrayList<INewsBin>(DynamicDAO.loadAll(INewsBin.class));
+          List<INewsBin> newsbins = new ArrayList<>(DynamicDAO.loadAll(INewsBin.class));
 
-          Comparator<INewsBin> comparator = new Comparator<INewsBin>() {
+          Comparator<INewsBin> comparator = new Comparator<>() {
             public int compare(INewsBin o1, INewsBin o2) {
               return o1.getName().compareTo(o2.getName());
             };
@@ -2014,7 +2014,7 @@ public class SearchNewsDialog extends TitleAreaDialog {
   }
 
   private List<ISearchCondition> getDefaultConditions() {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+    List<ISearchCondition> conditions = new ArrayList<>(1);
     IModelFactory factory = Owl.getModelFactory();
 
     ISearchField field = factory.createSearchField(IEntity.ALL_FIELDS, INews.class.getName());

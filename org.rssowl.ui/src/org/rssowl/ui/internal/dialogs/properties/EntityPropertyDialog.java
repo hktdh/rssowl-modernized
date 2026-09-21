@@ -72,8 +72,8 @@ import java.util.TreeSet;
 public class EntityPropertyDialog extends Dialog implements IPropertyDialogSite {
   private List<IEntity> fEntities;
   private String fTitle;
-  private Set<EntityPropertyPageWrapper> fPages = new TreeSet<EntityPropertyPageWrapper>();
-  private Set<IEntityPropertyPage> fCreatedPages = new HashSet<IEntityPropertyPage>();
+  private Set<EntityPropertyPageWrapper> fPages = new TreeSet<>();
+  private Set<IEntityPropertyPage> fCreatedPages = new HashSet<>();
   private Label fMessageText;
   private Label fMessageImage;
   private LocalResourceManager fResources;
@@ -124,7 +124,7 @@ public class EntityPropertyDialog extends Dialog implements IPropertyDialogSite 
   @Override
   protected void okPressed() {
     final boolean proceed[] = new boolean[] { true };
-    final Set<IEntity> entitiesToSave = new HashSet<IEntity>();
+    final Set<IEntity> entitiesToSave = new HashSet<>();
 
     /* Notify any Page and perform in Safe-Runner */
     for (Iterator<EntityPropertyPageWrapper> iterator = fPages.iterator(); iterator.hasNext() && proceed[0];) {

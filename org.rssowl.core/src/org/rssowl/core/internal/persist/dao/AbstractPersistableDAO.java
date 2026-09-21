@@ -129,7 +129,7 @@ public abstract class AbstractPersistableDAO<T extends IPersistable> implements 
       List<? extends T> entities = fDb.query(fEntityClass);
       activateAll(entities);
 
-      return new ArrayList<T>(entities);
+      return new ArrayList<>(entities);
     } catch (Db4oException e) {
       throw new PersistenceException(e);
     }

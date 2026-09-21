@@ -53,7 +53,7 @@ public class MarkStickyNewsAction implements INewsAction {
     news = CoreUtils.replace(news, replacements);
 
     /* Run Filter */
-    List<IEntity> entitiesToSave = new ArrayList<IEntity>(news.size());
+    List<IEntity> entitiesToSave = new ArrayList<>(news.size());
     for (INews newsitem : news) {
       if (!newsitem.isFlagged()) {
         newsitem.setFlagged(true);

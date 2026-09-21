@@ -81,7 +81,7 @@ public class NewsActionList extends ScrolledComposite {
   public NewsActionList(Composite parent, int style, List<IFilterAction> actions) {
     super(parent, style | SWT.V_SCROLL);
 
-    fItems = new ArrayList<NewsActionItem>();
+    fItems = new ArrayList<>();
     fResources = new LocalResourceManager(JFaceResources.getResources(), this);
 
     initResources();
@@ -146,7 +146,7 @@ public class NewsActionList extends ScrolledComposite {
    * actions are automatically ignored.
    */
   public List<IFilterAction> createActions() {
-    List<IFilterAction> actions = new ArrayList<IFilterAction>(fItems.size());
+    List<IFilterAction> actions = new ArrayList<>(fItems.size());
 
     /* For each Item */
     for (NewsActionItem item : fItems) {
@@ -156,7 +156,7 @@ public class NewsActionList extends ScrolledComposite {
     }
 
     /* Delete Duplicate Actions */
-    List<IFilterAction> duplicateActions = new ArrayList<IFilterAction>(0);
+    List<IFilterAction> duplicateActions = new ArrayList<>(0);
     for (IFilterAction action : actions) {
 
       /* Check if already Ignored */
@@ -208,7 +208,7 @@ public class NewsActionList extends ScrolledComposite {
     try {
 
       /* Remove all */
-      List<NewsActionItem> itemsToRemove = new ArrayList<NewsActionItem>(fItems);
+      List<NewsActionItem> itemsToRemove = new ArrayList<>(fItems);
       for (NewsActionItem itemToRemove : itemsToRemove) {
         itemToRemove.getParent().dispose();
         removeItem(itemToRemove);

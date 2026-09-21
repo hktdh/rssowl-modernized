@@ -59,7 +59,7 @@ public final class CachingNewsBinDAO extends CachingDAO<NewsBinDaoImpl, INewsBin
     else {
       IFolderDAO folderDAO = InternalOwl.getDefault().getPersistenceService().getDAOService().getFolderDAO();
       Collection<IFolder> roots = folderDAO.loadRoots();
-      Set<INewsBin> newsbins = new HashSet<INewsBin>();
+      Set<INewsBin> newsbins = new HashSet<>();
       CoreUtils.fillNewsBins(newsbins, roots);
       for (INewsBin newsbin : newsbins) {
         getCache().put(newsbin.getId(), newsbin);

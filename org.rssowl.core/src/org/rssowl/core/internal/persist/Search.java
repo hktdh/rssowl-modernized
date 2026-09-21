@@ -41,7 +41,7 @@ public class Search extends AbstractEntity implements ISearch {
 
   public Search(Long id) {
     super(id);
-    fSearchConditions = new ArrayList<ISearchCondition>(5);
+    fSearchConditions = new ArrayList<>(5);
   }
 
   /**
@@ -83,7 +83,7 @@ public class Search extends AbstractEntity implements ISearch {
    * @see org.rssowl.core.model.types.ISearchMark#getSearchConditions()
    */
   public synchronized List<ISearchCondition> getSearchConditions() {
-    return new ArrayList<ISearchCondition>(fSearchConditions);
+    return new ArrayList<>(fSearchConditions);
   }
 
   /*

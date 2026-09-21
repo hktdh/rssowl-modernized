@@ -111,7 +111,7 @@ public class ReloadTypesAction extends Action implements IObjectActionDelegate {
    */
   @Override
   public void run() {
-    Set<IBookMark> selectedBookMarks = new TreeSet<IBookMark>(new Comparator<IBookMark>() {
+    Set<IBookMark> selectedBookMarks = new TreeSet<>(new Comparator<IBookMark>() {
       public int compare(IBookMark o1, IBookMark o2) {
         if (o1.equals(o2))
           return 0;
@@ -131,7 +131,7 @@ public class ReloadTypesAction extends Action implements IObjectActionDelegate {
 
     /* Run Update */
     List<?> list = fSelection.toList();
-    Set<FeedLinkReference> handledFeedsFromNews = new HashSet<FeedLinkReference>();
+    Set<FeedLinkReference> handledFeedsFromNews = new HashSet<>();
     for (Object selection : list) {
       if (selection instanceof IFolder) {
         IFolder folder = (IFolder) selection;

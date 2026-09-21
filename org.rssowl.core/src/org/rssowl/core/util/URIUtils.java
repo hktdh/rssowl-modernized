@@ -433,7 +433,7 @@ public class URIUtils {
   private static String getFileSegmentFromQuery(String query, String extension) {
     if (StringUtils.isSet(query)) {
       StringTokenizer tokenizer = new StringTokenizer(query, "&?=/"); //$NON-NLS-1$
-      List<String> tokens = new ArrayList<String>();
+      List<String> tokens = new ArrayList<>();
       while (tokenizer.hasMoreTokens())
         tokens.add(tokenizer.nextToken());
 

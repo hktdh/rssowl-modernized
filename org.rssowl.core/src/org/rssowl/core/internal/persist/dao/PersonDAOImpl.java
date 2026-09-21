@@ -73,7 +73,7 @@ public class PersonDAOImpl extends AbstractEntityDAO<IPerson, PersonListener, Pe
    */
   public Set<String> loadAllNames() {
     try {
-      Set<String> strings = new TreeSet<String>();
+      Set<String> strings = new TreeSet<>();
       for (IPerson person : loadAll()) {
         String name = StringUtils.safeTrim(person.getName());
         if (StringUtils.isSet(name))

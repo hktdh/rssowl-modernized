@@ -467,7 +467,7 @@ public class NewsFilterDialog extends TitleAreaDialog {
   }
 
   private void onPreview() {
-    final List<ISearchCondition> conditions = new ArrayList<ISearchCondition>();
+    final List<ISearchCondition> conditions = new ArrayList<>();
 
     /* Create Condition from Scope */
     if (fMatchAllNewsRadio.getSelection()) {
@@ -805,7 +805,7 @@ public class NewsFilterDialog extends TitleAreaDialog {
   }
 
   private List<ISearchCondition> getDefaultConditions() {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+    List<ISearchCondition> conditions = new ArrayList<>(1);
     IModelFactory factory = Owl.getModelFactory();
 
     ISearchField field = factory.createSearchField(IEntity.ALL_FIELDS, INews.class.getName());
@@ -846,7 +846,7 @@ public class NewsFilterDialog extends TitleAreaDialog {
   }
 
   private List<IFilterAction> getDefaultActions() {
-    List<IFilterAction> defaultActions = new ArrayList<IFilterAction>(1);
+    List<IFilterAction> defaultActions = new ArrayList<>(1);
 
     IModelFactory factory = Owl.getModelFactory();
     defaultActions.add(factory.createFilterAction(MoveNewsAction.ID));

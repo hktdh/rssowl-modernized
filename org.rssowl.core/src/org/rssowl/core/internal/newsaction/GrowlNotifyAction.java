@@ -91,7 +91,7 @@ public class GrowlNotifyAction implements INewsAction {
       }
     };
 
-    fBatchedBuffer = new BatchedBuffer<INews>(receiver, BATCH_INTERVAL);
+    fBatchedBuffer = new BatchedBuffer<>(receiver, BATCH_INTERVAL);
   }
 
   /*
@@ -115,7 +115,7 @@ public class GrowlNotifyAction implements INewsAction {
 
   private void executeCommand(String pathToGrowlnotify, Collection<INews> news) throws IOException {
     if (StringUtils.isSet(pathToGrowlnotify)) {
-      List<String> commands = new ArrayList<String>();
+      List<String> commands = new ArrayList<>();
       commands.add(pathToGrowlnotify);
       commands.add("--name"); //$NON-NLS-1$
       commands.add(APPLICATION_NAME);
@@ -126,7 +126,7 @@ public class GrowlNotifyAction implements INewsAction {
       commands.add("-m"); //$NON-NLS-1$
 
       /* Sort News by Date */
-      Set<INews> sortedNews = new TreeSet<INews>(new Comparator<INews>() {
+      Set<INews> sortedNews = new TreeSet<>(new Comparator<INews>() {
         public int compare(INews news1, INews news2) {
           Date date1 = DateUtils.getRecentDate(news1);
           Date date2 = DateUtils.getRecentDate(news2);

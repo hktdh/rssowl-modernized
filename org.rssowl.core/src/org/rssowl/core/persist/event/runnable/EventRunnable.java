@@ -161,7 +161,7 @@ public abstract class EventRunnable<T extends ModelEvent> implements Runnable {
    */
   public final void addPersistEvent(T event) {
     if (fPersistEvents == null)
-      fPersistEvents = new HashSet<T>(3);
+      fPersistEvents = new HashSet<>(3);
 
     if (removeEventsContains(event))
       return;
@@ -184,7 +184,7 @@ public abstract class EventRunnable<T extends ModelEvent> implements Runnable {
    */
   public final void addRemoveEvent(T event) {
     if (fRemoveEvents == null)
-      fRemoveEvents = new HashSet<T>(3);
+      fRemoveEvents = new HashSet<>(3);
 
     if (fUpdateEvents != null)
       fUpdateEvents.remove(event);
@@ -201,7 +201,7 @@ public abstract class EventRunnable<T extends ModelEvent> implements Runnable {
    */
   public final void addUpdateEvent(T event) {
     if (fUpdateEvents == null)
-      fUpdateEvents = new HashSet<T>(3);
+      fUpdateEvents = new HashSet<>(3);
 
     if (removeEventsContains(event) || persistEventsContains(event))
       return;
@@ -215,7 +215,7 @@ public abstract class EventRunnable<T extends ModelEvent> implements Runnable {
    * @return a list of all events stored in this runnable.
    */
   public final List<T> getAllEvents() {
-    List<T> allEvents = new ArrayList<T>(getPersistEvents().size() + getRemoveEvents().size() + getUpdateEvents().size());
+    List<T> allEvents = new ArrayList<>(getPersistEvents().size() + getRemoveEvents().size() + getUpdateEvents().size());
     allEvents.addAll(getPersistEvents());
     allEvents.addAll(getRemoveEvents());
     allEvents.addAll(getUpdateEvents());

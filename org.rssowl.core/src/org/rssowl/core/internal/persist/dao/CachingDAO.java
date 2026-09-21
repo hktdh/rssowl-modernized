@@ -59,7 +59,7 @@ public abstract class CachingDAO<D extends AbstractEntityDAO<T, L, E>, T extends
   public CachingDAO(D dao) {
     fDAO = dao;
     fDAO.addEntityListener(createEntityListener());
-    fCache = new ConcurrentHashMap<Long, T>(16, 0.75f, 1);
+    fCache = new ConcurrentHashMap<>(16, 0.75f, 1);
 
     /* Update the Cache based on Database Events */
     DBManager.getDefault().addEntityStoreListener(new DatabaseListener() {

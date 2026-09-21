@@ -162,12 +162,12 @@ public final class DynamicDAO {
   }
 
   private static <T extends IPersistable> Map<Class<? extends IPersistable>, List<T>> getPersistablesMap(Collection<T> persistables) {
-    Map<Class<? extends IPersistable>, List<T>> persistablesMap = new LinkedHashMap<Class<? extends IPersistable>, List<T>>(3);
+    Map<Class<? extends IPersistable>, List<T>> persistablesMap = new LinkedHashMap<>(3);
     for (T persistable : persistables) {
       Class<? extends IPersistable> persistableClass = persistable.getClass();
       List<T> persistableList = persistablesMap.get(persistableClass);
       if (persistableList == null) {
-        persistableList = new ArrayList<T>(persistables.size());
+        persistableList = new ArrayList<>(persistables.size());
         persistablesMap.put(persistableClass, persistableList);
       }
       persistableList.add(persistable);

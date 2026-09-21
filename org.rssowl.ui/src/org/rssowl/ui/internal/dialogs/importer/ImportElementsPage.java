@@ -148,7 +148,7 @@ public class ImportElementsPage extends WizardPage {
   private Button fFlattenCheck;
   private Button fHideExistingCheck;
   private ExistingBookmarkFilter fExistingFilter = new ExistingBookmarkFilter();
-  private Map<URI, IFeed> fLoadedFeedCache = new ConcurrentHashMap<URI, IFeed>();
+  private Map<URI, IFeed> fLoadedFeedCache = new ConcurrentHashMap<>();
   private IProgressMonitor fCurrentProgressMonitor;
 
   /* Remember Current Import Values */
@@ -166,7 +166,7 @@ public class ImportElementsPage extends WizardPage {
   /* Filter to Exclude Existing Bookmarks (empty folders are excluded as well) */
   private static class ExistingBookmarkFilter extends ViewerFilter {
     private IBookMarkDAO dao = DynamicDAO.getDAO(IBookMarkDAO.class);
-    private Map<IFolderChild, Boolean> cache = new IdentityHashMap<IFolderChild, Boolean>();
+    private Map<IFolderChild, Boolean> cache = new IdentityHashMap<>();
 
     @Override
     public boolean select(Viewer viewer, Object parentElement, Object element) {
@@ -683,7 +683,7 @@ public class ImportElementsPage extends WizardPage {
             String content = StringUtils.readString(reader);
 
             /* Extract Links from Content */
-            List<String> links = new ArrayList<String>();
+            List<String> links = new ArrayList<>();
             if (StringUtils.isSet(content))
               links.addAll(RegExUtils.extractLinksFromText(content, false));
 
@@ -1064,7 +1064,7 @@ public class ImportElementsPage extends WizardPage {
     resourceLink = result.getSecond();
 
     /* Add the used Link at first if the user has typed in a valid feed address */
-    List<String> links = new ArrayList<String>();
+    List<String> links = new ArrayList<>();
     if (!isKeywordSearch)
       links.add(resourceLink.toString());
 
@@ -1127,7 +1127,7 @@ public class ImportElementsPage extends WizardPage {
 
     /* For Each Link of the Queue - try to interpret as Feed */
     int counter = 0;
-    final List<String> foundBookMarkNames = new ArrayList<String>();
+    final List<String> foundBookMarkNames = new ArrayList<>();
     IBookMarkDAO dao = DynamicDAO.getDAO(IBookMarkDAO.class);
     for (String feedLinkVal : links) {
       monitor.worked(1);
@@ -1269,12 +1269,12 @@ public class ImportElementsPage extends WizardPage {
   private InputStream openStream(URI link, IProgressMonitor monitor, int timeout, boolean setAcceptLanguage, boolean isLocalized, String authToken) throws ConnectionException {
     IProtocolHandler handler = Owl.getConnectionService().getHandler(link);
 
-    Map<Object, Object> properties = new HashMap<Object, Object>();
+    Map<Object, Object> properties = new HashMap<>();
     properties.put(IConnectionPropertyConstants.CON_TIMEOUT, timeout);
 
     /* Set Authorization Header if required */
     if (StringUtils.isSet(authToken)) {
-      Map<String, String> headers = new HashMap<String, String>();
+      Map<String, String> headers = new HashMap<>();
       headers.put("Authorization", SyncUtils.getGoogleAuthorizationHeader(authToken)); //$NON-NLS-1$
       properties.put(IConnectionPropertyConstants.HEADERS, headers);
     }
@@ -1307,7 +1307,7 @@ public class ImportElementsPage extends WizardPage {
 
   /* Updates Caches and Shows Elements */
   private void setImportedElements(List<? extends IEntity> types) {
-    List<IFolderChild> folderChilds = new ArrayList<IFolderChild>();
+    List<IFolderChild> folderChilds = new ArrayList<>();
     for (IEntity type : types) {
       if (type instanceof IFolderChild)
         folderChilds.add((IFolderChild) type);

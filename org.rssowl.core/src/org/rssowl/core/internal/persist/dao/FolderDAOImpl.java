@@ -92,7 +92,7 @@ public final class FolderDAOImpl extends AbstractEntityDAO<IFolder, FolderListen
       query.descend("fParent").constrain(null); //$NON-NLS-1$
       List<IFolder> folders = getList(query);
       activateAll(folders);
-      return new ArrayList<IFolder>(folders);
+      return new ArrayList<>(folders);
     } catch (Db4oException e) {
       throw new PersistenceException(e);
     }
@@ -108,8 +108,8 @@ public final class FolderDAOImpl extends AbstractEntityDAO<IFolder, FolderListen
 
     fWriteLock.lock();
     try {
-      List<FolderEvent> folderEvents = new ArrayList<FolderEvent>(3);
-      List<MarkEvent> markEvents = new ArrayList<MarkEvent>();
+      List<FolderEvent> folderEvents = new ArrayList<>(3);
+      List<MarkEvent> markEvents = new ArrayList<>();
       fillFolderChildEvents(reparentInfos, folderEvents, markEvents);
 
       for (FolderEvent event : folderEvents) {

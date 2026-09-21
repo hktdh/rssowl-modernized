@@ -551,7 +551,7 @@ public class NotifierPreferencesPage extends PreferencePage implements IWorkbenc
     if (fLimitNotifierToSelectionCheck.getSelection()) {
       Collection<IFolder> rootFolders = DynamicDAO.getDAO(IFolderDAO.class).loadRoots();
       List<?> checkedElements = Arrays.asList(fViewer.getCheckedElements());
-      final Set<IFolderChild> entitiesToSave = new HashSet<IFolderChild>();
+      final Set<IFolderChild> entitiesToSave = new HashSet<>();
 
       for (IFolder folder : rootFolders) {
         boolean checked = checkedElements.contains(folder);

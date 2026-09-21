@@ -90,7 +90,7 @@ public class MergeResult {
 
   private Set<Object> addAll(Set<Object> entities, Set<Object> entitiesToAdd) {
     if (entities == null)
-      entities = new HashSet<Object>(entitiesToAdd);
+      entities = new HashSet<>(entitiesToAdd);
     else
       entities.addAll(entitiesToAdd);
 
@@ -107,7 +107,7 @@ public class MergeResult {
       return;
 
     if (fUpdatedObjects == null)
-      fUpdatedObjects = new HashSet<Object>(3);
+      fUpdatedObjects = new HashSet<>(3);
 
     fUpdatedObjects.add(object);
   }
@@ -126,7 +126,7 @@ public class MergeResult {
   public final void addRemovedObject(Object object) {
     checkArgument(object);
     if (fRemovedObjects == null)
-      fRemovedObjects = new HashSet<Object>(3);
+      fRemovedObjects = new HashSet<>(3);
 
     if (getUpdatedObjects().contains(object))
       fUpdatedObjects.remove(object);

@@ -86,8 +86,8 @@ public class ConnectionServiceImpl implements IConnectionService {
 
   /** Default Constructor */
   public ConnectionServiceImpl() {
-    fProtocolHandler = new HashMap<String, IProtocolHandler>();
-    fCredentialsProvider = new HashMap<String, ICredentialsProvider>();
+    fProtocolHandler = new HashMap<>();
+    fCredentialsProvider = new HashMap<>();
 
     /* Init */
     fFeedListener = createFeedListener();
@@ -351,7 +351,7 @@ public class ConnectionServiceImpl implements IConnectionService {
       /* A URLStreamHandler is provided */
       try {
         if (protocolHandler.getURLStreamHandler() != null) {
-          Hashtable<String, String[]> properties = new Hashtable<String, String[]>(1);
+          Hashtable<String, String[]> properties = new Hashtable<>(1);
           properties.put(URLConstants.URL_HANDLER_PROTOCOL, new String[] { protocol });
           Activator.getDefault().getContext().registerService(URLStreamHandlerService.class.getName(), protocolHandler.getURLStreamHandler(), properties);
         }

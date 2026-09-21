@@ -116,7 +116,7 @@ public class LabelNewsActionPresentation implements INewsActionPresentation {
   }
 
   private void updateInput(Collection<ILabel> labels) {
-    List<Object> input = new ArrayList<Object>();
+    List<Object> input = new ArrayList<>();
     input.addAll(labels);
     input.add(NEW_LABEL_MARKER);
     fViewer.setInput(input);

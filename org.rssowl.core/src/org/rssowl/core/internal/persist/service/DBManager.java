@@ -152,7 +152,7 @@ public class DBManager {
   private ObjectContainer fObjectContainer;
   private final AtomicLong fNextOnlineBackup = new AtomicLong();
   private final ReadWriteLock fLock = new ReentrantReadWriteLock();
-  private final List<DatabaseListener> fEntityStoreListeners = new CopyOnWriteArrayList<DatabaseListener>();
+  private final List<DatabaseListener> fEntityStoreListeners = new CopyOnWriteArrayList<>();
 
   /**
    * @return The Singleton Instance.
@@ -736,7 +736,7 @@ public class DBManager {
     final BackupService backupService = new BackupService(dbFile, backupFileSuffix + workspaceFormat, 1);
     backupService.setLayoutStrategy(new BackupService.BackupLayoutStrategy() {
       public List<File> findBackupFiles() {
-        List<File> backupFiles = new ArrayList<File>(3);
+        List<File> backupFiles = new ArrayList<>(3);
         for (int i = workspaceFormat; i >= 0; --i) {
           File file = new File(dbFile.getAbsoluteFile() + backupFileSuffix + i);
           if (file.exists())
@@ -1005,7 +1005,7 @@ public class DBManager {
       return;
 
     /* Labels (keep in memory to avoid duplicate copies when cascading feed) */
-    List<Label> labels = new ArrayList<Label>();
+    List<Label> labels = new ArrayList<>();
     ObjectSet<Label> allLabels = sourceDb.query(Label.class);
     int available = DEFRAG_SUB_WORK_LABELS;
     if (!allLabels.isEmpty()) {
@@ -1064,7 +1064,7 @@ public class DBManager {
           return;
 
         destinationDb.activate(newsBin, Integer.MAX_VALUE);
-        List<NewsReference> staleNewsRefs = new ArrayList<NewsReference>(0);
+        List<NewsReference> staleNewsRefs = new ArrayList<>(0);
         for (NewsReference newsRef : newsBin.getNewsRefs()) {
           if (isCanceled(monitor, useLargeBlockSize, sourceDb, destinationDb))
             return;
@@ -1454,7 +1454,7 @@ public class DBManager {
   }
 
   List<File> getProfileBackups() {
-    List<File> backups = new ArrayList<File>();
+    List<File> backups = new ArrayList<>();
     File backupDir = new File(Activator.getDefault().getStateLocation().toOSString());
 
     /* Locate Online Backups */

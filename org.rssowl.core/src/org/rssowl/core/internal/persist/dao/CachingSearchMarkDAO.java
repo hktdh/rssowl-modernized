@@ -60,7 +60,7 @@ public class CachingSearchMarkDAO extends CachingDAO<SearchMarkDAOImpl, ISearchM
     else {
       IFolderDAO folderDAO = InternalOwl.getDefault().getPersistenceService().getDAOService().getFolderDAO();
       Collection<IFolder> roots = folderDAO.loadRoots();
-      Set<ISearchMark> searchmarks = new HashSet<ISearchMark>();
+      Set<ISearchMark> searchmarks = new HashSet<>();
       CoreUtils.fillSearchMarks(searchmarks, roots);
       for (ISearchMark searchmark : searchmarks) {
         getCache().put(searchmark.getId(), searchmark);

@@ -196,14 +196,14 @@ public class SyncUtils {
     if (handler != null) {
 
       /* Google Specific Parameters */
-      Map<String, String> parameters = new HashMap<String, String>();
+      Map<String, String> parameters = new HashMap<>();
       parameters.put("accountType", "GOOGLE"); //$NON-NLS-1$ //$NON-NLS-2$
       parameters.put("Email", email); //$NON-NLS-1$
       parameters.put("Passwd", pw); //$NON-NLS-1$
       parameters.put("service", "reader"); //$NON-NLS-1$ //$NON-NLS-2$
       parameters.put("source", "RSSOwl.org-RSSOwl-" + Activator.getDefault().getVersion()); //$NON-NLS-1$ //$NON-NLS-2$
 
-      Map<Object, Object> properties = new HashMap<Object, Object>();
+      Map<Object, Object> properties = new HashMap<>();
       properties.put(IConnectionPropertyConstants.PARAMETERS, parameters);
       properties.put(IConnectionPropertyConstants.POST, Boolean.TRUE);
       properties.put(IConnectionPropertyConstants.CON_TIMEOUT, getConnectionTimeout());
@@ -285,10 +285,10 @@ public class SyncUtils {
 
       String token = SyncUtils.getGoogleAuthToken(email, pw, refresh, monitor);
 
-      Map<String, String> headers = new HashMap<String, String>();
+      Map<String, String> headers = new HashMap<>();
       headers.put("Authorization", SyncUtils.getGoogleAuthorizationHeader(token)); //$NON-NLS-1$
 
-      Map<Object, Object> properties = new HashMap<Object, Object>();
+      Map<Object, Object> properties = new HashMap<>();
       properties.put(IConnectionPropertyConstants.HEADERS, headers);
       properties.put(IConnectionPropertyConstants.CON_TIMEOUT, getConnectionTimeout());
 

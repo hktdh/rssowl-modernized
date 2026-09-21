@@ -360,7 +360,7 @@ public class BookMarkFilter extends ViewerFilter {
    * @return an array of words
    */
   private String[] getWords(String text) {
-    List<String> words = new ArrayList<String>();
+    List<String> words = new ArrayList<>();
 
     /*
      * Break the text up into words, separating based on whitespace and common

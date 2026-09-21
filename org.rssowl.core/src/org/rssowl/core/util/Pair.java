@@ -52,7 +52,7 @@ public final class Pair<F, S> {
    * @return Returns a new <code>Pair</code> from the given Objects.
    */
   public static <F, S> Pair<F, S> create(F first, S second) {
-    return new Pair<F, S>(first, second);
+    return new Pair<>(first, second);
   }
 
   /**

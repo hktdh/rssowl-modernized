@@ -255,7 +255,7 @@ public class DeleteTypesAction extends Action implements IObjectActionDelegate {
     restoreEditorsIfNecessary(entities);
 
     /* Separate News */
-    final List<INews> newsToDelete = new ArrayList<INews>();
+    final List<INews> newsToDelete = new ArrayList<>();
 
     /* Extract News */
     for (Iterator<IEntity> it = entities.iterator(); it.hasNext();) {

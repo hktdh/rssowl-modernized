@@ -63,7 +63,7 @@ public final class NewsCounterService {
       return;
 
     boolean newsCounterUpdated = false;
-    Map<String, NewsCounterItem> updatedCounterItems = new HashMap<String, NewsCounterItem>();
+    Map<String, NewsCounterItem> updatedCounterItems = new HashMap<>();
     synchronized (fNewsCounter) {
       for (NewsEvent newsEvent : newsEvents) {
         INews news = newsEvent.getEntity();
@@ -110,7 +110,7 @@ public final class NewsCounterService {
    * @param newsEvents the updated news
    */
   public void onNewsUpdated(Collection<NewsEvent> newsEvents) {
-    Map<String, NewsCounterItem> updatedCounterItems = new HashMap<String, NewsCounterItem>();
+    Map<String, NewsCounterItem> updatedCounterItems = new HashMap<>();
     synchronized (fNewsCounter) {
       for (NewsEvent event : newsEvents) {
         INews currentNews = event.getEntity();
@@ -174,7 +174,7 @@ public final class NewsCounterService {
    * @param newsEvents the deleted news
    */
   public void onNewsRemoved(Collection<NewsEvent> newsEvents) {
-    Map<String, NewsCounterItem> updatedCounterItems = new HashMap<String, NewsCounterItem>();
+    Map<String, NewsCounterItem> updatedCounterItems = new HashMap<>();
 
     synchronized (fNewsCounter) {
       for (NewsEvent newsEvent : newsEvents) {

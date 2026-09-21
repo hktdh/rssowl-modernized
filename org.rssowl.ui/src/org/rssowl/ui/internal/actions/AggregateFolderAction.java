@@ -121,7 +121,7 @@ public class AggregateFolderAction implements IObjectActionDelegate {
     ISearchMark locationSearch = findSearch(folder);
     if (locationSearch == null) {
       IModelFactory factory = Owl.getModelFactory();
-      List<ISearchCondition> conditions = new ArrayList<ISearchCondition>();
+      List<ISearchCondition> conditions = new ArrayList<>();
 
       ISearchField locationField = factory.createSearchField(INews.LOCATION, INews.class.getName());
       conditions.add(factory.createSearchCondition(locationField, SearchSpecifier.IS, ModelUtils.toPrimitive(Collections.singletonList((IFolderChild) folder))));
@@ -146,7 +146,7 @@ public class AggregateFolderAction implements IObjectActionDelegate {
       OwlUI.openInFeedView(fTargetPart.getSite().getPage(), selection);
 
       /* Reload if necessary */
-      List<IBookMark> bookMarksToReload = new ArrayList<IBookMark>();
+      List<IBookMark> bookMarksToReload = new ArrayList<>();
       fillBookMarksToReload(bookMarksToReload, folder);
       if (!bookMarksToReload.isEmpty())
         new ReloadTypesAction(new StructuredSelection(bookMarksToReload.toArray()), fTargetPart.getSite().getShell()).run();

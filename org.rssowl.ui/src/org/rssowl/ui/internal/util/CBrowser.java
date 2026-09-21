@@ -160,7 +160,7 @@ public class CBrowser {
 
       throw e;
     }
-    fLinkHandler = new HashMap<String, ILinkHandler>();
+    fLinkHandler = new HashMap<>();
     hookListeners();
 
     /* Add custom Context Menu on OS where this is not supported */

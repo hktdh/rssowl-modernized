@@ -52,7 +52,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class AbstractEntityDAO<T extends IEntity, L extends EntityListener<E, T>, E extends ModelEvent> extends AbstractPersistableDAO<T> implements IEntityDAO<T, L, E> {
 
   /** The List of Listeners for this DAO */
-  protected final List<L> fEntityListeners = new CopyOnWriteArrayList<L>();
+  protected final List<L> fEntityListeners = new CopyOnWriteArrayList<>();
 
   /**
    * Creates an instance of this class.

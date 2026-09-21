@@ -103,10 +103,10 @@ public class NewsBrowserLabelProvider extends LabelProvider {
   private DateFormat fTimeFormat = OwlUI.getShortTimeFormat();
 
   /* Potential Image Tags */
-  private final Set<String> fImageTags = new HashSet<String>(Arrays.asList(new String[] { "img", "map", "area" })); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+  private final Set<String> fImageTags = new HashSet<>(Arrays.asList(new String[] { "img", "map", "area" })); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
   /* Potential Media Tags */
-  private final Set<String> fMediaTags = new HashSet<String>(Arrays.asList(new String[] { "applet", "embed", "frame", "frameset", "iframe", "object" })); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
+  private final Set<String> fMediaTags = new HashSet<>(Arrays.asList(new String[] { "applet", "embed", "frame", "frameset", "iframe", "object" })); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
 
   /* Image and Media Tags */
   private final Set<String> fImageAndMediaTags;
@@ -205,7 +205,7 @@ public class NewsBrowserLabelProvider extends LabelProvider {
   private boolean fForceNoGrouping;
   private boolean fForceNoPaging;
   private final long fTodayInMillies;
-  private final Map<String, String> fMapFeedLinkToName = new HashMap<String, String>();
+  private final Map<String, String> fMapFeedLinkToName = new HashMap<>();
 
   /**
    * Creates a new Browser LabelProvider for News
@@ -232,7 +232,7 @@ public class NewsBrowserLabelProvider extends LabelProvider {
     fShowFooter = true;
     fTodayInMillies = DateUtils.getToday().getTimeInMillis();
 
-    fImageAndMediaTags = new HashSet<String>();
+    fImageAndMediaTags = new HashSet<>();
     fImageAndMediaTags.addAll(fImageTags);
     fImageAndMediaTags.addAll(fMediaTags);
 

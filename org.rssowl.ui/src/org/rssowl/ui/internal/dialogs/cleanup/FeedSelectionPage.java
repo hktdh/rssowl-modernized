@@ -77,7 +77,7 @@ public class FeedSelectionPage extends WizardPage {
 
   /* Returns all selected Bookmarks */
   Set<IBookMark> getSelection() {
-    Set<IBookMark> selection = new HashSet<IBookMark>();
+    Set<IBookMark> selection = new HashSet<>();
 
     Object[] checkedElements = fViewer.getCheckedElements();
     for (Object checkedElement : checkedElements) {

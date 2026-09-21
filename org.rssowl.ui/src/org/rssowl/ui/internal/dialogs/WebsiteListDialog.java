@@ -229,7 +229,7 @@ public class WebsiteListDialog extends Dialog {
       String[] websites = fPreferences.getStrings(DefaultPreferences.DISABLE_JAVASCRIPT_EXCEPTIONS);
       if (websites == null)
         websites = new String[0];
-      List<String> newWebsites = new ArrayList<String>(Arrays.asList(websites));
+      List<String> newWebsites = new ArrayList<>(Arrays.asList(websites));
       if (!newWebsites.contains(website))
         newWebsites.add(website);
       String[] newWebsitesArray = newWebsites.toArray(new String[newWebsites.size()]);
@@ -248,7 +248,7 @@ public class WebsiteListDialog extends Dialog {
 
   private void onRemoveSelected() {
     String[] websites = fPreferences.getStrings(DefaultPreferences.DISABLE_JAVASCRIPT_EXCEPTIONS);
-    List<String> newWebsites = new ArrayList<String>(Arrays.asList(websites));
+    List<String> newWebsites = new ArrayList<>(Arrays.asList(websites));
 
     IStructuredSelection selection = (IStructuredSelection) fViewer.getSelection();
     List<?> list = selection.toList();

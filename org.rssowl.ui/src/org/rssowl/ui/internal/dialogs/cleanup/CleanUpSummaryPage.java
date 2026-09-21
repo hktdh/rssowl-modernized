@@ -175,7 +175,7 @@ public class CleanUpSummaryPage extends WizardPage {
 
   List<CleanUpTask> getTasks() {
     Object[] checkedElements = fViewer.getCheckedElements();
-    List<CleanUpTask> tasks = new ArrayList<CleanUpTask>(checkedElements.length);
+    List<CleanUpTask> tasks = new ArrayList<>(checkedElements.length);
 
     for (Object checkedElement : checkedElements)
       if (checkedElement instanceof CleanUpTask)

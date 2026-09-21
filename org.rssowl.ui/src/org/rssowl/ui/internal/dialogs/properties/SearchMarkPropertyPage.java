@@ -286,7 +286,7 @@ public class SearchMarkPropertyPage implements IEntityPropertyPage {
   }
 
   private List<ISearchCondition> getDefaultConditions() {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+    List<ISearchCondition> conditions = new ArrayList<>(1);
     IModelFactory factory = Owl.getModelFactory();
 
     ISearchField field = factory.createSearchField(IEntity.ALL_FIELDS, INews.class.getName());
@@ -396,7 +396,7 @@ public class SearchMarkPropertyPage implements IEntityPropertyPage {
   }
 
   private boolean performOkMultiSearch(Set<IEntity> entitiesToSave) {
-    Set<ISearchMark> searchesToUpdate = new HashSet<ISearchMark>(fEntities.size());
+    Set<ISearchMark> searchesToUpdate = new HashSet<>(fEntities.size());
 
     for (IEntity entity : fEntities) {
       ISearchMark mark = (ISearchMark) entity;
@@ -424,7 +424,7 @@ public class SearchMarkPropertyPage implements IEntityPropertyPage {
     for (IEntity entity : fEntities) {
       ISearchMark mark = (ISearchMark) entity;
       if (mark.getParent() != fFolderChooser.getFolder()) {
-        ReparentInfo<IFolderChild, IFolder> reparent = new ReparentInfo<IFolderChild, IFolder>(mark, fFolderChooser.getFolder(), null, null);
+        ReparentInfo<IFolderChild, IFolder> reparent = new ReparentInfo<>(mark, fFolderChooser.getFolder(), null, null);
         CoreUtils.reparentWithProperties(Collections.singletonList(reparent));
       }
     }

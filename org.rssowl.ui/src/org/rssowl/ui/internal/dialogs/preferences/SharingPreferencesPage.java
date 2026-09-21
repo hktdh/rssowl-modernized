@@ -403,7 +403,7 @@ public class SharingPreferencesPage extends PreferencePage implements IWorkbench
 
   private void onMove(boolean up) {
     TableItem[] items = fViewer.getTable().getItems();
-    List<ShareProvider> sortedProviders = new ArrayList<ShareProvider>(items.length);
+    List<ShareProvider> sortedProviders = new ArrayList<>(items.length);
     for (TableItem item : items) {
       sortedProviders.add((ShareProvider) item.getData());
     }
@@ -440,14 +440,14 @@ public class SharingPreferencesPage extends PreferencePage implements IWorkbench
   private void onMove(StructuredSelection selection, ShareProvider destination, int location) {
 
     /* Determine Moved Items */
-    List<ShareProvider> movedItems = new ArrayList<ShareProvider>();
+    List<ShareProvider> movedItems = new ArrayList<>();
     Object[] selectedElements = selection.toArray();
     for (Object element : selectedElements) {
       movedItems.add((ShareProvider) element);
     }
 
     /* Determine Visible Items */
-    List<ShareProvider> visibleItems = new ArrayList<ShareProvider>();
+    List<ShareProvider> visibleItems = new ArrayList<>();
     TableItem[] items = fViewer.getTable().getItems();
     for (TableItem item : items) {
       visibleItems.add((ShareProvider) item.getData());

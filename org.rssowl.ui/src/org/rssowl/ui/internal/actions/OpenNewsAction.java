@@ -133,9 +133,9 @@ public class OpenNewsAction extends Action {
 
     /* Convert selection to List of News (1 per Feed and Bin) */
     List<?> list = fSelection.toList();
-    List<FeedLinkReference> handledFeeds = new ArrayList<FeedLinkReference>(list.size() / 2);
-    List<Long> handledBins = new ArrayList<Long>(list.size() / 2);
-    List<INews> newsToOpen = new ArrayList<INews>(list.size());
+    List<FeedLinkReference> handledFeeds = new ArrayList<>(list.size() / 2);
+    List<Long> handledBins = new ArrayList<>(list.size() / 2);
+    List<INews> newsToOpen = new ArrayList<>(list.size());
     for (Object selection : list) {
       if (selection instanceof INews) {
         INews news = (INews) selection;

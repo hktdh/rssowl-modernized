@@ -191,7 +191,7 @@ public class News extends AbstractEntity implements INews {
       fIsFlagged = news.fIsFlagged;
 
       /* Don't need to copy the labels because the relationship is ManyToMany. */
-      fLabels = news.fLabels == null ? null : new HashSet<ILabel>(news.fLabels);
+      fLabels = news.fLabels == null ? null : new HashSet<>(news.fLabels);
 
       fLinkText = news.fLinkText;
 
@@ -391,7 +391,7 @@ public class News extends AbstractEntity implements INews {
     fLock.acquireWriteLock();
     try {
       if (fAttachments == null)
-        fAttachments = new ArrayList<IAttachment>(1);
+        fAttachments = new ArrayList<>(1);
 
       /* Rule: Child needs to know about its new parent already! */
       Assert.isTrue(equals(attachment.getNews()), "The Attachment has a different News set!"); //$NON-NLS-1$
@@ -408,10 +408,10 @@ public class News extends AbstractEntity implements INews {
     fLock.acquireReadLock();
     try {
       if (fLabels == null)
-        return new HashSet<ILabel>(0);
+        return new HashSet<>(0);
 
       /* Bug: For some reason a label can become null when it was deleted, ignore null thereby */
-      Set<ILabel> labels= new HashSet<ILabel>(fLabels.size());
+      Set<ILabel> labels= new HashSet<>(fLabels.size());
       Iterator<ILabel> iterator = fLabels.iterator();
       while(iterator.hasNext()) {
         ILabel label = iterator.next();
@@ -433,7 +433,7 @@ public class News extends AbstractEntity implements INews {
     fLock.acquireWriteLock();
     try {
       if (fLabels == null)
-        fLabels = new HashSet<ILabel>(1);
+        fLabels = new HashSet<>(1);
 
       return fLabels.add(label);
     } finally {
@@ -476,8 +476,8 @@ public class News extends AbstractEntity implements INews {
     fLock.acquireReadLock();
     try {
       if (fAttachments == null)
-        return new ArrayList<IAttachment>(0);
-      return new ArrayList<IAttachment>(fAttachments);
+        return new ArrayList<>(0);
+      return new ArrayList<>(fAttachments);
     } finally {
       fLock.releaseReadLock();
     }
@@ -728,7 +728,7 @@ public class News extends AbstractEntity implements INews {
     fLock.acquireWriteLock();
     try {
       if (fCategories == null)
-        fCategories = new ArrayList<ICategory>(1);
+        fCategories = new ArrayList<>(1);
       fCategories.add(category);
     } finally {
       fLock.releaseWriteLock();
@@ -814,8 +814,8 @@ public class News extends AbstractEntity implements INews {
     fLock.acquireReadLock();
     try {
       if (fCategories == null)
-        return new ArrayList<ICategory>(0);
-      return new ArrayList<ICategory>(fCategories);
+        return new ArrayList<>(0);
+      return new ArrayList<>(fCategories);
     } finally {
       fLock.releaseReadLock();
     }
@@ -1219,7 +1219,7 @@ public class News extends AbstractEntity implements INews {
     if (categories == null)
       categories = Collections.emptyList();
 
-    Comparator<ICategory> comparator = new Comparator<ICategory>() {
+    Comparator<ICategory> comparator = new Comparator<>() {
 
       public int compare(ICategory o1, ICategory o2) {
         if (o1.getName() == null ? o2.getName() == null : o1.getName().equals(o2.getName())) {
@@ -1239,7 +1239,7 @@ public class News extends AbstractEntity implements INews {
     if (attachments == null)
       attachments = Collections.emptyList();
 
-    Comparator<IAttachment> comparator = new Comparator<IAttachment>() {
+    Comparator<IAttachment> comparator = new Comparator<>() {
       public int compare(IAttachment o1, IAttachment o2) {
         if (o1.getLink() == null ? o2.getLink() == null : o1.getLink().equals(o2.getLink())) {
           return 0;

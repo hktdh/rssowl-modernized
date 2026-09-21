@@ -69,7 +69,7 @@ public class Folder extends AbstractEntity implements IFolder {
     Assert.isNotNull(name, "The type Folder requires a Name that is not NULL"); //$NON-NLS-1$
     fParent = parent;
     fName = name;
-    fChildren = new ArrayList<IFolderChild>(5);
+    fChildren = new ArrayList<>(5);
   }
 
   /**
@@ -145,7 +145,7 @@ public class Folder extends AbstractEntity implements IFolder {
    * @see org.rssowl.core.persist.IFolder#getChildren()
    */
   public synchronized List<IFolderChild> getChildren() {
-    return new ArrayList<IFolderChild>(fChildren);
+    return new ArrayList<>(fChildren);
   }
 
   /*
@@ -190,7 +190,7 @@ public class Folder extends AbstractEntity implements IFolder {
   }
 
   private <T> List<T> extractTypes(Class<T> type, List<? super T> list) {
-    List<T> types = new ArrayList<T>(list.size());
+    List<T> types = new ArrayList<>(list.size());
     for (Object object : list) {
       if (type.isInstance(object))
         types.add(type.cast(object));

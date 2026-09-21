@@ -50,7 +50,7 @@ public class CTree {
   private static final String LAYOUT_DATA = "org.rssowl.ui.internal.CTreeLayoutData"; //$NON-NLS-1$
 
   private Tree fTree;
-  private List<TreeColumn> fCols = new ArrayList<TreeColumn>();
+  private List<TreeColumn> fCols = new ArrayList<>();
   private boolean fIsFlat = true;
 
   /**

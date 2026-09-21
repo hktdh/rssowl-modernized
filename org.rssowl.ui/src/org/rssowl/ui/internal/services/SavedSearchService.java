@@ -260,7 +260,7 @@ public class SavedSearchService {
 
     fUpdatedOnce.set(true);
     IModelSearch modelSearch = Owl.getPersistenceService().getModelSearch();
-    Set<SearchMarkEvent> events = new HashSet<SearchMarkEvent>(searchMarks.size());
+    Set<SearchMarkEvent> events = new HashSet<>(searchMarks.size());
 
     /* For each Search Mark */
     for (ISearchMark searchMark : searchMarks) {
@@ -273,7 +273,7 @@ public class SavedSearchService {
       List<SearchHit<NewsReference>> results = modelSearch.searchNews(searchMark.getSearchConditions(), searchMark.matchAllConditions());
 
       /* Fill Result into Map Buckets */
-      Map<INews.State, List<NewsReference>> resultsMap = new EnumMap<INews.State, List<NewsReference>>(INews.State.class);
+      Map<INews.State, List<NewsReference>> resultsMap = new EnumMap<>(INews.State.class);
 
       Set<State> visibleStates = INews.State.getVisible();
       for (SearchHit<NewsReference> searchHit : results) {
@@ -286,7 +286,7 @@ public class SavedSearchService {
         if (visibleStates.contains(state)) {
           List<NewsReference> newsRefs = resultsMap.get(state);
           if (newsRefs == null) {
-            newsRefs = new ArrayList<NewsReference>(results.size() / 3);
+            newsRefs = new ArrayList<>(results.size() / 3);
             resultsMap.put(state, newsRefs);
           }
           newsRefs.add(searchHit.getResult());

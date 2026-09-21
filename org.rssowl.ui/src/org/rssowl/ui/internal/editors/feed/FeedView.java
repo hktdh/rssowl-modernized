@@ -406,7 +406,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
       Tree tree = fNewsTableControl.getViewer().getTree();
       TreeItem[] items = tree.getItems();
       if (items.length > 0) {
-        List<INews> newsToSave = new ArrayList<INews>();
+        List<INews> newsToSave = new ArrayList<>();
 
         /* Ungrouped */
         if (items[0].getItemCount() == 0) {
@@ -1261,7 +1261,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
     if (event == UIEvent.CLOSE) {
 
       /* Perform the State Change */
-      List<INews> newsToUpdate = new ArrayList<INews>();
+      List<INews> newsToUpdate = new ArrayList<>();
       for (INews newsItem : news) {
         if (newsItem.getState() == INews.State.NEW)
           newsToUpdate.add(newsItem);
@@ -1312,7 +1312,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
           }
 
           /* Perform the State Change */
-          List<INews> newsToUpdate = new ArrayList<INews>();
+          List<INews> newsToUpdate = new ArrayList<>();
           for (INews newsItem : news) {
             if (newsItem.getState() == INews.State.NEW)
               newsToUpdate.add(newsItem);
@@ -1448,7 +1448,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
         /* Trigger reload of not loaded included Bookmarks */
         else if (mark instanceof FolderNewsMark) {
           IFolder folder = ((FolderNewsMark) mark).getFolder();
-          List<IBookMark> bookMarksToReload = new ArrayList<IBookMark>();
+          List<IBookMark> bookMarksToReload = new ArrayList<>();
           fillBookMarksToReload(bookMarksToReload, folder);
           if (!bookMarksToReload.isEmpty())
             new ReloadTypesAction(new StructuredSelection(bookMarksToReload.toArray()), getEditorSite().getShell()).run();

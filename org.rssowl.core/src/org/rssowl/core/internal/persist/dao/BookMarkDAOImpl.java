@@ -79,7 +79,7 @@ public final class BookMarkDAOImpl extends AbstractEntityDAO<IBookMark, BookMark
     try {
       Collection<IBookMark> marks = DBHelper.loadAllBookMarks(fDb, feedRef);
       activateAll(marks);
-      return new ArrayList<IBookMark>(marks);
+      return new ArrayList<>(marks);
     } catch (Db4oException e) {
       throw new PersistenceException(e);
     }

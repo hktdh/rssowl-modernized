@@ -64,7 +64,7 @@ public abstract class AbstractEntity extends Persistable implements IEntity {
     fId = id;
     synchronized (entity) {
       if (entity.fProperties != null)
-        fProperties = new HashMap<String, Serializable>(entity.fProperties);
+        fProperties = new HashMap<>(entity.fProperties);
     }
   }
 
@@ -120,7 +120,7 @@ public abstract class AbstractEntity extends Persistable implements IEntity {
   public synchronized void setProperty(String key, Serializable value) {
     Assert.isNotNull(key, "Using NULL as Key is not permitted!"); //$NON-NLS-1$
     if (fProperties == null)
-      fProperties = new HashMap<String, Serializable>();
+      fProperties = new HashMap<>();
 
     fProperties.put(key, value);
   }
@@ -154,7 +154,7 @@ public abstract class AbstractEntity extends Persistable implements IEntity {
     if (fProperties == null)
       return Collections.emptyMap();
 
-    return new HashMap<String, Serializable>(fProperties);
+    return new HashMap<>(fProperties);
   }
 
   /*

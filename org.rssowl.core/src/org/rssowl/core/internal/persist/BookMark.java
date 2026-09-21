@@ -223,7 +223,7 @@ public class BookMark extends Mark implements IBookMark {
    */
   public List<NewsReference> getNewsRefs(Set<State> states) {
     List<INews> news = getNews(states);
-    List<NewsReference> newsRefs = new ArrayList<NewsReference>();
+    List<NewsReference> newsRefs = new ArrayList<>();
     for (INews newsItem : news) {
       newsRefs.add(new NewsReference(newsItem.getId()));
     }

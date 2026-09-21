@@ -291,7 +291,7 @@ public class ModelSearchQueries {
 
     /* Require all words to be contained or not contained */
     if (condition.getSpecifier() == SearchSpecifier.CONTAINS_ALL) {
-      List<ISearchCondition> tokenConditions = new ArrayList<ISearchCondition>();
+      List<ISearchCondition> tokenConditions = new ArrayList<>();
 
       List<String> tokens = StringUtils.tokenizePhraseAware((String) condition.getValue(), true);
       for (String token : tokens) {
@@ -321,7 +321,7 @@ public class ModelSearchQueries {
 
     /* Require any word to be contained or not contained */
     else {
-      List<ISearchCondition> allFieldsConditions = new ArrayList<ISearchCondition>(5);
+      List<ISearchCondition> allFieldsConditions = new ArrayList<>(5);
 
       /* Title */
       ISearchField field = factory.createSearchField(INews.TITLE, condition.getField().getEntityName());
@@ -351,7 +351,7 @@ public class ModelSearchQueries {
 
       /* Create Clauses out of Conditions */
       boolean anyClauseIsEmpty = false;
-      List<BooleanClause> clauses = new ArrayList<BooleanClause>();
+      List<BooleanClause> clauses = new ArrayList<>();
       for (ISearchCondition allFieldCondition : allFieldsConditions) {
         BooleanClause clause = createBooleanClause(analyzer, allFieldCondition, matchAllConditions);
         clause.setOccur(Occur.SHOULD);

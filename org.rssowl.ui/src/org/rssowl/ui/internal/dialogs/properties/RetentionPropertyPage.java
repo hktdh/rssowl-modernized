@@ -100,7 +100,7 @@ public class RetentionPropertyPage implements IEntityPropertyPage {
     fEntities = entities;
 
     /* Load Entity Preferences */
-    fEntityPreferences = new ArrayList<IPreferenceScope>(fEntities.size());
+    fEntityPreferences = new ArrayList<>(fEntities.size());
     for (IEntity entity : entities)
       fEntityPreferences.add(Owl.getPreferenceService().getEntityScope(entity));
 
@@ -407,7 +407,7 @@ public class RetentionPropertyPage implements IEntityPropertyPage {
         @Override
         protected IStatus run(IProgressMonitor monitor) {
           try {
-            Set<IBookMark> bookmarks = new HashSet<IBookMark>();
+            Set<IBookMark> bookmarks = new HashSet<>();
             for (IEntity entity : fEntities) {
               if (entity instanceof IBookMark)
                 bookmarks.add((IBookMark) entity);

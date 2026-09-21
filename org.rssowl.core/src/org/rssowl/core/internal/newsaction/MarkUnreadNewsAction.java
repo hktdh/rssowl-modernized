@@ -54,7 +54,7 @@ public class MarkUnreadNewsAction implements INewsAction {
     news = CoreUtils.replace(news, replacements);
 
     /* Run Filter */
-    List<IEntity> entitiesToSave = new ArrayList<IEntity>(news.size());
+    List<IEntity> entitiesToSave = new ArrayList<>(news.size());
     for (INews newsitem : news) {
       State state = newsitem.getState();
       if (state == INews.State.NEW || state == INews.State.READ || state == INews.State.UPDATED) {

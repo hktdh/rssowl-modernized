@@ -104,7 +104,7 @@ public class CleanUpModel {
   public CleanUpModel(CleanUpOperations operations, Collection<IBookMark> bookmarks) {
     fOps = operations;
     fBookmarks = bookmarks;
-    fTasks = new ArrayList<CleanUpGroup>();
+    fTasks = new ArrayList<>();
     fFactory = Owl.getModelFactory();
     fModelSearch = Owl.getPersistenceService().getModelSearch();
     fNewsDao = DynamicDAO.getDAO(INewsDAO.class);
@@ -134,8 +134,8 @@ public class CleanUpModel {
    * @param monitor
    */
   public void generate(IProgressMonitor monitor) {
-    Set<IBookMark> bookmarksToDelete = new HashSet<IBookMark>();
-    Map<IBookMark, Set<NewsReference>> newsToDelete = new HashMap<IBookMark, Set<NewsReference>>();
+    Set<IBookMark> bookmarksToDelete = new HashSet<>();
+    Map<IBookMark, Set<NewsReference>> newsToDelete = new HashMap<>();
 
     /* 0.) Create Recommended Tasks */
     CleanUpGroup recommendedTasks = new CleanUpGroup(Messages.CleanUpModel_RECOMMENDED_OPS);
@@ -147,7 +147,7 @@ public class CleanUpModel {
 
     /* Look for orphaned saved searches */
     {
-      List<ISearchMark> orphanedSearches = new ArrayList<ISearchMark>();
+      List<ISearchMark> orphanedSearches = new ArrayList<>();
       Collection<ISearchMark> searches = DynamicDAO.loadAll(ISearchMark.class);
       for (ISearchMark search : searches) {
         if (CoreUtils.isOrphaned(search))
@@ -160,7 +160,7 @@ public class CleanUpModel {
 
     /* Look for orphaned news filters */
     {
-      List<ISearchFilter> orphanedFilters = new ArrayList<ISearchFilter>();
+      List<ISearchFilter> orphanedFilters = new ArrayList<>();
       Collection<ISearchFilter> filters = DynamicDAO.loadAll(ISearchFilter.class);
       for (ISearchFilter filter : filters) {
         if (filter.isEnabled() && CoreUtils.isOrphaned(filter))
@@ -270,7 +270,7 @@ public class CleanUpModel {
         if (!bookmarksToDelete.contains(currentBookMark)) {
 
           /* Group of Bookmarks referencing the same Feed sorted by Creation Date */
-          Set<IBookMark> sortedBookmarkGroup = new TreeSet<IBookMark>(new Comparator<IBookMark>() {
+          Set<IBookMark> sortedBookmarkGroup = new TreeSet<>(new Comparator<IBookMark>() {
             public int compare(IBookMark o1, IBookMark o2) {
               if (o1.equals(o2))
                 return 0;
@@ -342,7 +342,7 @@ public class CleanUpModel {
     /* Reusable Label Condition */
     Collection<ILabel> labels = DynamicDAO.getDAO(ILabelDAO.class).loadAll();
     ISearchField labelField = fFactory.createSearchField(INews.LABEL, fNewsName);
-    List<ISearchCondition> labelConditions = new ArrayList<ISearchCondition>(labels.size());
+    List<ISearchCondition> labelConditions = new ArrayList<>(labels.size());
     for (ILabel label : labels) {
       labelConditions.add(fFactory.createSearchCondition(labelField, SearchSpecifier.IS_NOT, label.getName()));
     }
@@ -362,7 +362,7 @@ public class CleanUpModel {
         if (bookmarksToDelete.contains(mark))
           continue;
 
-        List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(3);
+        List<ISearchCondition> conditions = new ArrayList<>(3);
         conditions.add(getLocationCondition(mark));
         conditions.add(stickyCondition);
         conditions.add(stateCondition);
@@ -375,7 +375,7 @@ public class CleanUpModel {
           int toDeleteValue = results.size() - fOps.getMaxNewsCountPerFeed();
 
           /* Resolve News */
-          List<INews> resolvedNews = new ArrayList<INews>(results.size());
+          List<INews> resolvedNews = new ArrayList<>(results.size());
           for (SearchHit<NewsReference> result : results) {
             if (monitor.isCanceled())
               return;
@@ -402,7 +402,7 @@ public class CleanUpModel {
           if (monitor.isCanceled())
             return;
 
-          Set<NewsReference> newsOfMarkToDelete = new HashSet<NewsReference>();
+          Set<NewsReference> newsOfMarkToDelete = new HashSet<>();
           for (int i = 0; i < resolvedNews.size() && i < toDeleteValue; i++)
             newsOfMarkToDelete.add(new NewsReference(resolvedNews.get(i).getId()));
 
@@ -439,7 +439,7 @@ public class CleanUpModel {
         if (bookmarksToDelete.contains(mark))
           continue;
 
-        List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(4);
+        List<ISearchCondition> conditions = new ArrayList<>(4);
         conditions.add(getLocationCondition(mark));
         conditions.add(ageCond);
         conditions.add(stateCondition);
@@ -448,7 +448,7 @@ public class CleanUpModel {
           conditions.addAll(labelConditions);
 
         List<SearchHit<NewsReference>> results = filterInvalidResults(fModelSearch.searchNews(conditions, true), monitor);
-        Set<NewsReference> newsOfMarkToDelete = new HashSet<NewsReference>();
+        Set<NewsReference> newsOfMarkToDelete = new HashSet<>();
         for (SearchHit<NewsReference> result : results)
           newsOfMarkToDelete.add(result.getResult());
 
@@ -503,7 +503,7 @@ public class CleanUpModel {
         if (bookmarksToDelete.contains(mark))
           continue;
 
-        List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(3);
+        List<ISearchCondition> conditions = new ArrayList<>(3);
         conditions.add(getLocationCondition(mark));
         conditions.add(stateCond);
         conditions.add(stickyCondition);
@@ -511,7 +511,7 @@ public class CleanUpModel {
           conditions.addAll(labelConditions);
 
         List<SearchHit<NewsReference>> results = filterInvalidResults(fModelSearch.searchNews(conditions, true), monitor);
-        Set<NewsReference> newsOfMarkToDelete = new HashSet<NewsReference>();
+        Set<NewsReference> newsOfMarkToDelete = new HashSet<>();
         for (SearchHit<NewsReference> result : results)
           newsOfMarkToDelete.add(result.getResult());
 
@@ -564,8 +564,8 @@ public class CleanUpModel {
       URI opmlImportUri = URI.create(SyncUtils.GOOGLE_READER_OPML_URI);
       IProtocolHandler handler = Owl.getConnectionService().getHandler(opmlImportUri);
 
-      Map<Object, Object> properties = new HashMap<Object, Object>();
-      Map<String, String> headers = new HashMap<String, String>();
+      Map<Object, Object> properties = new HashMap<>();
+      Map<String, String> headers = new HashMap<>();
       headers.put("Authorization", SyncUtils.getGoogleAuthorizationHeader(authToken)); //$NON-NLS-1$
       properties.put(IConnectionPropertyConstants.HEADERS, headers);
 
@@ -579,7 +579,7 @@ public class CleanUpModel {
 
       /* Find Bookmarks */
       List<IEntity> types = Owl.getInterpreter().importFrom(inS);
-      Set<IBookMark> bookmarks = new HashSet<IBookMark>();
+      Set<IBookMark> bookmarks = new HashSet<>();
       for (IEntity type : types) {
         if (type instanceof IBookMark)
           bookmarks.add((IBookMark) type);
@@ -587,7 +587,7 @@ public class CleanUpModel {
           CoreUtils.fillBookMarks(bookmarks, Collections.singleton((IFolder) type));
       }
 
-      Set<String> feeds = new HashSet<String>();
+      Set<String> feeds = new HashSet<>();
       for (IBookMark bookmark : bookmarks) {
         feeds.add(bookmark.getFeedLinkReference().getLinkAsText());
       }
@@ -617,7 +617,7 @@ public class CleanUpModel {
 
   /* Have to test if Entity really exists (bug 337) */
   private List<SearchHit<NewsReference>> filterInvalidResults(List<SearchHit<NewsReference>> results, IProgressMonitor monitor) {
-    List<SearchHit<NewsReference>> validResults = new ArrayList<SearchHit<NewsReference>>(results.size());
+    List<SearchHit<NewsReference>> validResults = new ArrayList<>(results.size());
 
     for (SearchHit<NewsReference> searchHit : results) {
       if (monitor.isCanceled())

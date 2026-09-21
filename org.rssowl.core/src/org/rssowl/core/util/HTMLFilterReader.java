@@ -61,7 +61,7 @@ public class HTMLFilterReader extends Reader {
   private final StringBuilder fSb = new StringBuilder();
 
   static {
-    fgEntityTable = new HashMap<String, Character>();
+    fgEntityTable = new HashMap<>();
 
     /* Entity Names */
     final String[] entityName = { "zwnj", "aring", "gt", "yen", "ograve", "Chi", "delta", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$

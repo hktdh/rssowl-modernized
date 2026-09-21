@@ -405,7 +405,7 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
 
       /* Retrieve those actions that are forcable to run */
       List<IFilterAction> actions = filter.getActions();
-      List<IFilterAction> forcableActions = new ArrayList<IFilterAction>(actions.size());
+      List<IFilterAction> forcableActions = new ArrayList<>(actions.size());
       for (IFilterAction action : actions) {
         NewsActionDescriptor newsActionDescriptor = fNewsActionPresentationManager.getNewsActionDescriptor(action.getActionId());
         if (newsActionDescriptor != null && newsActionDescriptor.isForcable())
@@ -432,7 +432,7 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
       /* Use Search from Filter */
       else {
         List<SearchHit<NewsReference>> result = search.searchNews(filter.getSearch());
-        targetNews = new ArrayList<SearchHit<NewsReference>>(result.size());
+        targetNews = new ArrayList<>(result.size());
 
         /* Filter out those that are not visible */
         for (SearchHit<NewsReference> resultItem : result) {
@@ -502,7 +502,7 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
             return;
 
           monitor.subTask(NLS.bind(Messages.NewsFiltersListDialog_FILTERED_N_OF_M_NEWS, (counter * FILTER_CHUNK_SIZE), news.size()));
-          List<INews> newsItemsToFilter = new ArrayList<INews>(FILTER_CHUNK_SIZE);
+          List<INews> newsItemsToFilter = new ArrayList<>(FILTER_CHUNK_SIZE);
           for (SearchHit<NewsReference> chunkItem : chunk) {
             INews newsItemToFilter = chunkItem.getResult().resolve();
             if (newsItemToFilter != null && newsItemToFilter.isVisible())
@@ -536,8 +536,8 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
 
   private void applyFilterOnChunks(final List<INews> news, ISearchFilter filter) {
     Collection<IFilterAction> actions = CoreUtils.getActions(filter); //Need to sort structural actions to end
-    final Set<IEntity> entitiesToSave = new HashSet<IEntity>(news.size());
-    final Map<INews, INews> replacements = new HashMap<INews, INews>();
+    final Set<IEntity> entitiesToSave = new HashSet<>(news.size());
+    final Map<INews, INews> replacements = new HashMap<>();
 
     for (final IFilterAction action : actions) {
       NewsActionDescriptor newsActionDescriptor = fNewsActionPresentationManager.getNewsActionDescriptor(action.getActionId());
@@ -611,7 +611,7 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
 
   private void onMove(boolean up) {
     TableItem[] items = fViewer.getTable().getItems();
-    List<ISearchFilter> sortedFilters = new ArrayList<ISearchFilter>(items.length);
+    List<ISearchFilter> sortedFilters = new ArrayList<>(items.length);
     for (TableItem item : items) {
       sortedFilters.add((ISearchFilter) item.getData());
     }
@@ -683,7 +683,7 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
     List<?> selectedFilters = selection.toList();
     ConfirmDialog dialog = new ConfirmDialog(getShell(), Messages.NewsFiltersListDialog_CONFIRM_DELETE, Messages.NewsFiltersListDialog_NO_UNDO, getMessage(selectedFilters), null);
     if (dialog.open() == IDialogConstants.OK_ID) {
-      List<ISearchFilter> filtersToDelete = new ArrayList<ISearchFilter>(selectedFilters.size());
+      List<ISearchFilter> filtersToDelete = new ArrayList<>(selectedFilters.size());
       for (Iterator<?> iterator = selectedFilters.iterator(); iterator.hasNext();) {
         ISearchFilter filter = (ISearchFilter) iterator.next();
         filtersToDelete.add(filter);
@@ -698,7 +698,7 @@ public class NewsFiltersListDialog extends TitleAreaDialog {
 
   /* Ensure that after Delete, the orders are in sync again */
   private void fixOrderAfterDelete() {
-    List<ISearchFilter> filtersToSave = new ArrayList<ISearchFilter>();
+    List<ISearchFilter> filtersToSave = new ArrayList<>();
 
     TableItem[] items = fViewer.getTable().getItems();
     for (int i = 0; i < items.length; i++) {

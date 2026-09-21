@@ -1592,7 +1592,7 @@ public class BookMarkExplorer extends ViewPart {
     fViewSite = site;
     fGlobalPreferences = Owl.getPreferenceService().getGlobalScope();
     fPrefDAO = DynamicDAO.getDAO(IPreferenceDAO.class);
-    fExpandedNodes = new ArrayList<Long>();
+    fExpandedNodes = new ArrayList<>();
 
     /* Sort Root-Folders by ID */
     fRootFolders = CoreUtils.loadRootFolders();

@@ -263,19 +263,19 @@ public class InterpreterServiceImpl implements IInterpreterService {
     });
 
     /* Load Format Interpreters */
-    fFormatInterpreters = new HashMap<String, IFormatInterpreter>();
+    fFormatInterpreters = new HashMap<>();
     loadFormatInterpreters();
 
     /* Load Type Importers */
-    fTypeImporters = new HashMap<String, ITypeImporter>();
+    fTypeImporters = new HashMap<>();
     loadTypeImporters();
 
     /* Load Type Exporters */
-    fTypeExporters = new HashMap<String, ITypeExporter>();
+    fTypeExporters = new HashMap<>();
     loadTypeExporters();
 
     /* Load Namespace Handlers */
-    fNamespaceHandlers = new HashMap<String, INamespaceHandler>();
+    fNamespaceHandlers = new HashMap<>();
     loadNamespaceHandlers();
 
     /* Load Element Handlers */
@@ -308,7 +308,7 @@ public class InterpreterServiceImpl implements IInterpreterService {
     IConfigurationElement elements[] = reg.getConfigurationElementsFor(ELHANDLER_EXTENSION_POINT);
 
     if (elements.length > 0)
-      fElementHandlers = new HashMap<String, IElementHandler>();
+      fElementHandlers = new HashMap<>();
 
     for (IConfigurationElement element : elements) {
       String elementName = element.getAttribute("elementName").toLowerCase(); //$NON-NLS-1$

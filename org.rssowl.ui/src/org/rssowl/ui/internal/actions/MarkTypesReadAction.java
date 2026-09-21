@@ -130,7 +130,7 @@ public class MarkTypesReadAction extends Action implements IWorkbenchWindowActio
     for (Object element : entities) {
       if (element instanceof IFolder) {
         if (folders == null)
-          folders = new HashSet<IFolder>();
+          folders = new HashSet<>();
         folders.add((IFolder) element);
       }
     }
@@ -141,7 +141,7 @@ public class MarkTypesReadAction extends Action implements IWorkbenchWindowActio
         CoreUtils.normalize(folder, entities);
 
     /* Use Map for follow-up Retention */
-    Map<IBookMark, Collection<INews>> retentionHelperMap = new HashMap<IBookMark, Collection<INews>>();
+    Map<IBookMark, Collection<INews>> retentionHelperMap = new HashMap<>();
 
     /* Retrieve affected News */
     Collection<INews> news;
@@ -193,7 +193,7 @@ public class MarkTypesReadAction extends Action implements IWorkbenchWindowActio
     EnumSet<State> enumSet = EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED);
 
     Collection<INews> newsCache = feedView.getCachedNewsCopy();
-    Set<INews> news = new HashSet<INews>();
+    Set<INews> news = new HashSet<>();
     for (INews item : newsCache) {
       if (item != null && enumSet.contains(item.getState()) && !feedView.isHidden(item))
         news.add(item);
@@ -204,7 +204,7 @@ public class MarkTypesReadAction extends Action implements IWorkbenchWindowActio
 
   private Set<INews> resolveNews(List<IEntity> entities, Map<IBookMark, Collection<INews>> retentionHelperMap) {
     EnumSet<State> enumSet = EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED);
-    Set<INews> news = new HashSet<INews>();
+    Set<INews> news = new HashSet<>();
     for (IEntity element : entities) {
       if (element instanceof IFolder)
         fillNews((IFolder) element, news, retentionHelperMap);
@@ -229,7 +229,7 @@ public class MarkTypesReadAction extends Action implements IWorkbenchWindowActio
 
     /* Determine if any included Bookmark requires retention */
     boolean requiresRetention = false;
-    Set<IBookMark> bookmarks = new HashSet<IBookMark>();
+    Set<IBookMark> bookmarks = new HashSet<>();
     CoreUtils.fillBookMarks(bookmarks, Collections.singleton(folder));
     for (IBookMark bookmark : bookmarks) {
       if (Owl.getPreferenceService().getEntityScope(bookmark).getBoolean(DefaultPreferences.DEL_READ_NEWS_STATE)) {

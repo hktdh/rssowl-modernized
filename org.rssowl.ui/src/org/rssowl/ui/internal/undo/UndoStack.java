@@ -49,7 +49,7 @@ public class UndoStack {
 
   private final List<IUndoOperation> fOperations = Collections.synchronizedList(new ArrayList<IUndoOperation>());
   private int fCurrentIndex = 0;
-  private final List<IUndoRedoListener> fListeners = new ArrayList<IUndoRedoListener>();
+  private final List<IUndoRedoListener> fListeners = new ArrayList<>();
 
   private UndoStack() {}
 
@@ -98,7 +98,7 @@ public class UndoStack {
     if (fCurrentIndex < (fOperations.size() - 1)) {
 
       /* Remove all following Undo-Operations */
-      List<IUndoOperation> toDelete = new ArrayList<IUndoOperation>();
+      List<IUndoOperation> toDelete = new ArrayList<>();
       for (int i = fCurrentIndex + 1; i < fOperations.size(); i++)
         toDelete.add(fOperations.get(i));
 
@@ -108,7 +108,7 @@ public class UndoStack {
     /* Add operation and constrain size */
     fOperations.add(operation);
     if (fOperations.size() > MAX_SIZE) {
-      List<IUndoOperation> toDelete = new ArrayList<IUndoOperation>();
+      List<IUndoOperation> toDelete = new ArrayList<>();
       for (int i = 0; i < fOperations.size() - MAX_SIZE; i++)
         toDelete.add(fOperations.get(i));
 

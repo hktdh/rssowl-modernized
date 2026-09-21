@@ -73,7 +73,7 @@ public class ColumnsPropertyPage implements IEntityPropertyPage {
     fEntities = entities;
 
     /* Load Entity Preferences */
-    fEntityPreferences = new ArrayList<IPreferenceScope>(fEntities.size());
+    fEntityPreferences = new ArrayList<>(fEntities.size());
     for (IEntity entity : entities)
       fEntityPreferences.add(Owl.getPreferenceService().getEntityScope(entity));
 

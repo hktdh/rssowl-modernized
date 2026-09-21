@@ -129,7 +129,7 @@ public class SyncService implements Receiver<SyncItem> {
    * Starts the synchronizer by listening to news events.
    */
   public SyncService() {
-    fSynchronizer = new BatchedBuffer<SyncItem>(this, SYNC_DELAY);
+    fSynchronizer = new BatchedBuffer<>(this, SYNC_DELAY);
     fSyncItemsManager = new SyncItemsManager();
     init();
   }
@@ -206,7 +206,7 @@ public class SyncService implements Receiver<SyncItem> {
   }
 
   private Collection<SyncItem> filter(ISearchFilter filter, Collection<INews> news) {
-    List<SyncItem> filteredEvents = new ArrayList<SyncItem>();
+    List<SyncItem> filteredEvents = new ArrayList<>();
     for (INews item : news) {
       if (!SyncUtils.isSynchronized(item))
         continue;
@@ -220,7 +220,7 @@ public class SyncService implements Receiver<SyncItem> {
   }
 
   private Collection<SyncItem> filter(Set<NewsEvent> events) {
-    List<SyncItem> filteredEvents = new ArrayList<SyncItem>();
+    List<SyncItem> filteredEvents = new ArrayList<>();
     for (NewsEvent event : events) {
       if (event.isMerged() || event.getOldNews() == null || !SyncUtils.isSynchronized(event.getEntity()))
         continue;
@@ -394,18 +394,18 @@ public class SyncService implements Receiver<SyncItem> {
           continue;
 
         /* Connection Headers */
-        Map<String, String> headers = new HashMap<String, String>();
+        Map<String, String> headers = new HashMap<>();
         headers.put(REQUEST_HEADER_CONTENT_TYPE, CONTENT_TYPE_FORM_ENCODED);
         headers.put(REQUEST_HEADER_AUTHORIZATION, SyncUtils.getGoogleAuthorizationHeader(authToken));
 
         /* POST Parameters */
-        Map<String, String[]> parameters = new HashMap<String, String[]>();
+        Map<String, String[]> parameters = new HashMap<>();
         parameters.put(SyncUtils.API_PARAM_TOKEN, new String[] { token });
 
-        List<String> identifiers = new ArrayList<String>();
-        List<String> streamIds = new ArrayList<String>();
-        Set<String> tagsToAdd = new HashSet<String>();
-        Set<String> tagsToRemove = new HashSet<String>();
+        List<String> identifiers = new ArrayList<>();
+        List<String> streamIds = new ArrayList<>();
+        Set<String> tagsToAdd = new HashSet<>();
+        Set<String> tagsToRemove = new HashSet<>();
         for (SyncItem item : equivalentItems) {
           identifiers.add(item.getId());
           streamIds.add(item.getStreamId());
@@ -452,7 +452,7 @@ public class SyncService implements Receiver<SyncItem> {
           parameters.put(SyncUtils.API_PARAM_TAG_TO_REMOVE, tagsToRemove.toArray(new String[tagsToRemove.size()]));
 
         /* Connection Properties */
-        Map<Object, Object> properties = new HashMap<Object, Object>();
+        Map<Object, Object> properties = new HashMap<>();
         properties.put(IConnectionPropertyConstants.HEADERS, headers);
         properties.put(IConnectionPropertyConstants.POST, Boolean.TRUE);
         properties.put(IConnectionPropertyConstants.PARAMETERS, parameters);
@@ -495,7 +495,7 @@ public class SyncService implements Receiver<SyncItem> {
     for (SyncItem item : items) {
       Map<String, SyncItem> streamItems = mapFeedToSyncItems.get(item.getStreamId());
       if (streamItems == null) {
-        streamItems = new HashMap<String, SyncItem>();
+        streamItems = new HashMap<>();
         mapFeedToSyncItems.put(item.getStreamId(), streamItems);
       }
 
@@ -506,8 +506,8 @@ public class SyncService implements Receiver<SyncItem> {
   }
 
   private List<List<SyncItem>> findEquivalents(Collection<SyncItem> syncItems) {
-    List<List<SyncItem>> equivalentItemLists = new ArrayList<List<SyncItem>>();
-    List<SyncItem> currentItemList = new ArrayList<SyncItem>();
+    List<List<SyncItem>> equivalentItemLists = new ArrayList<>();
+    List<SyncItem> currentItemList = new ArrayList<>();
     equivalentItemLists.add(currentItemList);
     for (SyncItem item : syncItems) {
       if (currentItemList.isEmpty())
@@ -515,7 +515,7 @@ public class SyncService implements Receiver<SyncItem> {
       else if (item.isEquivalent(currentItemList.get(0)))
         currentItemList.add(item);
       else {
-        currentItemList = new ArrayList<SyncItem>();
+        currentItemList = new ArrayList<>();
         currentItemList.add(item);
         equivalentItemLists.add(currentItemList);
       }

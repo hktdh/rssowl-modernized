@@ -69,7 +69,7 @@ public final class CategoryDAOImpl extends AbstractEntityDAO<ICategory, Category
    * @see org.rssowl.core.persist.dao.ICategoryDAO#loadAllNames()
    */
   public final Set<String> loadAllNames() {
-    Set<String> names = new TreeSet<String>();
+    Set<String> names = new TreeSet<>();
     for (ICategory category : loadAll()) {
       String name = StringUtils.safeTrim(category.getName());
       if (StringUtils.isSet(name))

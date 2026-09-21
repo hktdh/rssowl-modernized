@@ -250,7 +250,7 @@ public class BookMarkGrouping {
     }
 
     /* Select all that are non empty */
-    return maskEmpty(new ArrayList<EntityGroup>(Arrays.asList(new EntityGroup[] { gNever, gToday, gYesterday, gEarlierThisWeek, gLastWeek, gOlder })));
+    return maskEmpty(new ArrayList<>(Arrays.asList(new EntityGroup[] { gNever, gToday, gYesterday, gEarlierThisWeek, gLastWeek, gOlder })));
   }
 
   /* Create the Group for the Type GROUP_BY_POPULARITY */
@@ -298,7 +298,7 @@ public class BookMarkGrouping {
     }
 
     /* Select all that are non empty */
-    return maskEmpty(new ArrayList<EntityGroup>(Arrays.asList(new EntityGroup[] { gVeryPopular, gPopular, gFairlyPopular, gUnpopular })));
+    return maskEmpty(new ArrayList<>(Arrays.asList(new EntityGroup[] { gVeryPopular, gPopular, gFairlyPopular, gUnpopular })));
   }
 
   /* Create the Group for the Type GROUP_BY_TYPE */
@@ -326,7 +326,7 @@ public class BookMarkGrouping {
     }
 
     /* Select all that are non empty */
-    return maskEmpty(new ArrayList<EntityGroup>(Arrays.asList(new EntityGroup[] { gBins, gSearches, gBookmarks })));
+    return maskEmpty(new ArrayList<>(Arrays.asList(new EntityGroup[] { gBins, gSearches, gBookmarks })));
   }
 
   /* Create the Group for the Type GROUP_BY_STATE */
@@ -366,11 +366,11 @@ public class BookMarkGrouping {
     }
 
     /* Select all that are non empty */
-    return maskEmpty(new ArrayList<EntityGroup>(Arrays.asList(new EntityGroup[] { gSticky, gNew, gUnread, gOther })));
+    return maskEmpty(new ArrayList<>(Arrays.asList(new EntityGroup[] { gSticky, gNew, gUnread, gOther })));
   }
 
   private EntityGroup[] maskEmpty(List<EntityGroup> items) {
-    List<EntityGroup> maskedItems = new ArrayList<EntityGroup>();
+    List<EntityGroup> maskedItems = new ArrayList<>();
     for (EntityGroup item : items) {
       if (item.size() > 0)
         maskedItems.add(item);

@@ -59,7 +59,7 @@ public class RetentionStrategy {
    * @param folder The <code>IFolder</code> to run the Retention on.
    */
   public static void process(IFolder folder) {
-    List<INews> newsToDelete = new ArrayList<INews>();
+    List<INews> newsToDelete = new ArrayList<>();
     internalProcess(folder, newsToDelete);
 
     /* Perform Deletion */
@@ -147,7 +147,7 @@ public class RetentionStrategy {
   }
 
   private static List<INews> getNewsToDelete(IBookMark bookmark, Collection<INews> targetNews) {
-    List<INews> newsToDelete = new ArrayList<INews>();
+    List<INews> newsToDelete = new ArrayList<>();
     IPreferenceScope prefs = Owl.getPreferenceService().getEntityScope(bookmark);
     boolean keepUnread = prefs.getBoolean(DefaultPreferences.NEVER_DEL_UNREAD_NEWS_STATE);
     boolean keepLabeled = prefs.getBoolean(DefaultPreferences.NEVER_DEL_LABELED_NEWS_STATE);

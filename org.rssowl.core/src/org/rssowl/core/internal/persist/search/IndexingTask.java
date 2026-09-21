@@ -71,7 +71,7 @@ public final class IndexingTask implements ITask {
   }
 
   private static List<INews> getNews(Set<NewsEvent> events, EventType taskType) {
-    List<INews> news = new ArrayList<INews>(events.size());
+    List<INews> news = new ArrayList<>(events.size());
     for (NewsEvent event : events) {
       if (taskType == EventType.PERSIST && event.getEntity().getState().equals(INews.State.DELETED))
         continue; //News could be deleted from a Filter
@@ -89,7 +89,7 @@ public final class IndexingTask implements ITask {
     if (news instanceof List)
       fNews = (List<INews>) news;
     else
-      fNews = new ArrayList<INews>(news);
+      fNews = new ArrayList<>(news);
 
     fNewsRefs = null;
     fTaskType = taskType;
@@ -148,8 +148,8 @@ public final class IndexingTask implements ITask {
   }
 
   private List<INews> getNewsFromRefs(Collection<NewsReference> newsRefs) {
-    List<INews> newsList = new ArrayList<INews>(newsRefs.size());
-    List<NewsReference> removedNewsRefs = new ArrayList<NewsReference>(1);
+    List<INews> newsList = new ArrayList<>(newsRefs.size());
+    List<NewsReference> removedNewsRefs = new ArrayList<>(1);
     INewsDAO newsDAO = InternalOwl.getDefault().getPersistenceService().getDAOService().getNewsDAO();
     for (NewsReference newsRef : newsRefs) {
       INews news = newsDAO.load(newsRef.getId());
@@ -166,7 +166,7 @@ public final class IndexingTask implements ITask {
   }
 
   private List<NewsReference> getRefsFromNews(List<INews> newsList) {
-    List<NewsReference> newsRefs = new ArrayList<NewsReference>(newsList.size());
+    List<NewsReference> newsRefs = new ArrayList<>(newsList.size());
     for (INews news : newsList)
       newsRefs.add(new NewsReference(news.getId()));
 

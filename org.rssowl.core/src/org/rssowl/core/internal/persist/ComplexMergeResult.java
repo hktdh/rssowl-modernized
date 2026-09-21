@@ -47,7 +47,7 @@ public final class ComplexMergeResult<T> extends MergeResult    {
    * @return an instance of this class.
    */
   public static <T> ComplexMergeResult<T> create(T mergedObject) {
-    return new ComplexMergeResult<T>(mergedObject);
+    return new ComplexMergeResult<>(mergedObject);
   }
 
   /**

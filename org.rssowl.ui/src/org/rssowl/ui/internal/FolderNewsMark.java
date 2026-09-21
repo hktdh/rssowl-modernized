@@ -107,7 +107,7 @@ public class FolderNewsMark extends Mark implements INewsMark {
   public FolderNewsMark(IFolder folder) {
     super(folder.getId(), folder, folder.getName());
     fFolder = folder;
-    fNewsContainer = new HashSet<Long>();
+    fNewsContainer = new HashSet<>();
     fNewsDao = DynamicDAO.getDAO(INewsDAO.class);
     fFactory = Owl.getModelFactory();
     fSearch = Owl.getPersistenceService().getModelSearch();
@@ -161,7 +161,7 @@ public class FolderNewsMark extends Mark implements INewsMark {
    */
   public List<NewsReference> getNewsRefs() {
     synchronized (this) {
-      List<NewsReference> news = new ArrayList<NewsReference>(fNewsContainer.size());
+      List<NewsReference> news = new ArrayList<>(fNewsContainer.size());
       for (Long id : fNewsContainer) {
         news.add(new NewsReference(id));
       }
@@ -209,7 +209,7 @@ public class FolderNewsMark extends Mark implements INewsMark {
    */
   public List<INews> getNews() {
     synchronized (this) {
-      List<INews> news = new ArrayList<INews>(fNewsContainer.size());
+      List<INews> news = new ArrayList<>(fNewsContainer.size());
       for (Long id : fNewsContainer) {
         INews item = fNewsDao.load(id);
         if (item != null)
@@ -395,7 +395,7 @@ public class FolderNewsMark extends Mark implements INewsMark {
 
     /* Resolve Bookmarks and Newsbins using Location search */
     {
-      List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(2);
+      List<ISearchCondition> conditions = new ArrayList<>(2);
       ISearchField field = fFactory.createSearchField(INews.LOCATION, INews.class.getName());
       ISearchCondition locationCondition = fFactory.createSearchCondition(field, SearchSpecifier.IS, ModelUtils.toPrimitive(Collections.singleton((IFolderChild) fFolder)));
       conditions.add(locationCondition);
@@ -416,7 +416,7 @@ public class FolderNewsMark extends Mark implements INewsMark {
 
     /* Resolve Searches */
     {
-      Set<ISearchMark> searches = new HashSet<ISearchMark>();
+      Set<ISearchMark> searches = new HashSet<>();
       findSearches(fFolder, searches);
       for (ISearchMark search : searches) {
 

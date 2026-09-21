@@ -111,7 +111,7 @@ public class BookMarkContentProvider implements ITreeContentProvider {
       }
 
       /* Grouping Enabled */
-      List<IMark> marks = new ArrayList<IMark>();
+      List<IMark> marks = new ArrayList<>();
       getAllMarks(rootFolder, marks);
 
       return fBookmarkGrouping.group(marks);
@@ -243,14 +243,14 @@ public class BookMarkContentProvider implements ITreeContentProvider {
                 /* Folder got reparented */
                 if (event.getOldParent() != null) {
                   if (reparentedFolders == null)
-                    reparentedFolders = new HashMap<IFolder, IFolder>();
+                    reparentedFolders = new HashMap<>();
                   reparentedFolders.put(event.getEntity(), event.getOldParent());
                 }
 
                 /* Normal Update */
                 else {
                   if (updatedFolders == null)
-                    updatedFolders = new HashSet<IFolder>();
+                    updatedFolders = new HashSet<>();
                   updatedFolders.add(event.getEntity());
                 }
               }
@@ -271,8 +271,8 @@ public class BookMarkContentProvider implements ITreeContentProvider {
             /* Handle reparented Folders */
             else if (reparentedFolders != null) {
               Set<Entry<IFolder, IFolder>> entries = reparentedFolders.entrySet();
-              Set<IFolder> parentsToUpdate = new HashSet<IFolder>();
-              List<Object> expandedElements = new ArrayList<Object>(Arrays.asList(fViewer.getExpandedElements()));
+              Set<IFolder> parentsToUpdate = new HashSet<>();
+              List<Object> expandedElements = new ArrayList<>(Arrays.asList(fViewer.getExpandedElements()));
               try {
                 fViewer.getControl().getParent().setRedraw(false);
                 for (Entry<IFolder, IFolder> entry : entries) {
@@ -325,7 +325,7 @@ public class BookMarkContentProvider implements ITreeContentProvider {
             for (FolderEvent event : events) {
               if (event.isRoot() && event.getEntity().getParent() != null) {
                 if (removedFolders == null)
-                  removedFolders = new HashSet<IFolder>();
+                  removedFolders = new HashSet<>();
                 removedFolders.add(event.getEntity());
               }
             }
@@ -364,7 +364,7 @@ public class BookMarkContentProvider implements ITreeContentProvider {
           public void run() {
 
             /* Reveal and Select added Folders */
-            final List<IFolder> addedFolders = new ArrayList<IFolder>();
+            final List<IFolder> addedFolders = new ArrayList<>();
             for (FolderEvent folderEvent : events) {
               IFolder addedFolder = folderEvent.getEntity();
               if (addedFolder.getParent() != null)
@@ -425,7 +425,7 @@ public class BookMarkContentProvider implements ITreeContentProvider {
               fViewer.refresh(false);
 
             /* Update SearchMarks */
-            Set<ISearchMark> updatedSearchMarks = new HashSet<ISearchMark>(events.size());
+            Set<ISearchMark> updatedSearchMarks = new HashSet<>(events.size());
             for (SearchMarkEvent event : events) {
               updatedSearchMarks.add(event.getEntity());
             }
@@ -547,7 +547,7 @@ public class BookMarkContentProvider implements ITreeContentProvider {
         for (MarkEvent event : events) {
           if (event.isRoot()) {
             if (removedMarks == null)
-              removedMarks = new HashSet<IMark>();
+              removedMarks = new HashSet<>();
             removedMarks.add(event.getEntity());
           }
 
@@ -601,14 +601,14 @@ public class BookMarkContentProvider implements ITreeContentProvider {
             /* Mark got reparented */
             if (oldParent != null) {
               if (reparentedMarks == null)
-                reparentedMarks = new HashMap<IMark, IFolder>();
+                reparentedMarks = new HashMap<>();
               reparentedMarks.put(event.getEntity(), oldParent);
             }
 
             /* Normal Update */
             else {
               if (updatedMarks == null)
-                updatedMarks = new HashSet<IMark>();
+                updatedMarks = new HashSet<>();
               updatedMarks.add(event.getEntity());
             }
           }
@@ -632,7 +632,7 @@ public class BookMarkContentProvider implements ITreeContentProvider {
         /* Handle reparented Marks */
         else if (reparentedMarks != null) {
           Set<Entry<IMark, IFolder>> entries = reparentedMarks.entrySet();
-          Set<IFolder> parentsToUpdate = new HashSet<IFolder>();
+          Set<IFolder> parentsToUpdate = new HashSet<>();
           try {
             fViewer.getControl().getParent().setRedraw(false);
             for (Entry<IMark, IFolder> entry : entries) {
@@ -678,9 +678,9 @@ public class BookMarkContentProvider implements ITreeContentProvider {
     INewsBinDAO newsBinDao = DynamicDAO.getDAO(INewsBinDAO.class);
 
     /* Group by Feed and Bins */
-    Set<FeedLinkReference> affectedFeeds = new HashSet<FeedLinkReference>();
-    Set<IFolder> affectedBinFolders = new HashSet<IFolder>();
-    Set<Long> handledBins = new HashSet<Long>();
+    Set<FeedLinkReference> affectedFeeds = new HashSet<>();
+    Set<IFolder> affectedBinFolders = new HashSet<>();
+    Set<Long> handledBins = new HashSet<>();
     for (NewsEvent event : events) {
       INews news = event.getEntity();
       long parentId = news.getParentId();
@@ -721,13 +721,13 @@ public class BookMarkContentProvider implements ITreeContentProvider {
   }
 
   private void updateMarksAndParents(Collection<IBookMark> bookmarks) {
-    Set<IEntity> entitiesToUpdate = new HashSet<IEntity>();
+    Set<IEntity> entitiesToUpdate = new HashSet<>();
     entitiesToUpdate.addAll(bookmarks);
 
     /* Collect parents */
     if (!fBookmarkGrouping.isActive()) {
       for (IBookMark bookmark : bookmarks) {
-        List<IFolder> visibleParents = new ArrayList<IFolder>();
+        List<IFolder> visibleParents = new ArrayList<>();
         collectParents(visibleParents, bookmark);
 
         entitiesToUpdate.addAll(visibleParents);
@@ -767,11 +767,11 @@ public class BookMarkContentProvider implements ITreeContentProvider {
   }
 
   private void updateFolderAndParents(IFolder folder) {
-    Set<IEntity> entitiesToUpdate = new HashSet<IEntity>();
+    Set<IEntity> entitiesToUpdate = new HashSet<>();
     entitiesToUpdate.add(folder);
 
     /* Collect parents */
-    List<IFolder> parents = new ArrayList<IFolder>();
+    List<IFolder> parents = new ArrayList<>();
     collectParents(parents, folder);
     entitiesToUpdate.addAll(parents);
 

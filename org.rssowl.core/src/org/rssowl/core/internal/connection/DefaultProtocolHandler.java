@@ -161,7 +161,7 @@ public class DefaultProtocolHandler implements IProtocolHandler {
 
     /* Add Monitor to support early cancelation */
     if (properties == null)
-      properties = new HashMap<Object, Object>();
+      properties = new HashMap<>();
     properties.put(IConnectionPropertyConstants.PROGRESS_MONITOR, monitor);
 
     /* Retrieve the InputStream out of the Feed's Link */
@@ -271,7 +271,7 @@ public class DefaultProtocolHandler implements IProtocolHandler {
     try {
 
       /* Define Properties for Connection */
-      Map<Object, Object> properties = new HashMap<Object, Object>();
+      Map<Object, Object> properties = new HashMap<>();
       properties.put(IConnectionPropertyConstants.CON_TIMEOUT, FAVICON_CON_TIMEOUT);
       properties.put(IConnectionPropertyConstants.PROGRESS_MONITOR, monitor);
 
@@ -315,7 +315,7 @@ public class DefaultProtocolHandler implements IProtocolHandler {
   private URI getFavicon(URI link, IProgressMonitor monitor) throws ConnectionException {
 
     /* Define Properties for Connection */
-    Map<Object, Object> properties = new HashMap<Object, Object>();
+    Map<Object, Object> properties = new HashMap<>();
     properties.put(IConnectionPropertyConstants.PROGRESS_MONITOR, monitor);
     properties.put(IConnectionPropertyConstants.CON_TIMEOUT, FAVICON_CON_TIMEOUT);
 
@@ -358,7 +358,7 @@ public class DefaultProtocolHandler implements IProtocolHandler {
     /* Add Monitor to support early cancelation */
     if (monitor != null) {
       if (properties == null)
-        properties = new HashMap<Object, Object>();
+        properties = new HashMap<>();
       properties.put(IConnectionPropertyConstants.PROGRESS_MONITOR, monitor);
     }
 
@@ -848,7 +848,7 @@ public class DefaultProtocolHandler implements IProtocolHandler {
     String title = ""; //$NON-NLS-1$
 
     /* Define Properties for Connection */
-    Map<Object, Object> properties = new HashMap<Object, Object>();
+    Map<Object, Object> properties = new HashMap<>();
     properties.put(IConnectionPropertyConstants.PROGRESS_MONITOR, monitor);
     properties.put(IConnectionPropertyConstants.CON_TIMEOUT, FEED_LABEL_CON_TIMEOUT);
 
@@ -997,7 +997,7 @@ public class DefaultProtocolHandler implements IProtocolHandler {
   public URI getFeed(final URI website, IProgressMonitor monitor) throws ConnectionException {
 
     /* Define Properties for Connection */
-    Map<Object, Object> properties = new HashMap<Object, Object>();
+    Map<Object, Object> properties = new HashMap<>();
     properties.put(IConnectionPropertyConstants.PROGRESS_MONITOR, monitor);
     properties.put(IConnectionPropertyConstants.CON_TIMEOUT, FEED_LABEL_CON_TIMEOUT);
 

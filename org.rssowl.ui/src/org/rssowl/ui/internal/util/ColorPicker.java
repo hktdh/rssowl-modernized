@@ -97,7 +97,7 @@ public class ColorPicker {
   private final Composite fParent;
   private ToolBar fBar;
   private ToolItem fColorItem;
-  private List<Image> fImagesToDispose = new ArrayList<Image>();
+  private List<Image> fImagesToDispose = new ArrayList<>();
   private RGB fSelectedColor = new RGB(0, 0, 0);
 
   /**

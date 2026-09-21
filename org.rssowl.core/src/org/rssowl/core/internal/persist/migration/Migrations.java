@@ -155,10 +155,10 @@ public final class Migrations {
   }
 
   private LinkedList<LinkedList<Migration>> createMigrationsQueues(int originFormat, int destinationFormat) {
-    LinkedList<LinkedList<Migration>> migrationQueues = new LinkedList<LinkedList<Migration>>();
+    LinkedList<LinkedList<Migration>> migrationQueues = new LinkedList<>();
     for (Migration migration : fMigrations) {
       if (migration.getOriginFormat() == originFormat) {
-        LinkedList<Migration> migrationQueue = new LinkedList<Migration>();
+        LinkedList<Migration> migrationQueue = new LinkedList<>();
         migrationQueue.add(migration);
         migrationQueues.add(migrationQueue);
       }
@@ -168,7 +168,7 @@ public final class Migrations {
 
   private LinkedList<LinkedList<Migration>> findMigrationQueues(LinkedList<LinkedList<Migration>> migrationQueues, int destinationFormat) {
     boolean changed = false;
-    LinkedList<LinkedList<Migration>> migrationQueuesCopy = new LinkedList<LinkedList<Migration>>(migrationQueues);
+    LinkedList<LinkedList<Migration>> migrationQueuesCopy = new LinkedList<>(migrationQueues);
     for (ListIterator<LinkedList<Migration>> it = migrationQueuesCopy.listIterator(); it.hasNext();) {
       LinkedList<Migration> migrationQueue = it.next();
       Migration migration = migrationQueue.getLast();
@@ -183,7 +183,7 @@ public final class Migrations {
 
         if (migration.getDestinationFormat() == innerMigration.getOriginFormat()) {
           changed = true;
-          LinkedList<Migration> newMigrationQueue = new LinkedList<Migration>(migrationQueue);
+          LinkedList<Migration> newMigrationQueue = new LinkedList<>(migrationQueue);
           newMigrationQueue.add(innerMigration);
           it.add(newMigrationQueue);
         }

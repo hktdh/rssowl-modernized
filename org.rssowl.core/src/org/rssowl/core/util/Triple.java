@@ -57,7 +57,7 @@ public final class Triple<F, S, T> {
    * @return Returns a new <code>Triple</code> from the given Objects.
    */
   public static <F, S, T> Triple<F, S, T> create(F first, S second, T third) {
-    return new Triple<F, S, T>(first, second, third);
+    return new Triple<>(first, second, third);
   }
 
   /**

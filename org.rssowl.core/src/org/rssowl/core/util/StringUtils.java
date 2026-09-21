@@ -233,7 +233,7 @@ public class StringUtils {
    * @return Set The new Strings with all replaced search terms
    */
   public static Set<String> replaceAll(Set<String> strings, String search, String replace) {
-    Set<String> replacedStrings = new HashSet<String>(strings.size());
+    Set<String> replacedStrings = new HashSet<>(strings.size());
 
     for (String string : strings) {
       replacedStrings.add(replaceAll(string, search, replace));
@@ -302,7 +302,7 @@ public class StringUtils {
     str = normalizeString(str);
 
     boolean inQuotes = false;
-    List<String> tokens = new ArrayList<String>(1);
+    List<String> tokens = new ArrayList<>(1);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < str.length(); i++) {
       char c = str.charAt(i);

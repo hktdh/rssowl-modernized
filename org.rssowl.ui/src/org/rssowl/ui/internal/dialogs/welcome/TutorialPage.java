@@ -355,7 +355,7 @@ public class TutorialPage extends WizardPage {
   }
 
   private void applyRichText(String text, StyledText widget) {
-    List<StyleRange> ranges = new ArrayList<StyleRange>();
+    List<StyleRange> ranges = new ArrayList<>();
     StringBuilder buffer = new StringBuilder();
     StringReader reader = new StringReader(text);
     int character;

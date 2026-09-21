@@ -198,7 +198,7 @@ public class CreateFilterAction implements IObjectActionDelegate {
       FeedLinkReference feedReference = news.getFeedReference();
       Collection<IBookMark> bookmarks = DynamicDAO.getDAO(IBookMarkDAO.class).loadAll(feedReference);
 
-      Long[][] value = ModelUtils.toPrimitive(new ArrayList<IFolderChild>(bookmarks));
+      Long[][] value = ModelUtils.toPrimitive(new ArrayList<>(bookmarks));
 
       ISearchCondition condition = factory.createSearchCondition(locationField, SearchSpecifier.SCOPE, value);
       presetSearch.addSearchCondition(condition);

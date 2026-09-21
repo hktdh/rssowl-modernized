@@ -58,7 +58,7 @@ public class SearchFilter extends AbstractEntity implements ISearchFilter {
     Assert.isNotNull(name);
     fSearch = search;
     fMatchAllNews = (fSearch == null);
-    fActions = new ArrayList<IFilterAction>(1);
+    fActions = new ArrayList<>(1);
     fName = name;
   }
 
@@ -73,7 +73,7 @@ public class SearchFilter extends AbstractEntity implements ISearchFilter {
    * @see org.rssowl.core.persist.ISearchFilter#getActions()
    */
   public synchronized List<IFilterAction> getActions() {
-    return new ArrayList<IFilterAction>(fActions);
+    return new ArrayList<>(fActions);
   }
 
   /*

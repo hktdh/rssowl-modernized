@@ -75,7 +75,7 @@ public class RegExUtils {
    * empty List if none.
    */
   public static List<String> extractLinksFromText(String text, boolean strict) {
-    List<String> urls = new ArrayList<String>();
+    List<String> urls = new ArrayList<>();
     Matcher match = strict ? STRICT_URL_REGEX_PATTERN.matcher(text) : URL_REGEX_PATTERN.matcher(text);
 
     while (match.find()) {

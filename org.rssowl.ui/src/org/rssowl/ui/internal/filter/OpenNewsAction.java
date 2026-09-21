@@ -110,7 +110,7 @@ public class OpenNewsAction implements INewsAction {
     news = CoreUtils.replace(news, replacements);
 
     /* Fill into Queue */
-    List<ITask> tasks = new ArrayList<ITask>(news.size());
+    List<ITask> tasks = new ArrayList<>(news.size());
     for (INews item : news) {
       String link = CoreUtils.getLink(item);
       if (StringUtils.isSet(link))

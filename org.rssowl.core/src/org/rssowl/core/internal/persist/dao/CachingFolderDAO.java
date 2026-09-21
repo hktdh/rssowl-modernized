@@ -53,7 +53,7 @@ public class CachingFolderDAO extends CachingDAO<FolderDAOImpl, IFolder, FolderL
 
   public CachingFolderDAO() {
     super(new FolderDAOImpl());
-    fRootFolders = new ConcurrentHashMap<IFolder, Object>(4, 0.75f, 1);
+    fRootFolders = new ConcurrentHashMap<>(4, 0.75f, 1);
   }
 
   /*
@@ -93,7 +93,7 @@ public class CachingFolderDAO extends CachingDAO<FolderDAOImpl, IFolder, FolderL
       }
 
       /* Cache all Folders from Roots */
-      Set<IFolder> folders = new HashSet<IFolder>();
+      Set<IFolder> folders = new HashSet<>();
       CoreUtils.fillFolders(folders, roots);
       for (IFolder folder : folders) {
         getCache().put(folder.getId(), folder);

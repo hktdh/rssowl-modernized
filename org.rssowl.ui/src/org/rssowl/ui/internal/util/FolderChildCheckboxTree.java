@@ -111,7 +111,7 @@ public class FolderChildCheckboxTree {
    * control.
    */
   public List<IFolderChild> getCheckedElements() {
-    List<IFolderChild> folderChilds = new ArrayList<IFolderChild>();
+    List<IFolderChild> folderChilds = new ArrayList<>();
     Object[] checkedElements = fViewer.getCheckedElements();
     for (Object checkedElement : checkedElements) {
       if (checkedElement instanceof IFolderChild)
@@ -208,7 +208,7 @@ public class FolderChildCheckboxTree {
   }
 
   private List<INewsMark> getNewsMarks(Collection<?> input) {
-    List<INewsMark> childs = new ArrayList<INewsMark>();
+    List<INewsMark> childs = new ArrayList<>();
 
     for (Object element : input) {
       if (element instanceof IFolder)

@@ -823,7 +823,7 @@ public class FeedsPreferencePage extends PreferencePage implements IWorkbenchPre
         @Override
         protected IStatus run(IProgressMonitor monitor) {
           try {
-            Set<IBookMark> bookmarks = new HashSet<IBookMark>();
+            Set<IBookMark> bookmarks = new HashSet<>();
             CoreUtils.fillBookMarks(bookmarks, rootFolders);
 
             monitor.beginTask(Messages.FeedsPreferencePage_PERFORMNG_CLEANUP, bookmarks.size());

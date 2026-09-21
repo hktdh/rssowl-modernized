@@ -226,7 +226,7 @@ public class PreferencesInitializer implements IPreferencesInitializer {
    * @param defaultScope the container for preferences to fill.
    */
   private void initToolbarDefaults(IPreferenceScope defaultScope) {
-    List<Integer> items = new ArrayList<Integer>();
+    List<Integer> items = new ArrayList<>();
 
     /* New | Import | Export */
     items.add(CoolBarAdvisor.CoolBarItem.NEW.ordinal());

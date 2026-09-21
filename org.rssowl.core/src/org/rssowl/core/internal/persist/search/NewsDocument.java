@@ -69,7 +69,7 @@ public class NewsDocument extends SearchDocument<INews> {
    */
   public boolean addFields(boolean indexDescription) {
     INews news = getType();
-    List<Field> fields = new ArrayList<Field>();
+    List<Field> fields = new ArrayList<>();
 
     /* Add ID */
     addField(fields, createDocumentIDField());

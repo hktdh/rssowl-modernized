@@ -593,7 +593,7 @@ public class SearchConditionItem extends Composite {
             JobRunner.runInBackgroundThread(100, new Runnable() {
               public void run() {
                 if (!text.isDisposed()) {
-                  Set<String> values = new TreeSet<String>(new Comparator<String>() {
+                  Set<String> values = new TreeSet<>(new Comparator<String>() {
                     public int compare(String o1, String o2) {
                       return o1.compareToIgnoreCase(o2);
                     }
@@ -683,12 +683,12 @@ public class SearchConditionItem extends Composite {
   }
 
   private List<ISearchField> createFields(ISearchCondition condition) {
-    List<ISearchField> fields = new ArrayList<ISearchField>();
+    List<ISearchField> fields = new ArrayList<>();
     String entityName = condition.getField().getEntityName();
 
     /* Return all Fields of News */
     if (INews.class.getName().equals(entityName)) {
-      List<Integer> newsFields = new ArrayList<Integer>();
+      List<Integer> newsFields = new ArrayList<>();
       newsFields.add(IEntity.ALL_FIELDS);
       newsFields.add(INews.STATE);
       newsFields.add(INews.LOCATION);
@@ -721,7 +721,7 @@ public class SearchConditionItem extends Composite {
   }
 
   private List<SearchSpecifier> createSpecifier(ISearchField field) {
-    List<SearchSpecifier> specifiers = new ArrayList<SearchSpecifier>();
+    List<SearchSpecifier> specifiers = new ArrayList<>();
     String entityName = field.getEntityName();
 
     /* Return all Specifiers for News-Fields */

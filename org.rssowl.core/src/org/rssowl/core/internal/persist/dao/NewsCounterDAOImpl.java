@@ -151,7 +151,7 @@ public final class NewsCounterDAOImpl extends AbstractPersistableDAO<NewsCounter
    */
   @Override
   public Collection<NewsCounter> loadAll() {
-    List<NewsCounter> newsCounters = new ArrayList<NewsCounter>(1);
+    List<NewsCounter> newsCounters = new ArrayList<>(1);
     newsCounters.add(load());
     return newsCounters;
   }

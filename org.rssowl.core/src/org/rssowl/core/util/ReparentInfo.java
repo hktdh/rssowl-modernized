@@ -62,7 +62,7 @@ public class ReparentInfo<T, P> {
    * @return ReparentInfo instance.
    */
   public final static <T, P> ReparentInfo<T, P> create(T object, P newParent, T newPosition, Boolean after) {
-    return new ReparentInfo<T, P>(object, newParent, newPosition, after);
+    return new ReparentInfo<>(object, newParent, newPosition, after);
   }
 
   /**

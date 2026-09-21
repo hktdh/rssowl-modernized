@@ -177,7 +177,7 @@ public class JSONInterpreter {
     }
 
     /* Categories / Labels / State */
-    Set<String> labels = new HashSet<String>(1);
+    Set<String> labels = new HashSet<>(1);
     if (item.has(CATEGORIES)) {
       JSONArray categories = item.getJSONArray(CATEGORIES);
       for (int i = 0; i < categories.length(); i++) {

@@ -88,7 +88,7 @@ public class MoveOperation extends CopyOperation {
       INews.State oldState = entry.getKey();
       List<NewsReference> newsRefs = entry.getValue();
 
-      List<INews> resolvedNews = new ArrayList<INews>(newsRefs.size());
+      List<INews> resolvedNews = new ArrayList<>(newsRefs.size());
       for (NewsReference newsRef : newsRefs) {
         INews news = newsRef.resolve();
         if (news != null)

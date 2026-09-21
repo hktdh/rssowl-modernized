@@ -73,7 +73,7 @@ public class ExpandingReader extends Reader {
     fPreExpand = preValue;
     fPostExpand = postValue;
     fSkipTags = skipTags;
-    fStringMatcher= new ArrayList<StringMatcher>(words.size());
+    fStringMatcher= new ArrayList<>(words.size());
     for (String word : words) {
       fStringMatcher.add(new StringMatcher(word, true, false));
     }

@@ -114,7 +114,7 @@ public class NotificationPopup extends PopupDialog {
   private static final boolean FADE_ENABLED = System.getProperty(DISABLE_TRANSPARENCY) == null;
 
   private Shell fShell;
-  private final List<NotificationItem> fDisplayedItems = new ArrayList<NotificationItem>();
+  private final List<NotificationItem> fDisplayedItems = new ArrayList<>();
   private final ResourceManager fResources;
   private Image fCloseImageNormal;
   private Image fCloseImageHot;

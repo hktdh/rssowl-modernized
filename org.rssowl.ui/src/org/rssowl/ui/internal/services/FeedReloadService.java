@@ -145,7 +145,7 @@ public class FeedReloadService {
    * Instantiates the Feed Reload Service.
    */
   public FeedReloadService() {
-    fMapBookMarkToInterval = new ConcurrentHashMap<IBookMark, Long>();
+    fMapBookMarkToInterval = new ConcurrentHashMap<>();
 
     /* Register Listeners */
     registerListeners();
@@ -170,8 +170,8 @@ public class FeedReloadService {
     Collection<IBookMark> bookmarks = DynamicDAO.loadAll(IBookMark.class);
     Collection<INewsBin> newsbins = DynamicDAO.loadAll(INewsBin.class);
 
-    final Set<IBookMark> bookmarksToReloadOnStartup = new HashSet<IBookMark>();
-    final List<INewsMark> newsmarksToOpenOnStartup = new ArrayList<INewsMark>();
+    final Set<IBookMark> bookmarksToReloadOnStartup = new HashSet<>();
+    final List<INewsMark> newsmarksToOpenOnStartup = new ArrayList<>();
 
     /* For each Bookmark */
     for (IBookMark bookMark : bookmarks) {

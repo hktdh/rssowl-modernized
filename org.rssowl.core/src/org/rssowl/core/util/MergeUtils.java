@@ -48,7 +48,7 @@ import java.util.Set;
 public class MergeUtils {
 
   /* Set of Properties to ignore during merge */
-  private static final Set<String> EXCLUDE_PROPERTIES = new HashSet<String>(Arrays.asList(SyncUtils.GOOGLE_MARKED_READ, SyncUtils.GOOGLE_MARKED_UNREAD, SyncUtils.GOOGLE_LABELS));
+  private static final Set<String> EXCLUDE_PROPERTIES = new HashSet<>(Arrays.asList(SyncUtils.GOOGLE_MARKED_READ, SyncUtils.GOOGLE_MARKED_UNREAD, SyncUtils.GOOGLE_LABELS));
 
   /**
    * Helper method that simply does:
@@ -137,7 +137,7 @@ public class MergeUtils {
     }
 
     /* Defensive copy */
-    List<T> newListCopy = new ArrayList<T>(newList);
+    List<T> newListCopy = new ArrayList<>(newList);
     if (existingList == null) {
       ComplexMergeResult<List<T>> mergeResult = ComplexMergeResult.create(newListCopy, true);
       for (T item : newListCopy) {
@@ -237,7 +237,7 @@ public class MergeUtils {
     }
 
     /* Remove Properties from Old Type */
-    List<Map.Entry<String, ?>> entries = new ArrayList<Map.Entry<String, ?>>(existingProperties.entrySet());
+    List<Map.Entry<String, ?>> entries = new ArrayList<>(existingProperties.entrySet());
     for (Map.Entry<String, ?> entry : entries) {
       String key = entry.getKey();
       if (EXCLUDE_PROPERTIES.contains(key))

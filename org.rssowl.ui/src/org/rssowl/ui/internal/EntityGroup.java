@@ -96,7 +96,7 @@ public class EntityGroup implements IActionFilter {
     fId = id;
     fCategoryId = groupId;
     fName = name;
-    fItems = new ArrayList<EntityGroupItem>();
+    fItems = new ArrayList<>();
     fSortKey = sortKey;
     fColorHint = colorHint;
   }
@@ -142,7 +142,7 @@ public class EntityGroup implements IActionFilter {
    * EntityGroupItems of this Group.
    */
   public List<IEntity> getEntities() {
-    List<IEntity> entities = new ArrayList<IEntity>();
+    List<IEntity> entities = new ArrayList<>();
     for (EntityGroupItem groupItem : fItems)
       entities.add(groupItem.getEntity());
 

@@ -220,7 +220,7 @@ public final class NewsContainer {
    * contains with the given news states.
    */
   public List<NewsReference> getNews(Set<INews.State> states) {
-    List<NewsReference> newsRefs = new ArrayList<NewsReference>(getNewsCount(states));
+    List<NewsReference> newsRefs = new ArrayList<>(getNewsCount(states));
 
     for (INews.State state : states) {
       int index = state.ordinal();

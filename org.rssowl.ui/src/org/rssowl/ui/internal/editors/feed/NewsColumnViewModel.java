@@ -50,7 +50,7 @@ public class NewsColumnViewModel {
   /** ID to associate a Column with its ID */
   public static final String COL_ID = "org.rssowl.ui.internal.editors.feed.ColumnIdentifier"; //$NON-NLS-1$
 
-  private final List<NewsColumn> fColumns = new ArrayList<NewsColumn>();
+  private final List<NewsColumn> fColumns = new ArrayList<>();
   private NewsColumn fSortColumn;
   private boolean fAscending;
 

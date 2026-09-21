@@ -89,7 +89,7 @@ public class BatchedBuffer<T> {
   public BatchedBuffer(Receiver<T> receiver, int batchInterval, String taskName) {
     fReceiver = receiver;
     fBatchInterval = batchInterval;
-    fBuffer = new ArrayList<T>();
+    fBuffer = new ArrayList<>();
     fBufferProcessor = createBufferProcessor(taskName);
   }
 
@@ -189,7 +189,7 @@ public class BatchedBuffer<T> {
 
           IStatus status;
           synchronized (fBuffer) {
-            status = fReceiver.receive(new ArrayList<T>(fBuffer), this, monitor);
+            status = fReceiver.receive(new ArrayList<>(fBuffer), this, monitor);
             fBuffer.clear();
           }
 

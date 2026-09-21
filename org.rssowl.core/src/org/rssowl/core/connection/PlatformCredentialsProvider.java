@@ -189,17 +189,17 @@ public class PlatformCredentialsProvider implements ICredentialsProvider {
         /* Use OS dependent password provider if available */
         if (useOSPasswordProvider) {
           if (Platform.OS_WIN32.equals(Platform.getOS())) {
-            options = new HashMap<String, String>();
+            options = new HashMap<>();
             options.put(IProviderHints.REQUIRED_MODULE_ID, WIN_PW_PROVIDER_ID);
           } else if (Platform.OS_MACOSX.equals(Platform.getOS())) {
-            options = new HashMap<String, String>();
+            options = new HashMap<>();
             options.put(IProviderHints.REQUIRED_MODULE_ID, MACOS_PW_PROVIDER_ID);
           }
         }
 
         /* Use RSSOwl password provider */
         else {
-          options = new HashMap<String, String>();
+          options = new HashMap<>();
           options.put(IProviderHints.REQUIRED_MODULE_ID, RSSOWL_PW_PROVIDER_ID);
         }
 

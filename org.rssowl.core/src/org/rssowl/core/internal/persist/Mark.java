@@ -145,7 +145,7 @@ public abstract class Mark extends AbstractEntity implements IMark {
   }
 
   protected static List<INews> getNews(List<NewsReference> newsRefs) {
-    List<INews> news = new ArrayList<INews>(newsRefs.size());
+    List<INews> news = new ArrayList<>(newsRefs.size());
 
     for (NewsReference newsRef : newsRefs) {
       INews newsItem = newsRef.resolve();

@@ -426,18 +426,18 @@ public class SearchField implements ISearchField {
 
   /* Return human-readable list of News-States */
   private List<String> loadStateValues() {
-    return new ArrayList<String>(Arrays.asList(new String[] { Messages.SearchField_NEW, Messages.SearchField_READ, Messages.SearchField_UNREAD, Messages.SearchField_UPDATED, Messages.SearchField_DELETED }));
+    return new ArrayList<>(Arrays.asList(new String[] { Messages.SearchField_NEW, Messages.SearchField_READ, Messages.SearchField_UNREAD, Messages.SearchField_UPDATED, Messages.SearchField_DELETED }));
   }
 
   private List<String> loadLanguageValues() {
-    return new ArrayList<String>();
+    return new ArrayList<>();
   }
 
   /* Return the Label Values */
   private List<String> loadLabelValues() {
     Collection<ILabel> labels = CoreUtils.loadSortedLabels();
 
-    List<String> values = new ArrayList<String>(labels.size());
+    List<String> values = new ArrayList<>(labels.size());
     for (ILabel label : labels) {
       values.add(label.getName());
     }

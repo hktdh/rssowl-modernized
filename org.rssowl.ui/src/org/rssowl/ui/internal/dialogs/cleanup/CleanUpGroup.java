@@ -39,7 +39,7 @@ public class CleanUpGroup {
 
   CleanUpGroup(String label) {
     fLabel = label;
-    fTasks = new ArrayList<CleanUpTask>();
+    fTasks = new ArrayList<>();
   }
 
   void addTask(CleanUpTask task) {

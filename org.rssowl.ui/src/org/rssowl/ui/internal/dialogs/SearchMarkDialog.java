@@ -392,7 +392,7 @@ public class SearchMarkDialog extends TitleAreaDialog {
   }
 
   private List<ISearchCondition> getDefaultConditions() {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+    List<ISearchCondition> conditions = new ArrayList<>(1);
     IModelFactory factory = Owl.getModelFactory();
 
     ISearchField field = factory.createSearchField(IEntity.ALL_FIELDS, INews.class.getName());

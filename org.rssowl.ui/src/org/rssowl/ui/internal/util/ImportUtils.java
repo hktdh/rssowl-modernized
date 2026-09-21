@@ -90,10 +90,10 @@ public class ImportUtils {
    * doing an initial import into an empty RSSOwl instance).
    */
   public static void doImport(IFolder target, List<? extends IEntity> elements, boolean checkExistingFeeds) {
-    List<IFolderChild> folderChilds = new ArrayList<IFolderChild>();
-    List<ILabel> labels = new ArrayList<ILabel>();
-    List<ISearchFilter> filters = new ArrayList<ISearchFilter>();
-    List<IPreference> preferences = new ArrayList<IPreference>();
+    List<IFolderChild> folderChilds = new ArrayList<>();
+    List<ILabel> labels = new ArrayList<>();
+    List<ISearchFilter> filters = new ArrayList<>();
+    List<IPreference> preferences = new ArrayList<>();
 
     if (elements != null) {
       for (IEntity entity : elements) {
@@ -136,7 +136,7 @@ public class ImportUtils {
 
     /* Look for Feeds in Elements and Save them if required */
     IFeedDAO feedDao = DynamicDAO.getDAO(IFeedDAO.class);
-    List<URI> feedsCreated = new ArrayList<URI>();
+    List<URI> feedsCreated = new ArrayList<>();
     for (IFolderChild element : elements) {
       saveFeedsOfBookmarks(feedsCreated, element, feedDao, checkExistingFeeds);
     }
@@ -157,8 +157,8 @@ public class ImportUtils {
 
     /* Import Labels  */
     boolean fixLabelOrder = false;
-    Map<String, ILabel> mapExistingLabelToName = new HashMap<String, ILabel>();
-    Map<Long, ILabel> mapOldIdToImportedLabel = new HashMap<Long, ILabel>();
+    Map<String, ILabel> mapExistingLabelToName = new HashMap<>();
+    Map<Long, ILabel> mapOldIdToImportedLabel = new HashMap<>();
     if (labels != null && !labels.isEmpty()) {
       Collection<ILabel> existingLabels = DynamicDAO.loadAll(ILabel.class);
       for (ILabel existingLabel : existingLabels) {
@@ -222,7 +222,7 @@ public class ImportUtils {
             Object data = action.getData();
             if (data != null && data instanceof Long[]) {
               Long[] oldBinLocations = (Long[]) data;
-              List<Long> newBinLocations = new ArrayList<Long>(oldBinLocations.length);
+              List<Long> newBinLocations = new ArrayList<>(oldBinLocations.length);
 
               for (int i = 0; i < oldBinLocations.length; i++) {
                 Long oldLocation = oldBinLocations[i];
@@ -367,7 +367,7 @@ public class ImportUtils {
   }
 
   private static void doDirectImport(List<IFolderChild> elements, Map<Long, IFolderChild> mapOldIdToFolderChild) {
-    List<IFolder> foldersToSave = new ArrayList<IFolder>();
+    List<IFolder> foldersToSave = new ArrayList<>();
     Set<IFolder> rootFolders = CoreUtils.loadRootFolders();
 
     /* Load the current selected Set as Location if necessary */
@@ -460,7 +460,7 @@ public class ImportUtils {
   }
 
   private static void doImportToTarget(IFolder target, List<IFolderChild> elements, Map<Long, IFolderChild> mapOldIdToFolderChild) {
-    List<IFolder> foldersToSave = new ArrayList<IFolder>();
+    List<IFolder> foldersToSave = new ArrayList<>();
 
     /* Import Elements */
     for (IFolderChild element : elements) {
@@ -549,7 +549,7 @@ public class ImportUtils {
         /* Location Condition */
         if (condition.getField().getId() == INews.LOCATION && condition.getValue() != null) {
           Long[][] value = (Long[][]) condition.getValue();
-          List<IFolderChild> newLocations = new ArrayList<IFolderChild>();
+          List<IFolderChild> newLocations = new ArrayList<>();
 
           /* Folders */
           for (int i = 0; value[CoreUtils.FOLDER] != null && i < value[CoreUtils.FOLDER].length; i++) {
@@ -600,7 +600,7 @@ public class ImportUtils {
   }
 
   private static List<ISearchMark> getLocationConditionSavedSearches(List<? extends IEntity> types) {
-    List<ISearchMark> locationConditionSavedSearches = new ArrayList<ISearchMark>();
+    List<ISearchMark> locationConditionSavedSearches = new ArrayList<>();
 
     for (IEntity entity : types)
       fillLocationConditionSavedSearches(locationConditionSavedSearches, entity);
@@ -609,7 +609,7 @@ public class ImportUtils {
   }
 
   private static List<ISearch> getLocationConditionSearchesFromFilters(List<ISearchFilter> filters) {
-    List<ISearch> locationConditionSearches = new ArrayList<ISearch>();
+    List<ISearch> locationConditionSearches = new ArrayList<>();
 
     for (ISearchFilter filter : filters) {
       ISearch search = filter.getSearch();
@@ -643,7 +643,7 @@ public class ImportUtils {
   }
 
   private static Map<Long, IFolderChild> createOldIdToEntityMap(List<? extends IEntity> types) {
-    Map<Long, IFolderChild> oldIdToEntityMap = new HashMap<Long, IFolderChild>();
+    Map<Long, IFolderChild> oldIdToEntityMap = new HashMap<>();
 
     for (IEntity entity : types) {
       if (entity instanceof IFolderChild)

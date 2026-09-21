@@ -161,7 +161,7 @@ public class AddCredentialsDialog extends Dialog {
     JobRunner.runInBackgroundThread(100, new Runnable() {
       public void run() {
         if (!fSiteInput.isDisposed()) {
-          Set<String> values = new TreeSet<String>(new Comparator<String>() {
+          Set<String> values = new TreeSet<>(new Comparator<String>() {
             public int compare(String o1, String o2) {
               return o1.compareToIgnoreCase(o2);
             }
@@ -171,7 +171,7 @@ public class AddCredentialsDialog extends Dialog {
           values.add(SyncUtils.GOOGLE_LOGIN_URL);
 
           /* Remember for Validation */
-          fFeedLinks = new HashSet<String>(values);
+          fFeedLinks = new HashSet<>(values);
 
           /* Apply Proposals */
           if (!fSiteInput.isDisposed())

@@ -133,7 +133,7 @@ public final class LazyList<E extends IEntity> implements List<E> {
    * @see java.util.List#listIterator(int)
    */
   public ListIterator<E> listIterator(int index) {
-    return new ListIterator<E>() {
+    return new ListIterator<>() {
 
       private int cursor;
       private int lastReturned = -1;

@@ -374,7 +374,7 @@ public class Indexer {
 
   private List<IndexingTask> getIndexOutstandingEntitiesTasks() {
     final EntitiesToBeIndexedDAOImpl dao = DBHelper.getEntitiesToBeIndexedDAO();
-    List<IndexingTask> indexingTasks = new ArrayList<IndexingTask>(3);
+    List<IndexingTask> indexingTasks = new ArrayList<>(3);
     if (dao != null) {
       RemovedNewsRefsListener removedNewsRefsListener = new IndexingTask.RemovedNewsRefsListener() {
         public void event(Collection<NewsReference> newsRefs) {
@@ -433,9 +433,9 @@ public class Indexer {
       public void entitiesUpdated(Set<NewsEvent> events) {
 
         /* An Updated News may involve Restore, Removal or actual Update */
-        Set<NewsEvent> newsToUpdate = new HashSet<NewsEvent>(3);
-        Set<NewsEvent> newsToRestore = new HashSet<NewsEvent>(3);
-        Set<NewsEvent> newsToDelete = new HashSet<NewsEvent>(3);
+        Set<NewsEvent> newsToUpdate = new HashSet<>(3);
+        Set<NewsEvent> newsToRestore = new HashSet<>(3);
+        Set<NewsEvent> newsToDelete = new HashSet<>(3);
         for (NewsEvent event : events)
           DBHelper.indexTypeForNewsUpdate(event, newsToRestore, newsToUpdate, newsToDelete);
 
@@ -462,7 +462,7 @@ public class Indexer {
         /* Re-Index all News when a containing Label updates */
         ISearchField searchField = Owl.getModelFactory().createSearchField(INews.LABEL, INews.class.getName());
 
-        Set<Long> newsIndexed = new HashSet<Long>();
+        Set<Long> newsIndexed = new HashSet<>();
         for (LabelEvent labelEvent : events) {
           ILabel oldLabel = labelEvent.getOldLabel();
           ILabel updatedLabel = labelEvent.getEntity();
@@ -470,7 +470,7 @@ public class Indexer {
             ISearchCondition searchCondition = Owl.getModelFactory().createSearchCondition(searchField, SearchSpecifier.IS, oldLabel.getName());
             List<SearchHit<NewsReference>> hits = Owl.getPersistenceService().getModelSearch().searchNews(Collections.singletonList(searchCondition), true);
 
-            List<INews> newsList = new ArrayList<INews>(hits.size());
+            List<INews> newsList = new ArrayList<>(hits.size());
             for (SearchHit<NewsReference> hit : hits) {
               INews news = hit.getResult().resolve();
               if (news != null && news.isVisible()) {

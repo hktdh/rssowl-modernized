@@ -119,7 +119,7 @@ public class OPMLExporter implements ITypeExporter {
 
     /* Export Folder Childs */
     if (elements != null && !elements.isEmpty()) {
-      Map<IFolder, Element> mapFolderToElement = new HashMap<IFolder, Element>();
+      Map<IFolder, Element> mapFolderToElement = new HashMap<>();
       mapFolderToElement.put(null, body);
 
       /* Ensure that all Parent Elements exist */
@@ -165,7 +165,7 @@ public class OPMLExporter implements ITypeExporter {
   private void repairHierarchy(Map<IFolder, Element> mapFolderToElement, Collection<? extends IFolderChild> elementsToExport, boolean exportPreferences) {
 
     /* Retrieve all Parents */
-    Set<IFolder> allParentFolders = new HashSet<IFolder>();
+    Set<IFolder> allParentFolders = new HashSet<>();
     for (IFolderChild element : elementsToExport) {
       fillParents(allParentFolders, element);
     }

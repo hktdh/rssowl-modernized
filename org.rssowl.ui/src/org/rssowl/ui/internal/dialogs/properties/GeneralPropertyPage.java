@@ -134,7 +134,7 @@ public class GeneralPropertyPage implements IEntityPropertyPage {
     fEntities = entities;
 
     /* Load Entity Preferences */
-    fEntityPreferences = new ArrayList<IPreferenceScope>(fEntities.size());
+    fEntityPreferences = new ArrayList<>(fEntities.size());
     for (IEntity entity : entities)
       fEntityPreferences.add(Owl.getPreferenceService().getEntityScope(entity));
 
@@ -261,7 +261,7 @@ public class GeneralPropertyPage implements IEntityPropertyPage {
       locationLabel.setText(Messages.GeneralPropertyPage_LOCATION);
 
       /* Exclude Folders that are selected from Chooser */
-      List<IFolder> excludes = new ArrayList<IFolder>();
+      List<IFolder> excludes = new ArrayList<>();
       for (IEntity entity : fEntities) {
         if (entity instanceof IFolder)
           excludes.add((IFolder) entity);

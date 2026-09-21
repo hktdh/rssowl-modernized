@@ -108,8 +108,8 @@ public class BookMarkDNDImpl extends ViewerDropAdapter implements DragSourceList
     List<?> selectedObjects = selection.toList();
 
     /* Retrieve dragged Marks / Folders and separate */
-    List<IEntity> draggedEntities = new ArrayList<IEntity>(selectedObjects.size());
-    List<IFolder> draggedFolders = new ArrayList<IFolder>(selectedObjects.size());
+    List<IEntity> draggedEntities = new ArrayList<>(selectedObjects.size());
+    List<IFolder> draggedFolders = new ArrayList<>(selectedObjects.size());
     for (Object object : selectedObjects) {
 
       /* Dragged Mark */
@@ -597,7 +597,7 @@ public class BookMarkDNDImpl extends ViewerDropAdapter implements DragSourceList
         /* Re-Ordering in same Parent */
         else {
           if (childReordering == null)
-            childReordering = new ArrayList<IFolderChild>(draggedObjects.size());
+            childReordering = new ArrayList<>(draggedObjects.size());
           childReordering.add(draggedFolderChild);
         }
       }

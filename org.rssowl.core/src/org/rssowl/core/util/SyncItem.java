@@ -148,7 +148,7 @@ public class SyncItem implements Serializable {
     Set<ILabel> newLabels = item.getLabels();
 
     if (!Arrays.equals(oldLabels.toArray(), newLabels.toArray())) {
-      Set<String> oldLabelNames = new HashSet<String>(oldLabels.size());
+      Set<String> oldLabelNames = new HashSet<>(oldLabels.size());
       for (ILabel oldLabel : oldLabels) {
         oldLabelNames.add(oldLabel.getName());
       }
@@ -292,7 +292,7 @@ public class SyncItem implements Serializable {
    */
   public void addLabel(String label) {
     if (fAddedLabels == null)
-      fAddedLabels = new ArrayList<String>(3);
+      fAddedLabels = new ArrayList<>(3);
 
     if (!fAddedLabels.contains(label))
       fAddedLabels.add(label);
@@ -306,7 +306,7 @@ public class SyncItem implements Serializable {
    */
   public void removeLabel(String label) {
     if (fRemovedLabels == null)
-      fRemovedLabels = new ArrayList<String>(1);
+      fRemovedLabels = new ArrayList<>(1);
 
     if (!fRemovedLabels.contains(label))
       fRemovedLabels.add(label);
@@ -432,7 +432,7 @@ public class SyncItem implements Serializable {
         labelsObj = new String[0];
 
       if (labelsObj instanceof String[]) {
-        Set<String> labels = new HashSet<String>(Arrays.asList((String[]) labelsObj));
+        Set<String> labels = new HashSet<>(Arrays.asList((String[]) labelsObj));
         if (fAddedLabels != null)
           labels.addAll(fAddedLabels);
         if (fRemovedLabels != null)

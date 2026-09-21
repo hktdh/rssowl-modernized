@@ -99,7 +99,7 @@ public class EventManager implements DatabaseListener {
     private int index;
 
     static <T> ReverseIterator<T> createInstance(List<T> list) {
-      return new ReverseIterator<T>(list);
+      return new ReverseIterator<>(list);
     }
 
     private ReverseIterator(List<T> list) {
@@ -125,7 +125,7 @@ public class EventManager implements DatabaseListener {
 
   }
 
-  private final ThreadLocal<Set<Object>> fItemsBeingDeleted = new ThreadLocal<Set<Object>>();
+  private final ThreadLocal<Set<Object>> fItemsBeingDeleted = new ThreadLocal<>();
   private static final String PARENT_DELETED_KEY = "rssowl.db4o.EventManager.parentDeleted"; //$NON-NLS-1$
   private final static EventManager INSTANCE = new EventManager();
   private ObjectContainer fDb;
@@ -287,7 +287,7 @@ public class EventManager implements DatabaseListener {
   }
 
   private void cascadeNewsBinDeletion(INewsBin entity) {
-    Set<FeedLinkReference> removedFeedRefs = new HashSet<FeedLinkReference>();
+    Set<FeedLinkReference> removedFeedRefs = new HashSet<>();
     DBHelper.removeNews(fDb, removedFeedRefs, entity.getNewsRefs());
     DBHelper.removeFeedsAfterNewsBinUpdate(fDb, removedFeedRefs);
     if (entity instanceof NewsBin)
@@ -466,7 +466,7 @@ public class EventManager implements DatabaseListener {
       FeedLinkReference feedRef = new FeedLinkReference(feed.getLink());
       if (DBHelper.countBookMarkReference(fDb, feedRef) == 1) {
         if (DBHelper.feedHasNewsWithCopies(fDb, feedRef)) {
-          List<INews> newsList = new ArrayList<INews>(feed.getNews());
+          List<INews> newsList = new ArrayList<>(feed.getNews());
           for (INews news : newsList) {
             feed.removeNews(news);
             addItemBeingDeleted(feed);
@@ -641,7 +641,7 @@ public class EventManager implements DatabaseListener {
   public final void addItemBeingDeleted(Object entity) {
     Set<Object> entities = fItemsBeingDeleted.get();
     if (entities == null) {
-      entities = new HashSet<Object>(3);
+      entities = new HashSet<>(3);
       fItemsBeingDeleted.set(entities);
     }
 

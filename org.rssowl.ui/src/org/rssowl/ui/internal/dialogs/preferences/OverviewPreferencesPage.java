@@ -99,9 +99,9 @@ public class OverviewPreferencesPage extends PreferencePage implements IWorkbenc
     titleLabel.setText(Messages.OverviewPreferencesPage_OVERVIEW_INFO);
     titleLabel.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false, 2, 1));
 
-    List<String> ids = new ArrayList<String>();
-    List<Image> images = new ArrayList<Image>();
-    List<String> labels = new ArrayList<String>();
+    List<String> ids = new ArrayList<>();
+    List<Image> images = new ArrayList<>();
+    List<String> labels = new ArrayList<>();
 
     Composite linkContainer = new Composite(container, SWT.NONE);
     linkContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));

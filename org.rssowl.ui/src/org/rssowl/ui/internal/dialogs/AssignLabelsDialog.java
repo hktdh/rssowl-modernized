@@ -86,7 +86,7 @@ public class AssignLabelsDialog extends Dialog {
     super(parentShell);
     fNews = news;
     fExistingLabels = CoreUtils.loadSortedLabels();
-    fExistingLabelNames = new HashSet<String>(fExistingLabels.size());
+    fExistingLabelNames = new HashSet<>(fExistingLabels.size());
     for (ILabel label : fExistingLabels) {
       fExistingLabelNames.add(label.getName().toLowerCase());
     }
@@ -188,7 +188,7 @@ public class AssignLabelsDialog extends Dialog {
     ContentAssistAdapter adapter = new ContentAssistAdapter(fLabelsInput, ',', true);
 
     /* Labels */
-    final List<String> labelNames = new ArrayList<String>(fExistingLabels.size());
+    final List<String> labelNames = new ArrayList<>(fExistingLabels.size());
     for (ILabel label : fExistingLabels) {
       labelNames.add(label.getName());
     }
@@ -200,7 +200,7 @@ public class AssignLabelsDialog extends Dialog {
     JobRunner.runDelayedInBackgroundThread(new Runnable() {
       public void run() {
         if (!fLabelsInput.isDisposed()) {
-          Set<String> values = new TreeSet<String>(new Comparator<String>() {
+          Set<String> values = new TreeSet<>(new Comparator<String>() {
             public int compare(String o1, String o2) {
               return o1.compareToIgnoreCase(o2);
             }
@@ -243,7 +243,7 @@ public class AssignLabelsDialog extends Dialog {
   private String getLabelsValue() {
 
     /* Sort by Sort Key to respect order */
-    Set<ILabel> labels = new TreeSet<ILabel>(new Comparator<ILabel>() {
+    Set<ILabel> labels = new TreeSet<>(new Comparator<ILabel>() {
       public int compare(ILabel l1, ILabel l2) {
         if (l1.equals(l2))
           return 0;
@@ -281,7 +281,7 @@ public class AssignLabelsDialog extends Dialog {
     int newLabelCounter = 0;
     String labelsValue = fLabelsInput.getText();
     String[] labelsValueSplit = labelsValue.split(","); //$NON-NLS-1$
-    Set<String> handledNewLabels = new HashSet<String>(1);
+    Set<String> handledNewLabels = new HashSet<>(1);
     for (String labelValue : labelsValueSplit) {
       labelValue = labelValue.trim().toLowerCase();
       if (labelValue.length() > 0 && !handledNewLabels.contains(labelValue) && !fExistingLabelNames.contains(labelValue)) {

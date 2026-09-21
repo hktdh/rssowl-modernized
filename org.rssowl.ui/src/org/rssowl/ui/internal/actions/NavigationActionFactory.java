@@ -188,7 +188,7 @@ public class NavigationActionFactory implements IExecutableExtensionFactory, IEx
     }
 
     private boolean navigateOnModel() {
-      List<IFolderChild> startingNodes = new ArrayList<IFolderChild>();
+      List<IFolderChild> startingNodes = new ArrayList<>();
 
       /* Check Current Active FeedView */
       FeedView activeFeedView = OwlUI.getActiveFeedView();

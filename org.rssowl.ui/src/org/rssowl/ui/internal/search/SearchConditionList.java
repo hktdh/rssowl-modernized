@@ -96,7 +96,7 @@ public class SearchConditionList extends ScrolledComposite {
    */
   public SearchConditionList(Composite parent, int style, List<ISearchCondition> conditions, List<Integer> fieldsToExclude) {
     super(parent, style | SWT.V_SCROLL);
-    fItems = new ArrayList<SearchConditionItem>();
+    fItems = new ArrayList<>();
     fFieldsToExclude = fieldsToExclude;
     fResources = new LocalResourceManager(JFaceResources.getResources(), this);
 
@@ -158,7 +158,7 @@ public class SearchConditionList extends ScrolledComposite {
 
       /* Remove all Items */
       if (fItems.size() > 0) {
-        List<SearchConditionItem> itemsToRemove = new ArrayList<SearchConditionItem>(fItems);
+        List<SearchConditionItem> itemsToRemove = new ArrayList<>(fItems);
         for (SearchConditionItem itemToRemove : itemsToRemove) {
           itemToRemove.getParent().dispose();
           removeItem(itemToRemove);
@@ -209,7 +209,7 @@ public class SearchConditionList extends ScrolledComposite {
    * @see SearchConditionList#createConditions()
    */
   public List<ISearchCondition> createConditions(ISearchMark searchmark) {
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>();
+    List<ISearchCondition> conditions = new ArrayList<>();
 
     /* For each Item */
     for (SearchConditionItem item : fItems) {
@@ -233,7 +233,7 @@ public class SearchConditionList extends ScrolledComposite {
     try {
 
       /* Remove all */
-      List<SearchConditionItem> itemsToRemove = new ArrayList<SearchConditionItem>(fItems);
+      List<SearchConditionItem> itemsToRemove = new ArrayList<>(fItems);
       for (SearchConditionItem itemToRemove : itemsToRemove) {
         itemToRemove.getParent().dispose();
         removeItem(itemToRemove);

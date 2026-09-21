@@ -143,7 +143,7 @@ public class ExportOptionsPage extends WizardPage {
 
   /* Get selected Export Options */
   Set<ITypeExporter.Options> getExportOptions() {
-    Set<ITypeExporter.Options> options = new HashSet<ITypeExporter.Options>();
+    Set<ITypeExporter.Options> options = new HashSet<>();
     if (fExportLabelsCheck.getSelection())
       options.add(ITypeExporter.Options.EXPORT_LABELS);
     if (fExportFiltersCheck.getSelection())

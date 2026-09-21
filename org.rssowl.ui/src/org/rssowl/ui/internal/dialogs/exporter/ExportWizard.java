@@ -117,7 +117,7 @@ public class ExportWizard extends Wizard implements IExportWizard {
     dialog.setText(Messages.ExportWizard_EXPORT_FILE);
 
     /* Receive Formats for Export */
-    List<String> filterExtensions = new ArrayList<String>();
+    List<String> filterExtensions = new ArrayList<>();
     filterExtensions.add("*.opml"); //$NON-NLS-1$
     filterExtensions.add("*.xml"); //$NON-NLS-1$
 
@@ -170,8 +170,8 @@ public class ExportWizard extends Wizard implements IExportWizard {
     if (!selectedElements.containsAll(rootFolders)) {
 
       /* Find Folders and Saved Searches */
-      Set<ISearchMark> savedSearches = new HashSet<ISearchMark>();
-      Set<IFolder> folders = new HashSet<IFolder>();
+      Set<ISearchMark> savedSearches = new HashSet<>();
+      Set<IFolder> folders = new HashSet<>();
       for (IFolderChild child : selectedElements) {
         if (child instanceof IFolder)
           folders.add((IFolder) child);

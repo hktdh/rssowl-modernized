@@ -112,7 +112,7 @@ public class EntitiesToBeIndexedDAOImpl extends AbstractPersistableDAO<EntityIds
    */
   @Override
   public Collection<EntityIdsByEventType> loadAll() {
-    List<EntityIdsByEventType> newsCounters = new ArrayList<EntityIdsByEventType>(1);
+    List<EntityIdsByEventType> newsCounters = new ArrayList<>(1);
     newsCounters.add(load());
 
     return newsCounters;

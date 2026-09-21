@@ -102,7 +102,7 @@ public class ModelUtils {
       /* Folder */
       if (entity instanceof IFolder) {
         if (folderIds == null)
-          folderIds = new ArrayList<Long>();
+          folderIds = new ArrayList<>();
 
         folderIds.add(entity.getId());
         folderCounter++;
@@ -111,7 +111,7 @@ public class ModelUtils {
       /* FolderMark (for aggregations) */
       else if (entity instanceof FolderNewsMark) {
         if (folderIds == null)
-          folderIds = new ArrayList<Long>();
+          folderIds = new ArrayList<>();
 
         folderIds.add(((FolderNewsMark) entity).getFolder().getId());
         folderCounter++;
@@ -120,7 +120,7 @@ public class ModelUtils {
       /* BookMark */
       else if (entity instanceof IBookMark) {
         if (bookmarkIds == null)
-          bookmarkIds = new ArrayList<Long>();
+          bookmarkIds = new ArrayList<>();
 
         bookmarkIds.add(entity.getId());
         bookmarkCounter++;
@@ -129,7 +129,7 @@ public class ModelUtils {
       /* NewsBin */
       else if (entity instanceof INewsBin) {
         if (newsbinIds == null)
-          newsbinIds = new ArrayList<Long>();
+          newsbinIds = new ArrayList<>();
 
         newsbinIds.add(entity.getId());
         newsbinCounter++;
@@ -175,10 +175,10 @@ public class ModelUtils {
    */
   public static List<IEntity> getEntities(IStructuredSelection selection) {
     if (selection.isEmpty())
-      return new ArrayList<IEntity>(0);
+      return new ArrayList<>(0);
 
     List<?> elements = selection.toList();
-    List<IEntity> entities = new ArrayList<IEntity>(elements.size());
+    List<IEntity> entities = new ArrayList<>(elements.size());
 
     for (Object object : elements) {
       if (object instanceof IEntity && !entities.contains(object))
@@ -201,10 +201,10 @@ public class ModelUtils {
    */
   public static List<IFolderChild> getFoldersBookMarksBins(IStructuredSelection selection) {
     if (selection.isEmpty())
-      return new ArrayList<IFolderChild>(0);
+      return new ArrayList<>(0);
 
     List<?> elements = selection.toList();
-    List<IFolderChild> entities = new ArrayList<IFolderChild>(elements.size());
+    List<IFolderChild> entities = new ArrayList<>(elements.size());
 
     for (Object object : elements) {
       if (object instanceof IFolder || object instanceof IBookMark || object instanceof INewsBin)
@@ -224,10 +224,10 @@ public class ModelUtils {
    */
   public static <T extends IEntity> List<T> getEntities(IStructuredSelection selection, Class<T> entityClass) {
     if (selection.isEmpty())
-      return new ArrayList<T>(0);
+      return new ArrayList<>(0);
 
     List<?> elements = selection.toList();
-    List<T> entities = new ArrayList<T>(elements.size());
+    List<T> entities = new ArrayList<>(elements.size());
 
     for (Object object : elements) {
       if (entityClass.isInstance(object) && !entities.contains(entityClass.cast(object)))
@@ -251,7 +251,7 @@ public class ModelUtils {
    * @return all News of the List of Objects also considering EntityGroups.
    */
   public static Collection<INews> normalize(List<?> objects) {
-    List<INews> normalizedNews = new ArrayList<INews>(objects.size());
+    List<INews> normalizedNews = new ArrayList<>(objects.size());
     for (Object object : objects) {
 
       /* News */
@@ -282,7 +282,7 @@ public class ModelUtils {
    * the given Selection had applied to.
    */
   public static Set<ILabel> getLabelsForAll(IStructuredSelection selection) {
-    Set<ILabel> labelsForAll = new HashSet<ILabel>(5);
+    Set<ILabel> labelsForAll = new HashSet<>(5);
 
     List<INews> selectedNews = getEntities(selection, INews.class);
 

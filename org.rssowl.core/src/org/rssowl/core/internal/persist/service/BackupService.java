@@ -77,7 +77,7 @@ public final class BackupService {
      */
     public List<File> findBackupFiles() {
       int index = 0;
-      List<File> backupFiles = new ArrayList<File>(5);
+      List<File> backupFiles = new ArrayList<>(5);
       File tempFile = fBackupFile;
       while (tempFile.exists()) {
         backupFiles.add(tempFile);

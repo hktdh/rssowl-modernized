@@ -58,9 +58,9 @@ public class NewsActionPresentationManager {
   /* Singleton Instance */
   private static NewsActionPresentationManager fgInstance = new NewsActionPresentationManager();
 
-  private Map<String, NewsActionDescriptor> fNewsActions = new HashMap<String, NewsActionDescriptor>();
-  private Set<NewsActionDescriptor> fSortedNewsActions = new TreeSet<NewsActionDescriptor>();
-  private Map<String, IConfigurationElement> fNewsActionPresentations = new HashMap<String, IConfigurationElement>();
+  private Map<String, NewsActionDescriptor> fNewsActions = new HashMap<>();
+  private Set<NewsActionDescriptor> fSortedNewsActions = new TreeSet<>();
+  private Map<String, IConfigurationElement> fNewsActionPresentations = new HashMap<>();
 
   /**
    * @return the singleton instance.

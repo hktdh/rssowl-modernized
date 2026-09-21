@@ -128,7 +128,7 @@ public class MoveCopyNewsToBinAction extends Action {
     boolean requiresSave = false;
 
     /* Only consider those not already present in the Bin */
-    List<INews> newsToMoveCopy = new ArrayList<INews>(news.size());
+    List<INews> newsToMoveCopy = new ArrayList<>(news.size());
     for (INews newsitem : news) {
       if (!fBin.containsNews(newsitem))
         newsToMoveCopy.add(newsitem);
@@ -139,7 +139,7 @@ public class MoveCopyNewsToBinAction extends Action {
       return;
 
     /* For each News: Copy */
-    List<INews> copiedNews = new ArrayList<INews>(newsToMoveCopy.size());
+    List<INews> copiedNews = new ArrayList<>(newsToMoveCopy.size());
     for (INews newsitem : newsToMoveCopy) {
       INews newsCopy = Owl.getModelFactory().createNews(newsitem, fBin);
       copiedNews.add(newsCopy);

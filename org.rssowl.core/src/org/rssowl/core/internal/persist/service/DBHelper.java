@@ -420,8 +420,8 @@ public final class DBHelper {
 
     EntitiesToBeIndexedDAOImpl dao = getEntitiesToBeIndexedDAO();
     EntityIdsByEventType newsToBeIndexed = dao.load();
-    Set<NewsEvent> updateEvents = new HashSet<NewsEvent>(newsEventRunnables.getUpdateEvents().size());
-    Set<NewsEvent> deleteEvents = new HashSet<NewsEvent>(newsEventRunnables.getRemoveEvents());
+    Set<NewsEvent> updateEvents = new HashSet<>(newsEventRunnables.getUpdateEvents().size());
+    Set<NewsEvent> deleteEvents = new HashSet<>(newsEventRunnables.getRemoveEvents());
     Set<NewsEvent> persistEvents = filterPersistedNewsForIndexing(newsEventRunnables.getPersistEvents());
     for (NewsEvent event : newsEventRunnables.getUpdateEvents())
       indexTypeForNewsUpdate(event, persistEvents, updateEvents, deleteEvents);
@@ -440,7 +440,7 @@ public final class DBHelper {
   }
 
   public static Set<NewsEvent> filterPersistedNewsForIndexing(Collection<NewsEvent> events) {
-    Set<NewsEvent> result = new HashSet<NewsEvent>(events.size());
+    Set<NewsEvent> result = new HashSet<>(events.size());
     for (NewsEvent event : events)
       if (event.getEntity().isVisible())
         result.add(event);
@@ -505,7 +505,7 @@ public final class DBHelper {
     }
 
     if (!statesUpdateInfos.isEmpty()) {
-      Set<FeedLinkReference> removedFeedRefs = new HashSet<FeedLinkReference>();
+      Set<FeedLinkReference> removedFeedRefs = new HashSet<>();
       INewsBinDAO newsBinDAO = DynamicDAO.getDAO(INewsBinDAO.class);
       for (Map.Entry<Long, List<StatesUpdateInfo>> mapEntry : statesUpdateInfos.entrySet()) {
         INewsBin newsBin = newsBinDAO.load(mapEntry.getKey());
@@ -583,6 +583,6 @@ public final class DBHelper {
 
   public static Collection<IFeed> loadAllFeeds(ObjectContainer db) {
     ObjectSet<? extends IFeed> entities = db.query(Feed.class);
-    return new LazyList<IFeed>(entities, db);
+    return new LazyList<>(entities, db);
   }
 }

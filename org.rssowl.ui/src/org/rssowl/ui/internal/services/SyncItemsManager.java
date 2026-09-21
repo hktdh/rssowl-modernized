@@ -52,7 +52,7 @@ public class SyncItemsManager {
   /* File of uncommitted sync items */
   private static final String UNCOMMITTED_SYNCITEMS_FILE = "syncitems"; //$NON-NLS-1$
 
-  private Map<String, SyncItem> fItems = new HashMap<String, SyncItem>();
+  private Map<String, SyncItem> fItems = new HashMap<>();
   private final Object fLock = new Object();
 
   /**
@@ -102,7 +102,7 @@ public class SyncItemsManager {
       if (fItems.isEmpty())
         return Collections.emptyMap();
 
-      return new HashMap<String, SyncItem>(fItems);
+      return new HashMap<>(fItems);
     }
   }
 
@@ -167,7 +167,7 @@ public class SyncItemsManager {
 
   @SuppressWarnings("unchecked")
   private Map<String, SyncItem> deserializeSyncItems() throws IOException, ClassNotFoundException {
-    Map<String, SyncItem> items = new HashMap<String, SyncItem>();
+    Map<String, SyncItem> items = new HashMap<>();
 
     File store = getUncommittedSyncItemsFile();
     if (store == null || !store.exists())

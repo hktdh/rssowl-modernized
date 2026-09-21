@@ -106,7 +106,7 @@ public class ReaderProtocolHandler extends DefaultProtocolHandler {
         }
       }
     } else
-      properties = new HashMap<Object, Object>();
+      properties = new HashMap<>();
 
     URI googleLink = readerToGoogle(link, itemLimit, dateLimit);
     InputStream inS = null;
@@ -205,7 +205,7 @@ public class ReaderProtocolHandler extends DefaultProtocolHandler {
       return null;
 
     /* Fill necessary headers to retrieve feed from Google */
-    Map<String, String> headers = new HashMap<String, String>();
+    Map<String, String> headers = new HashMap<>();
     headers.put(REQUEST_HEADER_AUTHORIZATION, SyncUtils.getGoogleAuthorizationHeader(authToken));
     headers.put(REQUEST_HEADER_ACCEPT_CHARSET, UTF_8.toLowerCase());
     headers.put(REQUEST_HEADER_USER_AGENT, BROWSER_USER_AGENT); //Necessary as otherwise the content is not sent over as gzip for some unknown reason

@@ -1204,9 +1204,9 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
           manager.add(new Separator("movecopy")); //$NON-NLS-1$
 
           /* Load all news bins and sort by name */
-          List<INewsBin> newsbins = new ArrayList<INewsBin>(DynamicDAO.loadAll(INewsBin.class));
+          List<INewsBin> newsbins = new ArrayList<>(DynamicDAO.loadAll(INewsBin.class));
 
-          Comparator<INewsBin> comparator = new Comparator<INewsBin>() {
+          Comparator<INewsBin> comparator = new Comparator<>() {
             public int compare(INewsBin o1, INewsBin o2) {
               return o1.getName().compareTo(o2.getName());
             };
@@ -1765,7 +1765,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
       }
 
       /* Collect openable Attachments that have already been downloaded */
-      List<Action> openActions = new ArrayList<Action>(1);
+      List<Action> openActions = new ArrayList<>(1);
       Set<String> downloadLocations = getDownloadLocations();
 
       /* Offer Download Action for each */
@@ -1845,7 +1845,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
   private static Set<String> getDownloadLocations() {
     IPreferenceScope preferences = Owl.getPreferenceService().getGlobalScope();
-    Set<String> locations = new HashSet<String>(1);
+    Set<String> locations = new HashSet<>(1);
 
     /* Check Preference */
     String folderPath = preferences.getString(DefaultPreferences.DOWNLOAD_FOLDER);

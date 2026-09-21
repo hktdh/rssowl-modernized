@@ -56,7 +56,7 @@ public class LabelNewsAction implements INewsAction {
     news = CoreUtils.replace(news, replacements);
 
     /* Run Filter */
-    List<IEntity> entitiesToSave = new ArrayList<IEntity>(news.size());
+    List<IEntity> entitiesToSave = new ArrayList<>(news.size());
     Long labelId = (Long) data;
     ILabel label = DynamicDAO.load(ILabel.class, labelId);
 

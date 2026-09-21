@@ -50,7 +50,7 @@ public final class NewsCounter extends Persistable {
    */
   public synchronized void put(String link, NewsCounterItem item) {
     if (fCountersMap == null)
-      fCountersMap = new HashMap<String, NewsCounterItem>();
+      fCountersMap = new HashMap<>();
 
     fCountersMap.put(link, item);
   }

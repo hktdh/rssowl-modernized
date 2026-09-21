@@ -81,7 +81,7 @@ public class AssignLabelsAction extends Action {
   @Override
   public void run() {
     List<INews> entities = ModelUtils.getEntities(fSelection, INews.class);
-    Set<INews> news = new HashSet<INews>(entities);
+    Set<INews> news = new HashSet<>(entities);
     if (!news.isEmpty())
       new AssignLabelsDialog(fShell, news).open();
   }

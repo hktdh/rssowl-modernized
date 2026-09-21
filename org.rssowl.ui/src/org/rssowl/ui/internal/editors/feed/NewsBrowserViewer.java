@@ -466,9 +466,9 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
           manager.add(new Separator("movecopy")); //$NON-NLS-1$
 
           /* Load all news bins and sort by name */
-          List<INewsBin> newsbins = new ArrayList<INewsBin>(DynamicDAO.loadAll(INewsBin.class));
+          List<INewsBin> newsbins = new ArrayList<>(DynamicDAO.loadAll(INewsBin.class));
 
-          Comparator<INewsBin> comparator = new Comparator<INewsBin>() {
+          Comparator<INewsBin> comparator = new Comparator<>() {
             public int compare(INewsBin o1, INewsBin o2) {
               return o1.getName().compareTo(o2.getName());
             };
@@ -610,7 +610,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
             manager.add(new Action(Messages.NewsBrowserViewer_SIMILAR_CONTENT) {
               @Override
               public void run() {
-                List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+                List<ISearchCondition> conditions = new ArrayList<>(1);
                 String headline = CoreUtils.getHeadline(news, false);
 
                 ISearchField field = fFactory.createSearchField(IEntity.ALL_FIELDS, entity);
@@ -633,7 +633,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
                 manager.add(new Action(NLS.bind(Messages.NewsBrowserViewer_AUTHORED_BY, escapeForMenu(author))) {
                   @Override
                   public void run() {
-                    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+                    List<ISearchCondition> conditions = new ArrayList<>(1);
 
                     ISearchField field = fFactory.createSearchField(INews.AUTHOR, entity);
                     ISearchCondition condition = fFactory.createSearchCondition(field, SearchSpecifier.CONTAINS_ALL, author);
@@ -655,7 +655,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
                   manager.add(new Action(NLS.bind(Messages.NewsBrowserViewer_CATEGORIZED_N, escapeForMenu(name))) {
                     @Override
                     public void run() {
-                      List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+                      List<ISearchCondition> conditions = new ArrayList<>(1);
 
                       ISearchField field = fFactory.createSearchField(INews.CATEGORIES, entity);
                       ISearchCondition condition = fFactory.createSearchCondition(field, SearchSpecifier.IS, name);
@@ -676,7 +676,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
                     categoriesMenu.add(new Action(escapeForMenu(name)) {
                       @Override
                       public void run() {
-                        List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+                        List<ISearchCondition> conditions = new ArrayList<>(1);
 
                         ISearchField field = fFactory.createSearchField(INews.CATEGORIES, entity);
                         ISearchCondition condition = fFactory.createSearchCondition(field, SearchSpecifier.IS, name);
@@ -698,7 +698,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
                 manager.add(new Action(NLS.bind(Messages.NewsBrowserViewer_LABELED_N, escapeForMenu(label.getName()))) {
                   @Override
                   public void run() {
-                    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(1);
+                    List<ISearchCondition> conditions = new ArrayList<>(1);
 
                     ISearchField field = fFactory.createSearchField(INews.LABEL, entity);
                     ISearchCondition condition = fFactory.createSearchCondition(field, SearchSpecifier.IS, label.getName());
@@ -1566,7 +1566,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
   }
 
   private List<INews> getNewsList(String query) {
-    List<INews> news = new ArrayList<INews>();
+    List<INews> news = new ArrayList<>();
 
     StringTokenizer tokenizer = new StringTokenizer(query, ","); //$NON-NLS-1$
     while (tokenizer.hasMoreTokens()) {
@@ -1587,7 +1587,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
     /* Try to resolve the news from the mapping table */
     List<Long> newsIds = fViewModel.getNewsIds(id);
     if (!newsIds.isEmpty()) {
-      List<INews> news = new ArrayList<INews>(newsIds.size());
+      List<INews> news = new ArrayList<>(newsIds.size());
       for (Long newsId : newsIds) {
         try {
           INews item = resolve(newsId);
@@ -1802,7 +1802,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
    */
   public void addFilter(ViewerFilter filter) {
     if (fFilters == null)
-      fFilters = new ArrayList<ViewerFilter>();
+      fFilters = new ArrayList<>();
 
     fFilters.add(filter);
     if (filter instanceof NewsFilter)
@@ -2138,7 +2138,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
        * containing just News (so either Feed or ViewerGroups).
        */
       if (cp.isGroupingEnabled() && !isNews(input)) {
-        List<Object> flatList = new ArrayList<Object>();
+        List<Object> flatList = new ArrayList<>();
 
         /* Wrap into Object-Array */
         if (!(input instanceof Object[]))
@@ -2393,7 +2393,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
     js.append("var body = ").append(getElementById(BODY_ELEMENT_ID)).append("; "); //$NON-NLS-1$ //$NON-NLS-2$
 
     boolean varDefined = false;
-    Set<Long> groupsToUpdate = new HashSet<Long>();
+    Set<Long> groupsToUpdate = new HashSet<>();
     for (Object element : elements) {
       if (element instanceof INews) {
         INews news = (INews) element;
@@ -2490,7 +2490,7 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
         List<ISearchCondition> conditions = ((ISearch) mark).getSearchConditions();
         extractedWords = CoreUtils.extractWords(conditions);
       } else
-        extractedWords = new HashSet<String>(1);
+        extractedWords = new HashSet<>(1);
 
       /* Fill Pattern if set */
       if (fNewsFilter != null && StringUtils.isSet(fNewsFilter.getPatternString())) {

@@ -50,7 +50,7 @@ public class CTable {
   private static final String LAYOUT_DATA = "org.rssowl.ui.internal.CTreeLayoutData"; //$NON-NLS-1$
 
   private Table fTable;
-  private List<TableColumn> fCols = new ArrayList<TableColumn>();
+  private List<TableColumn> fCols = new ArrayList<>();
 
   /**
    * @param parent

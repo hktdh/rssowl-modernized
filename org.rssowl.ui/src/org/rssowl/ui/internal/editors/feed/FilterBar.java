@@ -733,10 +733,10 @@ public class FilterBar {
 
   private void onCreateSavedSearch(boolean withQuickSearch) {
     IModelFactory factory = Owl.getModelFactory();
-    List<ISearchCondition> conditions = new ArrayList<ISearchCondition>(2);
+    List<ISearchCondition> conditions = new ArrayList<>(2);
 
     /* Create Condition from Location */
-    List<IFolderChild> searchScope = new ArrayList<IFolderChild>(1);
+    List<IFolderChild> searchScope = new ArrayList<>(1);
     searchScope.add(((FeedViewInput) fFeedView.getEditorInput()).getMark());
     ISearchField field = factory.createSearchField(INews.LOCATION, INews.class.getName());
     conditions.add(factory.createSearchCondition(field, SearchSpecifier.SCOPE, ModelUtils.toPrimitive(searchScope)));

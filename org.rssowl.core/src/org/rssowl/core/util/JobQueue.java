@@ -128,7 +128,7 @@ public class JobQueue {
     fMaxConcurrentJobs = maxConcurrentJobs;
     fShowProgress = showProgress;
     fProgressDelay = progressDelay;
-    fOpenTasksQueue = new LinkedBlockingQueue<ITask>(maxQueueSize);
+    fOpenTasksQueue = new LinkedBlockingQueue<>(maxQueueSize);
 
     /* Eagerly create the Progress-Job if we need one */
     if (showProgress)
