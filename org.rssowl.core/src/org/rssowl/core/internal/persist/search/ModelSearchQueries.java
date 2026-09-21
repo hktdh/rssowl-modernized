@@ -408,6 +408,13 @@ public class ModelSearchQueries {
    * WildcardQuery
    */
   private static Query createWildcardQuery(String field, String term) {
+    /*
+     * These terms are handed to Lucene as written, without passing through the
+     * analyzer, so fold them here or they keep diacritics the index does not
+     * have. See FoldingQueryParser for the same problem on the parser side.
+     */
+    term = FoldingQueryParser.fold(term);
+
     if (String.valueOf(INews.LABEL).equals(field) || isValidWildcardTerm(term))
       return new WildcardQuery(new Term(field, term));
 
@@ -636,7 +643,7 @@ public class ModelSearchQueries {
       case CONTAINS:
       case CONTAINS_ALL:
       case CONTAINS_NOT: {
-        QueryParser parser = new QueryParser(fieldname, analyzer);
+        QueryParser parser = new FoldingQueryParser(fieldname, analyzer);
         Operator operator = (specifier == SearchSpecifier.CONTAINS || specifier == SearchSpecifier.CONTAINS_NOT) ? QueryParser.OR_OPERATOR : QueryParser.AND_OPERATOR;
         parser.setDefaultOperator(operator);
         parser.setAllowLeadingWildcard(true);
