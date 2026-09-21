@@ -72,18 +72,30 @@ public class NewsGridViewer extends TableViewer {
     if (fBlockRefresh)
       return;
 
-    /*
-     * Ask the content provider to work the list out again first. A lazy Table
-     * answers a refresh by re-reading the rows on screen and nothing more: it
-     * never asks how many rows there are, so a changed sort order or grouping
-     * would redraw the same rows in the same order and look like nothing had
-     * happened.
-     */
-    IContentProvider provider = getContentProvider();
-    if (provider instanceof NewsContentProvider)
-      ((NewsContentProvider) provider).publishElementCount();
-
     super.refresh();
+  }
+
+  /*
+   * Every way of asking for a refresh ends up here, which is why the row count
+   * is pushed from this one place.
+   *
+   * It was in refresh() to begin with, and that caught almost nothing: sorting
+   * by clicking a column header calls refresh(boolean), and so does the search
+   * in the filter bar, by way of FeedView.refreshTableViewer. Both updated the
+   * sorter or the filter and then redrew the very same rows in the very same
+   * order, because a lazy Table re-reads the rows on screen and never asks how
+   * many rows it now has. Grouping appeared to work only by luck, reaching the
+   * no-argument refresh through expandAllGroups.
+   *
+   * @see org.eclipse.jface.viewers.AbstractTableViewer#internalRefresh(java.lang.Object, boolean)
+   */
+  @Override
+  protected void internalRefresh(Object element, boolean updateLabels) {
+    IContentProvider provider = getContentProvider();
+    if (provider instanceof ILazyElementCounter)
+      ((ILazyElementCounter) provider).publishElementCount();
+
+    super.internalRefresh(element, updateLabels);
   }
 
   /*

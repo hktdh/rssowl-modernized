@@ -34,6 +34,7 @@ import org.rssowl.core.persist.IFeed;
 import org.rssowl.core.persist.IModelFactory;
 import org.rssowl.core.persist.INews;
 import org.rssowl.core.persist.INews.State;
+import org.rssowl.core.persist.dao.DynamicDAO;
 import org.rssowl.ui.internal.EntityGroup;
 import org.rssowl.ui.internal.editors.feed.NewsColumn;
 import org.rssowl.ui.internal.editors.feed.NewsComparator;
@@ -241,6 +242,49 @@ public class NewsVisibleElementsTest {
 
   private Set<Long> noneCollapsed() {
     return Collections.emptySet();
+  }
+
+  /*
+   * Searching inside a feed is a filter, not a different list: the pattern is
+   * resolved against the search index once and then every news is asked whether
+   * it matched. The list on screen is whatever comes out of here, so if this
+   * narrows correctly the feed view narrows correctly.
+   *
+   * @throws Exception in case of an error.
+   */
+  @Test
+  public void testTextPatternNarrowsTheList() throws Exception {
+    IFeed feed = fFactory.createFeed(null, new URI("http://www.rssowl.org/pattern")); //$NON-NLS-1$
+
+    List<INews> news = new ArrayList<>();
+    news.add(named(feed, "Chung khoan tang manh")); //$NON-NLS-1$
+    news.add(named(feed, "Thoi tiet hom nay")); //$NON-NLS-1$
+    news.add(named(feed, "Chung khoan giam nhe")); //$NON-NLS-1$
+
+    /* The pattern is resolved against the index, so the news have to be in it */
+    DynamicDAO.save(feed);
+    Thread.sleep(1500);
+
+    NewsFilter filter = filter();
+    filter.setPattern("khoan"); //$NON-NLS-1$
+
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
+
+    assertEquals(2, elements.length);
+    for (Object element : elements)
+      assertTrue(((INews) element).getTitle().contains("khoan")); //$NON-NLS-1$
+
+    /* Clearing the pattern brings everything back */
+    filter.setPattern(""); //$NON-NLS-1$
+    elements = NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
+    assertEquals(3, elements.length);
+  }
+
+  private INews named(IFeed feed, String title) {
+    INews news = fFactory.createNews(null, feed, new Date());
+    news.setTitle(title);
+    news.setState(State.NEW);
+    return news;
   }
 
   private NewsFilter filter() {

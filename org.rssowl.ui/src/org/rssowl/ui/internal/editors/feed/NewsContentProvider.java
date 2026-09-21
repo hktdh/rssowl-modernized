@@ -99,7 +99,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author bpasero
  */
-public class NewsContentProvider implements ITreeContentProvider, ILazyContentProvider {
+public class NewsContentProvider implements ITreeContentProvider, ILazyContentProvider, ILazyElementCounter {
 
   /* The maximum number of items returned from a FolderNewsMark */
   static final int MAX_FOLDER_ELEMENTS = 500;
@@ -354,7 +354,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
    * While the list was a lazy Tree this was not needed, because a Tree does
    * ask, through updateChildCount.
    */
-  void publishElementCount() {
+  public void publishElementCount() {
     rebuildVisibleElements();
     fTableViewer.setElementCount(fTableViewer.getInput(), fVisibleElements.length);
   }
