@@ -41,7 +41,6 @@ import org.eclipse.jface.resource.LocalResourceManager;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.util.PropertyChangeEvent;
-import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -53,7 +52,7 @@ import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TreeViewerColumn;
+import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.window.SameShellProvider;
 import org.eclipse.jface.window.ToolTip;
@@ -73,9 +72,9 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeColumn;
-import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.PlatformUI;
 import org.rssowl.core.Owl;
@@ -120,7 +119,7 @@ import org.rssowl.ui.internal.actions.ToggleReadStateAction;
 import org.rssowl.ui.internal.editors.browser.WebBrowserContext;
 import org.rssowl.ui.internal.undo.NewsStateOperation;
 import org.rssowl.ui.internal.undo.UndoStack;
-import org.rssowl.ui.internal.util.CTree;
+import org.rssowl.ui.internal.util.CTable;
 import org.rssowl.ui.internal.util.JobRunner;
 import org.rssowl.ui.internal.util.JobTracker;
 import org.rssowl.ui.internal.util.ModelUtils;
@@ -173,13 +172,13 @@ public class NewsTableControl implements IFeedViewPart {
      */
     @Override
     protected Object getToolTipArea(Event event) {
-      Tree tree = (Tree) event.widget;
+      Table table = (Table) event.widget;
       Point point = new Point(event.x, event.y);
-      TreeItem item = tree.getItem(point);
+      TableItem item = table.getItem(point);
 
       /* Only valid for Feed Column */
       if (item != null) {
-        int feedIndex = indexOf(tree, NewsColumn.FEED);
+        int feedIndex = indexOf(table, NewsColumn.FEED);
         if (feedIndex >= 0 && item.getBounds(feedIndex).contains(point))
           return super.getToolTipArea(event);
       }
@@ -187,11 +186,11 @@ public class NewsTableControl implements IFeedViewPart {
       return null;
     }
 
-    private static int indexOf(Tree tree, NewsColumn column) {
-      if (tree.isDisposed())
+    private static int indexOf(Table table, NewsColumn column) {
+      if (table.isDisposed())
         return -1;
 
-      TreeColumn[] columns = tree.getColumns();
+      TableColumn[] columns = table.getColumns();
       for (int i = 0; i < columns.length; i++) {
         if (column == columns[i].getData(NewsColumnViewModel.COL_ID))
           return i;
@@ -208,11 +207,11 @@ public class NewsTableControl implements IFeedViewPart {
   private IFeedViewSite fFeedViewSite;
   private MarkReadTracker fNewsStateTracker;
   private MarkReadTracker fInstantMarkUnreadTracker;
-  private NewsTableViewer fViewer;
+  private NewsGridViewer fViewer;
   private NewsTableLabelProvider fNewsTableLabelProvider;
   private ISelectionChangedListener fSelectionChangeListener;
   private IPropertyChangeListener fPropertyChangeListener;
-  private CTree fCustomTree;
+  private CTable fCustomTable;
   private int[] fOldColumnOrder;
   private LocalResourceManager fResources;
   private NewsComparator fNewsSorter;
@@ -269,17 +268,17 @@ public class NewsTableControl implements IFeedViewPart {
    */
   public void createPart(Composite parent) {
     /*
-     * SWT.VIRTUAL, together with the lazy content provider, means a TreeItem is
+     * SWT.VIRTUAL, together with the lazy content provider, means a TableItem is
      * created only for the rows on screen. Without it every news in the feed
      * became a native widget up front, which is what made opening a large feed
      * take seconds.
      */
     int style = SWT.MULTI | SWT.FULL_SELECTION | SWT.VIRTUAL;
 
-    fCustomTree = new CTree(parent, style);
-    fCustomTree.getControl().setHeaderVisible(true);
+    fCustomTable = new CTable(parent, style);
+    fCustomTable.getControl().setHeaderVisible(true);
 
-    fViewer = new NewsTableViewer(fCustomTree.getControl());
+    fViewer = new NewsGridViewer(fCustomTable.getControl());
     fViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
     fViewer.setUseHashlookup(true);
     fViewer.getControl().setData(ApplicationWorkbenchWindowAdvisor.FOCUSLESS_SCROLL_HOOK, new Object());
@@ -288,8 +287,6 @@ public class NewsTableControl implements IFeedViewPart {
     /* Custom Tooltip for Feed Column */
     FeedColumnToolTipSupport.enableFor(fViewer);
 
-    /* This is a Workaround until we remember expanded Groups */
-    fViewer.setAutoExpandLevel(AbstractTreeViewer.ALL_LEVELS);
 
     fHandCursor = parent.getDisplay().getSystemCursor(SWT.CURSOR_HAND);
 
@@ -378,7 +375,7 @@ public class NewsTableControl implements IFeedViewPart {
   /*
    * @see org.rssowl.ui.internal.editors.feed.IFeedViewPart#getViewer()
    */
-  public NewsTableViewer getViewer() {
+  public NewsGridViewer getViewer() {
     return fViewer;
   }
 
@@ -411,7 +408,6 @@ public class NewsTableControl implements IFeedViewPart {
     fViewer.setComparer(getComparer());
 
     /* Create and Show Columns */
-    fCustomTree.setFlat(!isGroupingEnabled());
     showColumns(columnModel, false, false);
 
     /* Add Filter */
@@ -450,6 +446,14 @@ public class NewsTableControl implements IFeedViewPart {
     return model;
   }
 
+  private NewsContentProvider getNewsContentProvider() {
+    IContentProvider contentProvider = fViewer.getContentProvider();
+    if (contentProvider instanceof NewsContentProvider)
+      return (NewsContentProvider) contentProvider;
+
+    return null;
+  }
+
   private boolean isGroupingEnabled() {
     IContentProvider contentProvider = fViewer.getContentProvider();
     if (contentProvider != null && contentProvider instanceof NewsContentProvider)
@@ -475,7 +479,7 @@ public class NewsTableControl implements IFeedViewPart {
   }
 
   private void showColumns(NewsColumnViewModel newModel, boolean update, boolean refresh) {
-    if (fCustomTree.getControl().isDisposed())
+    if (fCustomTable.getControl().isDisposed())
       return;
 
     /* Return early if no change is required */
@@ -485,7 +489,7 @@ public class NewsTableControl implements IFeedViewPart {
     /* Dispose Old */
     fBlockColumMoveEvent = true;
     try {
-      fCustomTree.clear();
+      fCustomTable.clear();
     } finally {
       fBlockColumMoveEvent = false;
     }
@@ -497,24 +501,24 @@ public class NewsTableControl implements IFeedViewPart {
     List<NewsColumn> cols = newModel.getColumns();
     for (int i = 0; i < cols.size(); i++) {
       NewsColumn col = cols.get(i);
-      TreeViewerColumn viewerColumn = new TreeViewerColumn(fViewer, SWT.LEFT);
-      fCustomTree.manageColumn(viewerColumn.getColumn(), newModel.getLayoutData(col), col.showName() ? col.getName() : null, col.showTooltip() ? col.getName() : null, null, col.isMoveable(), col.isResizable());
+      TableViewerColumn viewerColumn = new TableViewerColumn(fViewer, SWT.LEFT);
+      fCustomTable.manageColumn(viewerColumn.getColumn(), newModel.getLayoutData(col), col.showName() ? col.getName() : null, col.showTooltip() ? col.getName() : null, null, col.isMoveable(), col.isResizable());
       if (i == 0)
         viewerColumn.getColumn().setResizable(true); //Need to override this due to bug on windows
       viewerColumn.getColumn().setData(NewsColumnViewModel.COL_ID, col);
 
       if (newModel.getSortColumn() == col && col.showSortIndicator()) {
-        fCustomTree.getControl().setSortColumn(viewerColumn.getColumn());
-        fCustomTree.getControl().setSortDirection(newModel.isAscending() ? SWT.UP : SWT.DOWN);
+        fCustomTable.getControl().setSortColumn(viewerColumn.getColumn());
+        fCustomTable.getControl().setSortDirection(newModel.isAscending() ? SWT.UP : SWT.DOWN);
       }
     }
 
     /* Remember Column Order */
-    fOldColumnOrder = fCustomTree.getControl().getColumnOrder();
+    fOldColumnOrder = fCustomTable.getControl().getColumnOrder();
 
-    /* Update Tree */
+    /* Update Table */
     if (update)
-      fCustomTree.update();
+      fCustomTable.update();
 
     /* Update Sorter */
     fNewsSorter.setAscending(newModel.isAscending());
@@ -529,8 +533,8 @@ public class NewsTableControl implements IFeedViewPart {
       fViewer.refresh(true);
 
     /* Enable Sorting adding listeners to Columns */
-    TreeColumn[] columns = fCustomTree.getControl().getColumns();
-    for (final TreeColumn column : columns) {
+    TableColumn[] columns = fCustomTable.getControl().getColumns();
+    for (final TableColumn column : columns) {
       column.addSelectionListener(new SelectionAdapter() {
         @Override
         public void widgetSelected(SelectionEvent e) {
@@ -549,10 +553,10 @@ public class NewsTableControl implements IFeedViewPart {
 
           /* Indicate Sort-Column in UI for Columns that have a certain width */
           if (newSortBy.showSortIndicator()) {
-            fCustomTree.getControl().setSortColumn(column);
-            fCustomTree.getControl().setSortDirection(ascending ? SWT.UP : SWT.DOWN);
+            fCustomTable.getControl().setSortColumn(column);
+            fCustomTable.getControl().setSortDirection(ascending ? SWT.UP : SWT.DOWN);
           } else {
-            fCustomTree.getControl().setSortColumn(null);
+            fCustomTable.getControl().setSortColumn(null);
           }
 
           /* Refresh UI */
@@ -566,17 +570,17 @@ public class NewsTableControl implements IFeedViewPart {
       /* Listen to moved columns */
       column.addListener(SWT.Move, new Listener() {
         public void handleEvent(Event event) {
-          if (fCustomTree.getControl().isDisposed() || fBlockColumMoveEvent)
+          if (fCustomTable.getControl().isDisposed() || fBlockColumMoveEvent)
             return;
 
-          int[] columnOrder = fCustomTree.getControl().getColumnOrder();
+          int[] columnOrder = fCustomTable.getControl().getColumnOrder();
           if (!Arrays.equals(fOldColumnOrder, columnOrder)) {
 
             /* Remember Old */
             fOldColumnOrder = columnOrder;
 
             /* Create Column Model from Control */
-            NewsColumnViewModel currentModel = NewsColumnViewModel.initializeFrom(fCustomTree.getControl());
+            NewsColumnViewModel currentModel = NewsColumnViewModel.initializeFrom(fCustomTable.getControl());
             currentModel.setSortColumn(fNewsSorter.getSortBy());
             currentModel.setAscending(fNewsSorter.isAscending());
 
@@ -612,21 +616,21 @@ public class NewsTableControl implements IFeedViewPart {
     fViewer.addSelectionChangedListener(fSelectionChangeListener);
 
     /* Perform Action on Mouse-Down */
-    fCustomTree.getControl().addListener(SWT.MouseDown, new Listener() {
+    fCustomTable.getControl().addListener(SWT.MouseDown, new Listener() {
       public void handleEvent(Event event) {
         onMouseDown(event);
       }
     });
 
     /* Perform Action on Mouse-Up */
-    fCustomTree.getControl().addListener(SWT.MouseUp, new Listener() {
+    fCustomTable.getControl().addListener(SWT.MouseUp, new Listener() {
       public void handleEvent(Event event) {
         onMouseUp(event);
       }
     });
 
     /* Update Cursor on Mouse-Move */
-    fCustomTree.getControl().addListener(SWT.MouseMove, new Listener() {
+    fCustomTable.getControl().addListener(SWT.MouseMove, new Listener() {
       public void handleEvent(Event event) {
         onMouseMove(event);
       }
@@ -636,7 +640,7 @@ public class NewsTableControl implements IFeedViewPart {
     fLabelListener = new LabelAdapter() {
       @Override
       public void entitiesUpdated(Set<LabelEvent> events) {
-        JobRunner.runInUIThread(fViewer.getTree(), new Runnable() {
+        JobRunner.runInUIThread(fViewer.getTable(), new Runnable() {
           public void run() {
             fViewer.refresh(true);
           }
@@ -654,7 +658,7 @@ public class NewsTableControl implements IFeedViewPart {
         if (OwlUI.STICKY_BG_COLOR_ID.equals(event.getProperty()) || OwlUI.NEWS_LIST_BG_COLOR_ID.equals(event.getProperty())) {
           ((NewsTableLabelProvider) fViewer.getLabelProvider()).updateResources();
           fViewer.refresh(true);
-          fViewer.getTree().redraw();
+          fViewer.getTable().redraw();
         }
       }
     };
@@ -676,9 +680,20 @@ public class NewsTableControl implements IFeedViewPart {
         new OpenInBrowserAction(selection, WebBrowserContext.createFrom((INews) firstElem, fEditorInput.getMark())).run();
     }
 
-    /* Toggle expanded State of Group */
-    else if (firstElem instanceof EntityGroup)
-      fViewer.setExpandedState(firstElem, !fViewer.getExpandedState(firstElem));
+    /*
+     * Toggle expanded State of Group.
+     *
+     * A group is a row of the list now rather than a parent of other rows, so
+     * folding it is the content provider leaving the news it holds out of the
+     * list, not the widget hiding children it owns.
+     */
+    else if (firstElem instanceof EntityGroup) {
+      NewsContentProvider provider = getNewsContentProvider();
+      if (provider != null) {
+        EntityGroup group = (EntityGroup) firstElem;
+        provider.setCollapsed(group, !provider.isCollapsed(group));
+      }
+    }
   }
 
   private void onSelectionChanged(SelectionChangedEvent event) {
@@ -749,7 +764,7 @@ public class NewsTableControl implements IFeedViewPart {
     /* Middle Mouse Button pressed */
     if (event.button == 2) {
       Point p = new Point(event.x, event.y);
-      TreeItem item = fCustomTree.getControl().getItem(p);
+      TableItem item = fCustomTable.getControl().getItem(p);
 
       /* Problem - return */
       if (item == null || item.isDisposed())
@@ -764,7 +779,7 @@ public class NewsTableControl implements IFeedViewPart {
 
   private void onMouseDown(Event event) {
     Point p = new Point(event.x, event.y);
-    TreeItem item = fCustomTree.getControl().getItem(p);
+    TableItem item = fCustomTable.getControl().getItem(p);
 
     /* Problem - return */
     if (item == null || item.isDisposed())
@@ -844,12 +859,12 @@ public class NewsTableControl implements IFeedViewPart {
 
   private void onMouseMove(Event event) {
     Point p = new Point(event.x, event.y);
-    TreeItem item = fCustomTree.getControl().getItem(p);
+    TableItem item = fCustomTable.getControl().getItem(p);
 
     /* Problem / Group hovered - reset */
     if (item == null || item.isDisposed() || item.getData() instanceof EntityGroup) {
-      if (fShowsHandCursor && !fCustomTree.getControl().isDisposed()) {
-        fCustomTree.getControl().setCursor(null);
+      if (fShowsHandCursor && !fCustomTable.getControl().isDisposed()) {
+        fCustomTable.getControl().setCursor(null);
         fShowsHandCursor = false;
       }
       return;
@@ -858,10 +873,10 @@ public class NewsTableControl implements IFeedViewPart {
     /* Show Hand-Cursor if action can be performed */
     boolean changeToHandCursor = isInImageBounds(item, NewsColumn.TITLE, p) || isInImageBounds(item, NewsColumn.STICKY, p) || isInImageBounds(item, NewsColumn.ATTACHMENTS, p);
     if (!fShowsHandCursor && changeToHandCursor) {
-      fCustomTree.getControl().setCursor(fHandCursor);
+      fCustomTable.getControl().setCursor(fHandCursor);
       fShowsHandCursor = true;
     } else if (fShowsHandCursor && !changeToHandCursor) {
-      fCustomTree.getControl().setCursor(null);
+      fCustomTable.getControl().setCursor(null);
       fShowsHandCursor = false;
     }
   }
@@ -916,7 +931,7 @@ public class NewsTableControl implements IFeedViewPart {
 
         /* Attachments */
         {
-          ApplicationActionBarAdvisor.fillAttachmentsMenu(manager, selection, new SameShellProvider(fViewer.getTree().getShell()), false);
+          ApplicationActionBarAdvisor.fillAttachmentsMenu(manager, selection, new SameShellProvider(fViewer.getTable().getShell()), false);
         }
 
         /* Mark / Label */
@@ -943,7 +958,7 @@ public class NewsTableControl implements IFeedViewPart {
           markMenu.add(action);
 
           /* Label */
-          ApplicationActionBarAdvisor.fillLabelMenu(manager, selection, new SameShellProvider(fViewer.getTree().getShell()), false);
+          ApplicationActionBarAdvisor.fillLabelMenu(manager, selection, new SameShellProvider(fViewer.getTable().getShell()), false);
         }
 
         /* Move To / Copy To */
@@ -998,7 +1013,7 @@ public class NewsTableControl implements IFeedViewPart {
         /* Share */
         boolean entityGroupSelected = ModelUtils.isEntityGroupSelected(selection);
         if (!entityGroupSelected)
-          ApplicationActionBarAdvisor.fillShareMenu(manager, selection, new SameShellProvider(fViewer.getTree().getShell()), false);
+          ApplicationActionBarAdvisor.fillShareMenu(manager, selection, new SameShellProvider(fViewer.getTable().getShell()), false);
 
         manager.add(new Separator("filter")); //$NON-NLS-1$
         manager.add(new Separator("copy")); //$NON-NLS-1$
@@ -1011,12 +1026,9 @@ public class NewsTableControl implements IFeedViewPart {
           manager.add(new Action(Messages.NewsTableControl_COLLAPSE_GROUPS, icon) {
             @Override
             public void run() {
-              fViewer.getControl().setRedraw(false);
-              try {
-                fViewer.collapseAll();
-              } finally {
-                fViewer.getControl().setRedraw(true);
-              }
+              NewsContentProvider provider = getNewsContentProvider();
+              if (provider != null)
+                provider.collapseAllGroups();
             };
           });
         }
@@ -1057,17 +1069,13 @@ public class NewsTableControl implements IFeedViewPart {
    * Adjusts the scroll position to reflect the sorting.
    */
   public void adjustScrollPosition() {
-    Tree tree = fViewer.getTree();
-    int itemCount = tree.getItemCount();
+    Table table = fViewer.getTable();
+    int itemCount = table.getItemCount();
     if (itemCount > 0) {
       if ((fNewsSorter.getSortBy() == NewsColumn.DATE || fNewsSorter.getSortBy() == NewsColumn.PUBLISHED || fNewsSorter.getSortBy() == NewsColumn.MODIFIED || fNewsSorter.getSortBy() == NewsColumn.RECEIVED) && fNewsSorter.isAscending()) {
-        TreeItem item = tree.getItem(itemCount - 1);
-        int childCount = item.getItemCount();
-        if (childCount != 0)
-          item = item.getItem(childCount - 1);
-        tree.showItem(item);
+        table.showItem(table.getItem(itemCount - 1));
       } else
-        tree.setTopItem(tree.getItem(0));
+        table.setTopIndex(0);
     }
   }
 
@@ -1127,11 +1135,11 @@ public class NewsTableControl implements IFeedViewPart {
   }
 
   private int indexOf(NewsColumn column) {
-    Tree tree = fCustomTree.getControl();
-    if (tree.isDisposed())
+    Table table = fCustomTable.getControl();
+    if (table.isDisposed())
       return -1;
 
-    TreeColumn[] columns = tree.getColumns();
+    TableColumn[] columns = table.getColumns();
     for (int i = 0; i < columns.length; i++) {
       if (column == columns[i].getData(NewsColumnViewModel.COL_ID))
         return i;
@@ -1140,7 +1148,7 @@ public class NewsTableControl implements IFeedViewPart {
     return -1;
   }
 
-  private boolean isInImageBounds(TreeItem item, NewsColumn column, Point p) {
+  private boolean isInImageBounds(TableItem item, NewsColumn column, Point p) {
     int index = indexOf(column);
     if (index == -1)
       return false;

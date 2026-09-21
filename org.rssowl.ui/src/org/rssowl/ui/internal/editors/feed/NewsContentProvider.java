@@ -25,7 +25,7 @@
 package org.rssowl.ui.internal.editors.feed;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jface.viewers.ILazyTreeContentProvider;
+import org.eclipse.jface.viewers.ILazyContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
@@ -99,21 +99,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author bpasero
  */
-public class NewsContentProvider implements ITreeContentProvider, ILazyTreeContentProvider {
+public class NewsContentProvider implements ITreeContentProvider, ILazyContentProvider {
 
   /* The maximum number of items returned from a FolderNewsMark */
   static final int MAX_FOLDER_ELEMENTS = 500;
 
-  /*
-   * The maximum number of items returned from a single Bookmark, News Bin or
-   * Saved Search.
-   *
-   * Every item shown becomes a native TreeItem, so the cost of opening a feed
-   * grows with the number of news it holds, not with what fits on screen: a
-   * feed holding 2000 news takes about 3.5 seconds to display. Folders were
-   * already capped, single marks were not.
-   */
-  static final int MAX_NEWSMARK_ELEMENTS = 200;
 
   /* The maximum number of items that will get resolved from a FolderNewsMark */
   private static final int MAX_RESOLVED_FOLDER_ELEMENTS = 5000;
@@ -127,11 +117,6 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
   /* System Property to override the limits above */
   private static final String NO_FOLDER_LIMIT_PROPERTY = "noFolderLimit"; //$NON-NLS-1$
 
-  /* System Property to override the per-mark limit */
-  private static final String NO_NEWSMARK_LIMIT_PROPERTY = "noNewsMarkLimit"; //$NON-NLS-1$
-
-  /* Set once at class initialisation, same lifetime as the system property */
-  private static final boolean NO_NEWSMARK_LIMIT = System.getProperty(NO_NEWSMARK_LIMIT_PROPERTY) != null;
 
   /**
    * The number of news that will be displayed at most for the given input.
@@ -140,10 +125,21 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    * @return the maximum number of news to display, or -1 when unlimited.
    */
   static int getDisplayLimit(INewsMark mark) {
+    /*
+     * A single bookmark, news bin or saved search is no longer capped. It was,
+     * back when every row cost a native TreeItem: a feed of 2000 news took
+     * three and a half seconds to open, so only the first 200 were shown. The
+     * list is a Table now, which costs the same for 200 rows as for 20000, and
+     * a reader who subscribes to a busy feed should be able to see all of it.
+     *
+     * A folder is still capped, because that limit is not about drawing: a
+     * folder gathers news from every bookmark under it, and resolving tens of
+     * thousands of them out of the database is the part that takes the time.
+     */
     if (mark instanceof FolderNewsMark)
       return System.getProperty(NO_FOLDER_LIMIT_PROPERTY) != null ? -1 : MAX_FOLDER_ELEMENTS;
 
-    return NO_NEWSMARK_LIMIT ? -1 : MAX_NEWSMARK_ELEMENTS;
+    return -1;
   }
 
   /**
@@ -166,7 +162,17 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
   }
 
   private final NewsBrowserViewer fBrowserViewer;
-  private final NewsTableViewer fTableViewer;
+  /*
+   * Which groups are collapsed, by EntityGroup id.
+   *
+   * The list is flat, so a group is not a parent that a widget can fold away:
+   * collapsing means leaving the news it holds out of the list. Keeping the ids
+   * rather than the groups matters because grouping rebuilds its EntityGroup
+   * objects from scratch on every refresh, while the ids stay put.
+   */
+  private final Set<Long> fCollapsedGroups = new HashSet<>();
+
+  private final NewsGridViewer fTableViewer;
   private final NewsGrouping fGrouping;
   private final NewsFilter fFilter;
   private NewsListener fNewsListener;
@@ -203,7 +209,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    * @param browserViewer
    * @param feedView
    */
-  public NewsContentProvider(NewsTableViewer tableViewer, NewsBrowserViewer browserViewer, FeedView feedView) {
+  public NewsContentProvider(NewsGridViewer tableViewer, NewsBrowserViewer browserViewer, FeedView feedView) {
     fTableViewer = tableViewer;
     fBrowserViewer = browserViewer;
     fFeedView = feedView;
@@ -326,67 +332,100 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
   }
 
   /*
-   * @see org.eclipse.jface.viewers.ILazyTreeContentProvider#updateChildCount(java.lang.Object, int)
+   * The viewer asks what belongs in a row as that row comes on screen, which
+   * is what keeps a feed of twenty thousand news as cheap to open as one of
+   * two hundred.
+   *
+   * @see org.eclipse.jface.viewers.ILazyContentProvider#updateElement(int)
    */
-  public void updateChildCount(Object element, int currentChildCount) {
-
-    /*
-     * News are leaves. Saying so explicitly matters: a virtual Tree reuses its
-     * items, so an item that is not told it has no children keeps the count the
-     * slot held before, which showed every news as expandable.
-     */
-    if (element instanceof INews) {
-      fTableViewer.setChildCount(element, 0);
-      return;
-    }
-
-    /* Children of a group are already known */
-    if (element instanceof EntityGroup) {
-      fTableViewer.setChildCount(element, ((EntityGroup) element).getItems().size());
-      return;
-    }
-
-    /*
-     * Anything else is the input. Rebuilding here rather than on every model
-     * change is what keeps a changed sort order correct: the viewer answers a
-     * refresh by asking for the child count again.
-     */
-    rebuildVisibleElements();
-    fTableViewer.setChildCount(element, fVisibleElements.length);
+  public void updateElement(int index) {
+    Object[] elements = fVisibleElements;
+    if (index >= 0 && index < elements.length)
+      fTableViewer.replaceElement(null, index, elements[index]);
   }
 
-  /*
-   * @see org.eclipse.jface.viewers.ILazyTreeContentProvider#updateElement(java.lang.Object, int)
+  /**
+   * Works out the list again and tells the viewer how many rows it holds.
+   *
+   * Called by the viewer as it refreshes rather than by every caller that
+   * wants a refresh. A lazy Table never asks how many rows it has, so the
+   * count has to be pushed - and pushing it from one place means a refresh
+   * that arrives by some path nobody thought of still shows the right thing.
+   * While the list was a lazy Tree this was not needed, because a Tree does
+   * ask, through updateChildCount.
    */
-  public void updateElement(Object parent, int index) {
-    Object element = null;
+  void publishElementCount() {
+    rebuildVisibleElements();
+    fTableViewer.setElementCount(fTableViewer.getInput(), fVisibleElements.length);
+  }
 
-    /* News inside a group */
-    if (parent instanceof EntityGroup) {
-      List<EntityGroupItem> items = ((EntityGroup) parent).getItems();
-      if (index < items.size())
-        element = items.get(index).getEntity();
+  /**
+   * @return how many rows the news table shows.
+   */
+  public int getVisibleElementCount() {
+    return fVisibleElements.length;
+  }
+
+  /**
+   * The element at a row, asked of the provider rather than of the widget.
+   * <p>
+   * A virtual widget only fills in the rows on screen, so asking a row what it
+   * shows answers <code>null</code> for everything scrolled out of view. Code
+   * that walks the whole list - navigating to the next unread, saving the feed
+   * as HTML - has to come here instead.
+   * </p>
+   *
+   * @param index the row.
+   * @return what that row shows, or <code>null</code> if there is no such row.
+   */
+  public Object getVisibleElement(int index) {
+    Object[] elements = fVisibleElements;
+    return (index >= 0 && index < elements.length) ? elements[index] : null;
+  }
+
+  /**
+   * @param group a group shown in the news table.
+   * @return <code>true</code> if the news it holds are hidden.
+   */
+  public boolean isCollapsed(EntityGroup group) {
+    return fCollapsedGroups.contains(Long.valueOf(group.getId()));
+  }
+
+  /**
+   * Hides or shows the news a group holds.
+   *
+   * @param group the group to fold or unfold.
+   * @param collapsed <code>true</code> to hide the news it holds.
+   */
+  public void setCollapsed(EntityGroup group, boolean collapsed) {
+    Long id = Long.valueOf(group.getId());
+    boolean changed = collapsed ? fCollapsedGroups.add(id) : fCollapsedGroups.remove(id);
+    if (changed)
+      refreshVisibleElements();
+  }
+
+  /**
+   * Folds every group away.
+   */
+  public void collapseAllGroups() {
+    boolean changed = false;
+    for (Object element : fVisibleElements) {
+      if (element instanceof EntityGroup)
+        changed |= fCollapsedGroups.add(Long.valueOf(((EntityGroup) element).getId()));
     }
 
-    /* Top level */
-    else if (!(parent instanceof INews)) {
-      Object[] elements = fVisibleElements;
-      if (index < elements.length)
-        element = elements[index];
+    if (changed)
+      refreshVisibleElements();
+  }
+
+  /**
+   * Unfolds every group.
+   */
+  public void expandAllGroups() {
+    if (!fCollapsedGroups.isEmpty()) {
+      fCollapsedGroups.clear();
+      refreshVisibleElements();
     }
-
-    if (element == null)
-      return;
-
-    fTableViewer.replace(parent, index, element);
-
-    /*
-     * Every element that was just put into a slot needs its child count set,
-     * not only the groups: the slot may have been used for something else
-     * before, and the count left over from that would decide whether this row
-     * looks expandable.
-     */
-    updateChildCount(element, -1);
   }
 
   /**
@@ -394,7 +433,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    * sorted or arranged into groups.
    */
   private synchronized void rebuildVisibleElements() {
-    fVisibleElements = computeVisibleElements(fCachedNews.values(), fFilter, fGrouping, fFeedView.getComparator());
+    fVisibleElements = computeVisibleElements(fCachedNews.values(), fFilter, fGrouping, fFeedView.getComparator(), fCollapsedGroups);
   }
 
   /**
@@ -414,7 +453,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    * @return the elements to display: news when ungrouped, otherwise
    * {@link EntityGroup} instances that carry the news.
    */
-  public static Object[] computeVisibleElements(Collection<INews> cached, NewsFilter filter, NewsGrouping grouping, NewsComparator comparator) {
+  public static Object[] computeVisibleElements(Collection<INews> cached, NewsFilter filter, NewsGrouping grouping, NewsComparator comparator, Set<Long> collapsedGroups) {
     List<INews> news = new ArrayList<>(cached.size());
     for (INews item : cached) {
       if (item.isVisible() && filter.select(item, false))
@@ -429,7 +468,25 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
       return news.toArray();
     }
 
-    return grouping.group(news).toArray();
+    /*
+     * Groups are rows of the list rather than parents of other rows: the header
+     * comes first and the news it holds follow it, until the next header. A
+     * flat list is what lets this be a Table, and a Table is what lets a feed
+     * show all of its news instead of the first two hundred.
+     */
+    List<Object> flattened = new ArrayList<>(news.size() + 8);
+    for (EntityGroup group : grouping.group(news)) {
+      flattened.add(group);
+
+      /* A collapsed group keeps its header and hides what is under it */
+      if (collapsedGroups != null && collapsedGroups.contains(Long.valueOf(group.getId())))
+        continue;
+
+      for (EntityGroupItem item : group.getItems())
+        flattened.add(item.getEntity());
+    }
+
+    return flattened.toArray();
   }
 
   /**
@@ -442,6 +499,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
     if (fTableViewer == null || fTableViewer.getControl().isDisposed())
       return;
 
+    /* The viewer rebuilds the list as part of refreshing, see publishElementCount */
     fTableViewer.refresh();
   }
 
@@ -459,7 +517,21 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    * java.lang.Object, java.lang.Object)
    */
   public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-    /* Ignore - Input changes are handled via refreshCache(Object input) */
+    /*
+     * The cache itself is filled by refreshCache, not here. What does belong
+     * here is telling the news table how many rows it now has: a lazy Table
+     * shows nothing until it is told, and unlike the lazy Tree this replaced,
+     * it never asks. Leaving this out leaves the reader looking at an empty
+     * list with a perfectly healthy log.
+     */
+    if (viewer == fTableViewer) {
+      if (newInput != null) {
+        publishElementCount();
+      } else {
+        fVisibleElements = new Object[0];
+        fTableViewer.setElementCount(null, 0);
+      }
+    }
   }
 
   boolean isGroupingEnabled() {
@@ -1433,27 +1505,19 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
     if (addedNews.isEmpty())
       return;
 
-    /* Add to Table-Viewer if Visible (keep top item and selection stable) */
+    /* Add to Table-Viewer if Visible (keep the reader where they were) */
     if (fFeedView.isTableViewerVisible()) {
-      Tree tree = fTableViewer.getTree();
-      TreeItem topItem = tree.getTopItem();
-      int indexOfTopItem = 0;
-      if (topItem != null)
-        indexOfTopItem = tree.indexOf(topItem);
-
-      tree.setRedraw(false);
-      try {
-        /*
-         * A lazy viewer does not take items one by one: it is told to fetch
-         * the child count and the elements again. Only the rows on screen are
-         * actually rebuilt, so this is not the full redraw it looks like.
-         */
-        refreshVisibleElements();
-        if (topItem != null && indexOfTopItem != 0)
-          tree.setTopItem(topItem);
-      } finally {
-        tree.setRedraw(true);
-      }
+      /*
+       * A lazy viewer does not take items one by one: it is told to fetch the
+       * count and the elements again. Only the rows on screen are actually
+       * rebuilt, so this is not the full redraw it looks like. How the position
+       * is held on to differs per widget, so the viewer does that part.
+       */
+      fTableViewer.refreshPreservingPosition(new Runnable() {
+        public void run() {
+          refreshVisibleElements();
+        }
+      });
     }
 
     /* Add to Browser-Viewer if showing entire Feed */
@@ -1520,7 +1584,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
 
     /* Update in Table-Viewer */
     if (fFeedView.isTableViewerVisible())
-      fTableViewer.update(visibleNews.toArray(), null);
+      fTableViewer.updateElements(visibleNews.toArray(), null);
 
     /* Update in Browser-Viewer */
     if (fFeedView.isBrowserViewerVisible() && contains(fBrowserViewer.getInput(), visibleNews)) {

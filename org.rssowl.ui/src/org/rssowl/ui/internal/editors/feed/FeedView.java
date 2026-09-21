@@ -55,7 +55,8 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
@@ -401,28 +402,23 @@ public class FeedView extends EditorPart implements IReusableEditor {
 
     /* Save from Table */
     if (isTableViewerVisible()) {
-      Tree tree = fNewsTableControl.getViewer().getTree();
-      TreeItem[] items = tree.getItems();
-      if (items.length > 0) {
+      /*
+       * Ask the content provider rather than the widget. This used to walk the
+       * rows and read what each one showed, which silently stopped working when
+       * the list became virtual: a virtual widget only fills in the rows on
+       * screen, so what got saved was the couple of dozen news the reader
+       * happened to be looking at rather than the feed.
+       */
+      int count = fContentProvider.getVisibleElementCount();
+      if (count > 0) {
         List<INews> newsToSave = new ArrayList<>();
 
-        /* Ungrouped */
-        if (items[0].getItemCount() == 0) {
-          for (TreeItem item : items) {
-            if (item.getData() instanceof INews)
-              newsToSave.add((INews) item.getData());
-          }
-        }
+        for (int i = 0; i < count; i++) {
+          Object element = fContentProvider.getVisibleElement(i);
 
-        /* Grouped */
-        else {
-          for (TreeItem parentItem : items) {
-            TreeItem[] childItems = parentItem.getItems();
-            for (TreeItem item : childItems) {
-              if (item.getData() instanceof INews)
-                newsToSave.add((INews) item.getData());
-            }
-          }
+          /* Group headers are rows of the list too, and are not news */
+          if (element instanceof INews)
+            newsToSave.add((INews) element);
         }
 
         /* Render Elements */
@@ -1949,36 +1945,36 @@ public class FeedView extends EditorPart implements IReusableEditor {
   }
 
   private void expandNewsTableViewerGroups(boolean delayRedraw, ISelection oldSelection) {
-    TreeViewer viewer = fNewsTableControl.getViewer();
-    Tree tree = (Tree) viewer.getControl();
+    NewsGridViewer viewer = fNewsTableControl.getViewer();
+    Table table = viewer.getTable();
 
-    /* Remember TopItem if required */
-    TreeItem topItem = oldSelection.isEmpty() ? tree.getTopItem() : null;
+    /* Remember the row at the top if required */
+    int topIndex = oldSelection.isEmpty() ? table.getTopIndex() : -1;
 
-    /* Expand All & Restore Selection with redraw false */
+    /* Unfold All & Restore Selection with redraw false */
     if (delayRedraw)
-      tree.getParent().setRedraw(false);
+      table.getParent().setRedraw(false);
     try {
-      viewer.expandAll();
+      fContentProvider.expandAllGroups();
 
       /* Restore selection if required */
       if (!oldSelection.isEmpty() && viewer.getSelection().isEmpty())
         viewer.setSelection(oldSelection, true);
-      else if (topItem != null)
-        tree.setTopItem(topItem);
+      else if (topIndex > 0 && topIndex < table.getItemCount())
+        table.setTopIndex(topIndex);
     } finally {
       if (delayRedraw)
-        tree.getParent().setRedraw(true);
+        table.getParent().setRedraw(true);
     }
   }
 
   /* TODO This is a Workaround until Eclipse Bug #159586 is fixed */
   private void stableSetInputToNewsTable(Object input, ISelection oldSelection) {
-    TreeViewer viewer = fNewsTableControl.getViewer();
-    Tree tree = (Tree) viewer.getControl();
+    NewsGridViewer viewer = fNewsTableControl.getViewer();
+    Table table = viewer.getTable();
 
     /* Set Input & Restore Selection with redraw false */
-    tree.getParent().setRedraw(false);
+    table.getParent().setRedraw(false);
     try {
       fNewsTableControl.setPartInput(input);
 
@@ -1995,7 +1991,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
       /* Adjust Scroll Position */
       fNewsTableControl.adjustScrollPosition();
     } finally {
-      tree.getParent().setRedraw(true);
+      table.getParent().setRedraw(true);
     }
   }
 
@@ -2152,7 +2148,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
     fSashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
     /* Table-Viewer to display headlines */
-    NewsTableViewer tableViewer;
+    NewsGridViewer tableViewer;
     {
       fNewsTableControlContainer = new Composite(fSashForm, SWT.None);
       fNewsTableControlContainer.setLayout(LayoutUtils.createGridLayout(2, 0, 0, 0, 0, false));
@@ -2320,66 +2316,58 @@ public class FeedView extends EditorPart implements IReusableEditor {
       return true;
     }
 
-    Tree newsTree = fNewsTableControl.getViewer().getTree();
+    Table newsTable = fNewsTableControl.getViewer().getTable();
 
     /* Nothing to Navigate to */
-    if (newsTree.getItemCount() == 0 || newsTree.isDisposed())
+    if (newsTable.isDisposed() || fContentProvider.getVisibleElementCount() == 0)
       return false;
 
     /* Navigate */
-    return navigate(newsTree, respectSelection, next, unread);
+    return navigate(newsTable, respectSelection, next, unread);
   }
 
-  private boolean navigate(Tree tree, boolean respectSelection, boolean next, boolean unread) {
+  /*
+   * The list is flat, so moving to the next or previous news is a walk along
+   * it. It used to be a tree traversal, which also meant reading each row off
+   * the widget - and a virtual widget only fills in the rows on screen, so the
+   * walk has to ask the content provider instead.
+   */
+  private boolean navigate(Table table, boolean respectSelection, boolean next, boolean unread) {
+    int count = fContentProvider.getVisibleElementCount();
 
-    /* Selection is Present */
-    if (respectSelection && tree.getSelectionCount() > 0) {
-
-      /* Try navigating from Selection */
-      ITreeNode startingNode = new WidgetTreeNode(tree.getSelection()[0], fNewsTableControl.getViewer());
-      if (navigate(startingNode, next, unread))
-        return true;
-    }
-
-    /* No Selection is Present */
+    /*
+     * With nothing selected the search always runs forwards from the top,
+     * which is what the tree traversal did before.
+     */
+    boolean forwards = next;
+    int start;
+    if (respectSelection && table.getSelectionCount() > 0)
+      start = table.getSelectionIndex();
     else {
-      ITreeNode startingNode = new WidgetTreeNode(tree, fNewsTableControl.getViewer());
-      return navigate(startingNode, true, unread);
+      forwards = true;
+      start = -1;
     }
 
-    return false;
-  }
-
-  private boolean navigate(ITreeNode startingNode, boolean next, final boolean unread) {
-
-    /* Create Traverse-Helper */
-    TreeTraversal traverse = new TreeTraversal(startingNode) {
-      @Override
-      public boolean select(ITreeNode node) {
-        return isValidNavigation(node, unread);
+    int step = forwards ? 1 : -1;
+    for (int i = start + step; i >= 0 && i < count; i += step) {
+      Object element = fContentProvider.getVisibleElement(i);
+      if (isValidNavigation(element, unread)) {
+        fNewsTableControl.getViewer().setSelection(new StructuredSelection(element), true);
+        return true;
       }
-    };
-
-    /* Retrieve and select new Target Node */
-    ITreeNode targetNode = (next ? traverse.nextNode() : traverse.previousNode());
-    if (targetNode != null) {
-      ISelection selection = new StructuredSelection(targetNode.getData());
-      fNewsTableControl.getViewer().setSelection(selection, true);
-      return true;
     }
 
     return false;
   }
 
-  private boolean isValidNavigation(ITreeNode node, boolean unread) {
-    Object data = node.getData();
+  private boolean isValidNavigation(Object element, boolean unread) {
 
-    /* Require a News */
-    if (!(data instanceof INews))
+    /* Require a News: group headers are rows too, and are not a destination */
+    if (!(element instanceof INews))
       return false;
 
     /* Check if News is unread if set as flag */
-    INews news = (INews) data;
+    INews news = (INews) element;
     if (unread && !CoreUtils.isUnread(news.getState()))
       return false;
 

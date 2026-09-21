@@ -43,8 +43,11 @@ import org.rssowl.ui.internal.editors.feed.NewsGrouping;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Pins down what the news table shows and in which order.
@@ -79,7 +82,7 @@ public class NewsVisibleElementsTest {
     for (int i = 0; i < 500; i++)
       news.add(createNews("Tin " + i, State.NEW, new Date(1000L + i))); //$NON-NLS-1$
 
-    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), null);
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
 
     assertEquals(500, elements.length);
     for (Object element : elements)
@@ -96,7 +99,7 @@ public class NewsVisibleElementsTest {
     for (int i = 0; i < 2000; i++)
       news.add(createNews("Tin " + i, State.NEW, new Date(1000L + i))); //$NON-NLS-1$
 
-    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), null);
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
 
     assertEquals(2000, elements.length);
   }
@@ -111,7 +114,7 @@ public class NewsVisibleElementsTest {
     deleted.setState(State.DELETED);
     news.add(deleted);
 
-    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), null);
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
 
     assertEquals(1, elements.length);
     assertEquals("Con lai", ((INews) elements[0]).getTitle()); //$NON-NLS-1$
@@ -129,7 +132,7 @@ public class NewsVisibleElementsTest {
     ascending.setSortBy(NewsColumn.DATE);
     ascending.setAscending(true);
 
-    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), ascending);
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), ascending, noneCollapsed());
     assertEquals("Cu nhat", ((INews) elements[0]).getTitle()); //$NON-NLS-1$
     assertEquals("Moi nhat", ((INews) elements[2]).getTitle()); //$NON-NLS-1$
 
@@ -137,29 +140,107 @@ public class NewsVisibleElementsTest {
     descending.setSortBy(NewsColumn.DATE);
     descending.setAscending(false);
 
-    elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), descending);
+    elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.NO_GROUPING), descending, noneCollapsed());
     assertEquals("Moi nhat", ((INews) elements[0]).getTitle()); //$NON-NLS-1$
     assertEquals("Cu nhat", ((INews) elements[2]).getTitle()); //$NON-NLS-1$
   }
 
-  /* Grouped: the elements are groups, and they carry every news between them */
+  /*
+   * Grouped: the list is flat, a group header followed by the news it holds.
+   * Every news still appears exactly once.
+   */
   @Test
-  public void testGroupedReturnsGroupsHoldingEveryNews() {
+  public void testGroupedIsFlatAndKeepsEveryNews() {
     List<INews> news = new ArrayList<>();
     for (int i = 0; i < 40; i++)
       news.add(createNews("Tin " + i, (i % 2 == 0) ? State.NEW : State.READ, new Date(1000L + i))); //$NON-NLS-1$
 
-    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.GROUP_BY_STATE), null);
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping(NewsGrouping.Type.GROUP_BY_STATE), null, noneCollapsed());
 
-    assertTrue("Phai co it nhat mot nhom", elements.length > 0); //$NON-NLS-1$
-
-    int inGroups = 0;
+    int groups = 0, items = 0;
     for (Object element : elements) {
-      assertTrue(element instanceof EntityGroup);
-      inGroups += ((EntityGroup) element).size();
+      if (element instanceof EntityGroup)
+        groups++;
+      else {
+        assertTrue(element instanceof INews);
+        items++;
+      }
     }
 
-    assertEquals(40, inGroups);
+    assertTrue("Phai co it nhat mot nhom", groups > 0); //$NON-NLS-1$
+    assertEquals(40, items);
+    assertEquals(groups + items, elements.length);
+
+    /* A header always comes before the news it holds */
+    assertTrue(elements[0] instanceof EntityGroup);
+  }
+
+  /* A collapsed group keeps its header and drops the news under it */
+  @Test
+  public void testCollapsedGroupHidesItsNews() {
+    List<INews> news = new ArrayList<>();
+    for (int i = 0; i < 40; i++)
+      news.add(createNews("Tin " + i, (i % 2 == 0) ? State.NEW : State.READ, new Date(1000L + i))); //$NON-NLS-1$
+
+    NewsGrouping grouping = grouping(NewsGrouping.Type.GROUP_BY_STATE);
+    Object[] expanded = NewsContentProvider.computeVisibleElements(news, filter(), grouping, null, noneCollapsed());
+
+    /* Collapse the first group */
+    EntityGroup first = (EntityGroup) expanded[0];
+    Set<Long> collapsed = new HashSet<>();
+    collapsed.add(Long.valueOf(first.getId()));
+
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping, null, collapsed);
+
+    assertEquals(expanded.length - first.size(), elements.length);
+
+    /* The header itself stays put, at the front */
+    assertTrue(elements[0] instanceof EntityGroup);
+    assertEquals(first.getId(), ((EntityGroup) elements[0]).getId());
+
+    /* None of the news it held are left */
+    int groupsSeen = 0;
+    for (Object element : elements) {
+      if (element instanceof EntityGroup)
+        groupsSeen++;
+    }
+    assertEquals(countGroups(expanded), groupsSeen);
+  }
+
+  /* Collapsing every group leaves nothing but headers */
+  @Test
+  public void testCollapsingEveryGroupLeavesOnlyHeaders() {
+    List<INews> news = new ArrayList<>();
+    for (int i = 0; i < 40; i++)
+      news.add(createNews("Tin " + i, (i % 2 == 0) ? State.NEW : State.READ, new Date(1000L + i))); //$NON-NLS-1$
+
+    NewsGrouping grouping = grouping(NewsGrouping.Type.GROUP_BY_STATE);
+    Object[] expanded = NewsContentProvider.computeVisibleElements(news, filter(), grouping, null, noneCollapsed());
+
+    Set<Long> collapsed = new HashSet<>();
+    for (Object element : expanded) {
+      if (element instanceof EntityGroup)
+        collapsed.add(Long.valueOf(((EntityGroup) element).getId()));
+    }
+
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter(), grouping, null, collapsed);
+
+    assertEquals(countGroups(expanded), elements.length);
+    for (Object element : elements)
+      assertTrue(element instanceof EntityGroup);
+  }
+
+  private int countGroups(Object[] elements) {
+    int groups = 0;
+    for (Object element : elements) {
+      if (element instanceof EntityGroup)
+        groups++;
+    }
+    return groups;
+  }
+
+  private Set<Long> noneCollapsed() {
+    return Collections.emptySet();
   }
 
   private NewsFilter filter() {
