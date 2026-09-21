@@ -1,10 +1,10 @@
 <#
-  Deploy RSSOwl 2.1 thanh mot Eclipse RCP runtime doc lap roi chay.
+  Deploy RSSOwl 2.2 thanh mot Eclipse RCP runtime doc lap roi chay.
 
-  Cach hoat dong: org.rssowl.ui/config.ini goc dung org.eclipse.update.configurator
-  (co che doi Eclipse 3.x, tu quet thu muc plugins/) chu khong dung p2. Nho vay chi
-  can dat bundle vao plugins/ la runtime tu nhan ra, khong phai dung ke hoach p2 nao.
-  Script nay tai lap dung mo hinh do.
+  Cach hoat dong: chep bundle vao plugins/ roi ghi ten chung vao bundles.info,
+  danh sach ma org.eclipse.equinox.simpleconfigurator doc luc khoi dong. Day la
+  co che cua Eclipse 4.x; xem phan 4 ben duoi de biet vi sao khong dung
+  org.eclipse.update.configurator cua dong 3.x nua.
 
   Runtime la ban sao rieng cua Eclipse SDK (-RuntimeHome), khong dung vao ban SDK
   dung lam target platform, de IDE va app chay doc lap nhau.
@@ -29,6 +29,10 @@ $build = Join-Path $root "build-out\main"
 
 function Fail($msg) { Write-Host "LOI: $msg" -ForegroundColor Red; exit 1 }
 
+# Phan dat bundle dung chung voi dist.ps1, de ban phat hanh giong het ban da
+# kiem thu o day.
+. (Join-Path $PSScriptRoot "build-common.ps1")
+
 # Ghim JDK theo runtime, khong tin JAVA_HOME (trinh cai JDK ghi de bien nay).
 if (-not $JavaHome) {
   $JavaHome = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
@@ -47,81 +51,12 @@ if (-not $SkipBuild) {
 }
 if (-not (Test-Path $build)) { Fail "Khong thay $build. Chay .\build.ps1 truoc." }
 
-# robocopy tra ve 0-7 khi thanh cong; chi tu 8 tro len moi la loi.
-function Copy-Tree($from, $to, [string[]] $excludeFiles) {
-  if (-not (Test-Path $from)) { return }
-  $a = @($from, $to, "/E", "/NFL", "/NDL", "/NJH", "/NJS", "/NP")
-  if ($excludeFiles) { $a += "/XF"; $a += $excludeFiles }
-  robocopy @a | Out-Null
-  if ($LASTEXITCODE -ge 8) { Fail "robocopy that bai ($from -> $to), ma $LASTEXITCODE" }
-}
-
 $plugins = Join-Path $RuntimeHome "plugins"
 
-# --- 2. hai bundle co source -------------------------------------------------
-# Thu muc dat ten <symbolic-name>_<version> dung chuan OSGi. Chuoi "qualifier"
-# chi duoc thay the luc build chinh thuc, de nguyen o runtime la hop le.
-foreach ($b in @(
-  @{ Proj = "org.rssowl.core"; Pkg = "org\rssowl\core";
-     Files = @("plugin.xml", "plugin.properties", "about.html"); Dirs = @("schema") },
-  @{ Proj = "org.rssowl.ui";   Pkg = "org\rssowl\ui";
-     Files = @("plugin.xml", "plugin.properties", "about.html", "about.ini",
-               "preferences.ini", "splash.bmp", "default_feeds.xml"); Dirs = @("icons", "schema") }
-)) {
-  $src  = Join-Path $root $b.Proj
-  $dest = Join-Path $plugins "$($b.Proj)_2.1.0.qualifier"
-  if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+# --- 2. dat sau bundle cua RSSOwl ---------------------------------------------
+Copy-RssOwlBundles $root $build $plugins
 
-  Copy-Tree (Join-Path $src "META-INF") (Join-Path $dest "META-INF")
-  foreach ($d in $b.Dirs)  { Copy-Tree (Join-Path $src $d) (Join-Path $dest $d) }
-  foreach ($f in $b.Files) {
-    $p = Join-Path $src $f
-    if (Test-Path $p) { Copy-Item $p $dest -Force }
-  }
-
-  # Class da bien dich.
-  Copy-Tree (Join-Path $build $b.Pkg) (Join-Path $dest $b.Pkg)
-
-  # messages.properties va entities.dtd nam lan trong src, khong co chung thi
-  # NLS nem MissingResourceException ngay luc khoi dong.
-  Copy-Tree (Join-Path $src "src") $dest @("*.java")
-
-  $n = @(Get-ChildItem $dest -Recurse -Filter *.class).Count
-  $r = @(Get-ChildItem $dest -Recurse -Include *.properties, *.dtd).Count
-  Write-Host ("  {0,-20} {1} class, {2} resource" -f $b.Proj, $n, $r)
-}
-
-# --- 3. bon bundle thu vien --------------------------------------------------
-# Chep theo dung bin.includes cua tung bundle: chi cay .class va META-INF.
-# Cac file .jar khong nam tren Bundle-ClassPath (chung chi de tham chieu source),
-# nen bo qua de runtime nhe hon.
-foreach ($lib in @(
-  # The three legacy bundles ship unpacked class trees; their .jar files are
-  # only there for source reference and are not on the Bundle-ClassPath.
-  @{ Proj = "org.rssowl.lib.db4o";       Skip = @("*.jar", "src.zip") },
-  @{ Proj = "org.rssowl.lib.httpclient"; Skip = @("*.jar", "src.zip") },
-  @{ Proj = "org.rssowl.lib.jdom";       Skip = @("*.jar", "src.zip") },
-
-  # The query parser wraps a jar that IS on its Bundle-ClassPath, so keep it.
-  @{ Proj = "org.rssowl.lib.lucene.queryparser"; Skip = @() }
-)) {
-  $src = Join-Path $root $lib.Proj
-
-  # Read the version off the bundle rather than assuming they all share one.
-  $manifest = Get-Content (Join-Path $src "META-INF\MANIFEST.MF")
-  $version = ($manifest | Where-Object { $_ -match '^Bundle-Version:\s*(.+)$' } |
-              ForEach-Object { $Matches[1].Trim() } | Select-Object -First 1)
-
-  $dest = Join-Path $plugins "$($lib.Proj)_$version"
-  if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-  Copy-Tree $src $dest ($lib.Skip + @("build.properties", ".classpath", ".project"))
-
-  $classes = @(Get-ChildItem $dest -Recurse -Filter *.class).Count
-  $jars = @(Get-ChildItem $dest -Filter *.jar).Count
-  Write-Host ("  {0,-34} {1} class{2}" -f $lib.Proj, $classes, $(if ($jars) { ", $jars jar" } else { "" }))
-}
-
-# --- 4. config.ini -----------------------------------------------------------
+# --- 3. config.ini -----------------------------------------------------------
 $osgi = (Get-ChildItem $plugins -Filter "org.eclipse.osgi_*.jar" |
          Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1).Name
 if (-not $osgi) { Fail "Khong thay bundle org.eclipse.osgi trong $plugins" }
@@ -136,20 +71,8 @@ New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
 $bundlesInfo = Join-Path $cfgDir "org.eclipse.equinox.simpleconfigurator\bundles.info"
 if (-not (Test-Path $bundlesInfo)) { Fail "Khong thay bundles.info. Runtime nay khong phai ban p2?" }
 
-$lines = @(Get-Content $bundlesInfo | Where-Object { $_ -notmatch '^org\.rssowl\.' })
-foreach ($dir in Get-ChildItem $plugins -Directory -Filter "org.rssowl.*") {
-
-  # Folder name is <symbolic-name>_<version>; split on the last underscore
-  # because the symbolic names contain underscores of their own.
-  $split = $dir.Name.LastIndexOf('_')
-  $id = $dir.Name.Substring(0, $split)
-  $version = $dir.Name.Substring($split + 1)
-
-  # Dinh dang: id,version,duong-dan,start-level,da-start.
-  # Bundle dang thu muc phai co dau / o cuoi duong dan.
-  $lines += "$id,$version,plugins/$($dir.Name)/,4,false"
-}
-$lines -join "`r`n" | Set-Content $bundlesInfo -Encoding ASCII
+# Giu nguyen cac dong cua ban Eclipse, chi thay phan org.rssowl.*
+Write-BundlesInfo $plugins $bundlesInfo $bundlesInfo (Get-StartLevels $bundlesInfo)
 
 $simple = (Get-ChildItem $plugins -Filter "org.eclipse.equinox.simpleconfigurator_*.jar" |
            Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1).Name
@@ -190,7 +113,7 @@ if (-not $simple) { Fail "Khong thay bundle simpleconfigurator trong $plugins" }
 Write-Host "Deploy xong vao $RuntimeHome" -ForegroundColor Green
 if ($DeployOnly) { exit 0 }
 
-# --- 5. chay -----------------------------------------------------------------
+# --- 4. chay -----------------------------------------------------------------
 New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 Write-Host "Dang chay RSSOwl (data: $DataDir)..."
 Start-Process -FilePath (Join-Path $RuntimeHome "eclipse.exe") `

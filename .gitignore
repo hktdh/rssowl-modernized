@@ -3,3 +3,6 @@ build-out/
 
 # thu muc output cua Eclipse PDE
 bin/
+
+# thu muc san pham cua dist.ps1 (mac dinh .\dist)
+dist/
