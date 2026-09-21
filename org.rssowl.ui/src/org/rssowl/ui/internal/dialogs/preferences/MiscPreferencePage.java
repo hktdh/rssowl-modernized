@@ -70,7 +70,6 @@ public class MiscPreferencePage extends PreferencePage implements IWorkbenchPref
   private Button fReopenFeedsOnStartupCheck;
   private Button fAlwaysReuseFeedView;
   private Button fOpenOnSingleClick;
-  private Button fUpdateOnStartup;
   private Button fSingleClickRestore;
   private Button fDoubleClickRestore;
 
@@ -200,11 +199,6 @@ public class MiscPreferencePage extends PreferencePage implements IWorkbenchPref
     fOpenOnSingleClick.setText(Messages.MiscPreferencePage_SINGLE_CLICK);
     fOpenOnSingleClick.setSelection(fEclipseScope.getBoolean(DefaultPreferences.ECLIPSE_SINGLE_CLICK_OPEN));
 
-    if (!Application.IS_ECLIPSE) {
-      fUpdateOnStartup = new Button(miscGroup, SWT.CHECK);
-      fUpdateOnStartup.setText(Messages.MiscPreferencePage_UPDATE_ON_STARTUP);
-      fUpdateOnStartup.setSelection(fGlobalScope.getBoolean(DefaultPreferences.UPDATE_ON_STARTUP));
-    }
   }
 
   private void createTrayOptions(Composite container) {
@@ -297,9 +291,6 @@ public class MiscPreferencePage extends PreferencePage implements IWorkbenchPref
   public boolean performOk() {
     boolean layoutChanged = false;
 
-    if (!Application.IS_ECLIPSE)
-      fGlobalScope.putBoolean(DefaultPreferences.UPDATE_ON_STARTUP, fUpdateOnStartup.getSelection());
-
     fEclipseScope.putBoolean(DefaultPreferences.ECLIPSE_SINGLE_CLICK_OPEN, fOpenOnSingleClick.getSelection());
     if (!Application.IS_ECLIPSE)
       OpenStrategy.setOpenMethod(fOpenOnSingleClick.getSelection() ? OpenStrategy.SINGLE_CLICK | OpenStrategy.ARROW_KEYS_OPEN : OpenStrategy.DOUBLE_CLICK);
@@ -344,9 +335,6 @@ public class MiscPreferencePage extends PreferencePage implements IWorkbenchPref
     super.performDefaults();
 
     IPreferenceScope defaultScope = Owl.getPreferenceService().getDefaultScope();
-
-    if (!Application.IS_ECLIPSE)
-      fUpdateOnStartup.setSelection(defaultScope.getBoolean(DefaultPreferences.UPDATE_ON_STARTUP));
 
     fOpenOnSingleClick.setSelection(defaultScope.getBoolean(DefaultPreferences.ECLIPSE_SINGLE_CLICK_OPEN));
     if (!Application.IS_ECLIPSE)

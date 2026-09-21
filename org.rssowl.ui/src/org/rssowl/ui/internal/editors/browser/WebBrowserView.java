@@ -73,6 +73,7 @@ import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.part.EditorPart;
+import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.rssowl.core.Owl;
 import org.rssowl.core.internal.persist.pref.DefaultPreferences;
 import org.rssowl.core.persist.INewsMark;
@@ -131,6 +132,7 @@ public class WebBrowserView extends EditorPart implements IReusableEditor {
   private Action fPasteAction;
   private Action fPrintAction;
   private boolean fCreated;
+  private boolean fIsBusy;
   private boolean fLocationSelectAllOnce = true;
   private IPartListener2 fPartListener;
   private Label fJSInfoSeparator;
@@ -772,10 +774,23 @@ public class WebBrowserView extends EditorPart implements IReusableEditor {
     });
   }
 
-  @SuppressWarnings("restriction")
   private void setBusy(boolean busy) {
-    if (fCreated && getSite() instanceof org.eclipse.ui.internal.PartSite)
-      ((org.eclipse.ui.internal.PartSite) getSite()).getPane().setBusy(busy);
+    /* PartSite.getPane().setBusy() was internal API and is gone in Eclipse 4.x.
+     * IWorkbenchSiteProgressService keeps a counter instead of a flag, and this
+     * method is called unbalanced from several places, so only act on an actual
+     * state change to keep the counter from drifting. */
+    if (!fCreated || busy == fIsBusy)
+      return;
+
+    IWorkbenchSiteProgressService service = getSite().getAdapter(IWorkbenchSiteProgressService.class);
+    if (service == null)
+      return;
+
+    fIsBusy = busy;
+    if (busy)
+      service.incrementBusy();
+    else
+      service.decrementBusy();
   }
 
   /*

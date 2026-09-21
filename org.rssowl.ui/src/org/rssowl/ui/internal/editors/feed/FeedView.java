@@ -66,6 +66,7 @@ import org.eclipse.ui.IReusableEditor;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.part.EditorPart;
+import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.rssowl.core.Owl;
 import org.rssowl.core.connection.ConnectionException;
 import org.rssowl.core.connection.IAbortable;
@@ -267,6 +268,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
   private Label fVerticalBrowserSep;
   private final INewsDAO fNewsDao = Owl.getPersistenceService().getDAOService().getNewsDAO();
   private boolean fIsDisposed;
+  private boolean fIsBusy;
   private AtomicLong fLastCleanUpRun = new AtomicLong();
 
   /*
@@ -707,10 +709,22 @@ public class FeedView extends EditorPart implements IReusableEditor {
 
   private void showBusyLoading(final boolean busy) {
     JobRunner.runInUIThread(fParent, new Runnable() {
-      @SuppressWarnings("restriction")
       public void run() {
-        if (!fIsDisposed && getSite() instanceof org.eclipse.ui.internal.PartSite)
-          ((org.eclipse.ui.internal.PartSite) getSite()).getPane().setBusy(busy);
+        /* PartSite.getPane().setBusy() was internal API and is gone in Eclipse 4.x.
+         * IWorkbenchSiteProgressService keeps a counter instead of a flag, so only
+         * act on an actual state change, otherwise the counter drifts. */
+        if (fIsDisposed || busy == fIsBusy)
+          return;
+
+        IWorkbenchSiteProgressService service = getSite().getAdapter(IWorkbenchSiteProgressService.class);
+        if (service == null)
+          return;
+
+        fIsBusy = busy;
+        if (busy)
+          service.incrementBusy();
+        else
+          service.decrementBusy();
       }
     });
   }

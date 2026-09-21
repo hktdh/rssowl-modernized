@@ -5,10 +5,11 @@
   va ecj ho tro muc nay trong khi javac doi moi da bo. ecj cung la trinh
   bien dich ma PDE dung, nen ket qua khop voi build trong IDE.
 
-  Vi sao target platform phai la Eclipse 3.x (dang dung 3.8.2, ban 3.x cuoi):
-  org.rssowl.ui dung API Update Manager cu, ke ca class internal nhu
-  InstallWizard2 va ConfigurationManagerWindow. Bundle org.eclipse.update.*
-  da bi go khoi cac dong Eclipse 4.x, nen khong the nang target platform.
+  NHANH NAY (migrate-eclipse-4x) build tren Eclipse 4.41 + JDK 21.
+  Subsystem Update Manager da duoc go bo, nen khong con rang buoc vao
+  org.eclipse.update.* (cac bundle do da bien mat khoi Eclipse 4.x).
+  Code o nhanh nay KHONG con bien dich duoc tren 3.8.2: no dung
+  getAdapter(Class<T>) dang generic, chi co tu Eclipse 4.x.
 
   Vi sao loai org.apache.lucene* khoi classpath: Eclipse ship san Lucene 2.9.1
   cho Help search, con RSSOwl can 2.3.2 cua rieng no (org.rssowl.lib.lucene).
@@ -22,10 +23,10 @@
 #>
 [CmdletBinding()]
 param(
-  [string] $EclipseHome = "D:\CDS\tools\eclipse",
+  [string] $EclipseHome = "D:\CDS\tools\eclipse441\eclipse",
   [string] $JavaHome    = $env:JAVA_HOME,
   [string] $OutDir      = (Join-Path $PSScriptRoot "build-out"),
-  [string] $Compliance  = "1.5",
+  [string] $Compliance  = "21",
   [switch] $IncludeTests,
   [switch] $Clean
 )
@@ -36,13 +37,11 @@ $root = $PSScriptRoot
 function Fail($msg) { Write-Host "LOI: $msg" -ForegroundColor Red; exit 1 }
 
 # --- kiem tra moi truong -----------------------------------------------------
-# Phai chay tren JDK 8, KHONG lay JAVA_HOME. ecj cua Eclipse 3.8 co truoc Java 9
-# nen khong doc duoc module system (jrt://); chay no bang JDK 9+ thi no khong tim
-# thay bootclasspath va bao hang nghin loi kieu "java.lang.Object cannot be resolved".
-# Cai them mot JDK moi thuong ghi de JAVA_HOME cap May, nen JAVA_HOME khong dang tin.
+# Ghim JDK theo target platform thay vi tin JAVA_HOME: moi lan cai them mot JDK
+# la trinh cai ghi de JAVA_HOME cap May, nen no khong dang tin.
 if (-not $JavaHome) {
   $JavaHome = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
-              Where-Object { $_.Name -like "jdk-8*" -and (Test-Path (Join-Path $_.FullName "bin\java.exe")) } |
+              Where-Object { $_.Name -like "jdk-21*" -and (Test-Path (Join-Path $_.FullName "bin\java.exe")) } |
               Select-Object -First 1 -ExpandProperty FullName
 }
 if (-not $JavaHome) { $JavaHome = [Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine") }
@@ -52,9 +51,15 @@ $java = Join-Path $JavaHome "bin\java.exe"
 if (-not (Test-Path $java)) { Fail "Khong thay java.exe tai $java" }
 if (-not (Test-Path (Join-Path $EclipseHome "plugins"))) { Fail "Khong thay target platform tai $EclipseHome" }
 
-$ecj = Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter "org.eclipse.jdt.core_*.jar" |
+# Tu Eclipse 4.x, ecj tach khoi org.eclipse.jdt.core sang bundle rieng.
+# Tim ban tach truoc, roi moi lui ve ten cu cua dong 3.x.
+$ecj = Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter "org.eclipse.jdt.core.compiler.batch_*.jar" |
        Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1
-if (-not $ecj) { Fail "Khong thay org.eclipse.jdt.core_*.jar trong $EclipseHome\plugins" }
+if (-not $ecj) {
+  $ecj = Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter "org.eclipse.jdt.core_*.jar" |
+         Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1
+}
+if (-not $ecj) { Fail "Khong thay bundle ecj trong $EclipseHome\plugins" }
 
 if ($Clean -and (Test-Path $OutDir)) { Remove-Item $OutDir -Recurse -Force }
 

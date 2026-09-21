@@ -152,7 +152,6 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
     configurer.setShowPerspectiveBar(false);
     configurer.setShowStatusLine(true);
     configurer.setShowMenuBar(true);
-    configurer.setShowFastViewBars(false);
     configurer.setShowProgressIndicator(true);
     configurer.setTitle("RSSOwl"); //$NON-NLS-1$
 

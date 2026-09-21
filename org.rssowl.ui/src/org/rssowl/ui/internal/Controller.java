@@ -99,7 +99,6 @@ import org.rssowl.core.util.TaskAdapter;
 import org.rssowl.core.util.Triple;
 import org.rssowl.core.util.URIUtils;
 import org.rssowl.ui.internal.OwlUI.Layout;
-import org.rssowl.ui.internal.actions.FindUpdatesAction;
 import org.rssowl.ui.internal.actions.OpenInBrowserAction;
 import org.rssowl.ui.internal.actions.SendLinkAction;
 import org.rssowl.ui.internal.dialogs.FatalOutOfMemoryErrorDialog;
@@ -1493,18 +1492,6 @@ public class Controller {
       });
     }
 
-    /* Check for Updates if Set */
-    else if (!Application.IS_ECLIPSE && !fDisableUpdate) {
-      JobRunner.runInUIThread(5000, OwlUI.getActiveShell(), new Runnable() {
-        public void run() {
-          if (!fShuttingDown && Owl.getPreferenceService().getGlobalScope().getBoolean(DefaultPreferences.UPDATE_ON_STARTUP)) {
-            FindUpdatesAction action = new FindUpdatesAction(false);
-            action.init(OwlUI.getWindow());
-            action.run();
-          }
-        }
-      });
-    }
 
     /* Inform the User if the ApplicationServer is not running */
     ApplicationServer server = ApplicationServer.getDefault();

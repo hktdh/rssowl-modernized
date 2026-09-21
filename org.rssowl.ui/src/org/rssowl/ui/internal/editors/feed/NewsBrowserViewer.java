@@ -541,9 +541,10 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
 
         manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 
-        /* Fill Contributions if Context Menu not registered */
+        /* Fill Contributions if Context Menu not registered. The fourth argument
+         * was added in Eclipse 4.x: it collects the contributors already applied. */
         if (fSite == null)
-          org.eclipse.ui.internal.ObjectActionContributorManager.getManager().contributeObjectActions(null, manager, NewsBrowserViewer.this);
+          org.eclipse.ui.internal.ObjectActionContributorManager.getManager().contributeObjectActions(null, manager, NewsBrowserViewer.this, new HashSet<org.eclipse.ui.internal.IObjectActionContributor>());
       }
     });
 
