@@ -1,5 +1,5 @@
 <#
-  Bien dich RSSOwl 2.2 bang ecj cua Eclipse, khong can mo IDE.
+  Bien dich RSSOwl 2.3 bang ecj cua Eclipse, khong can mo IDE.
 
   Vi sao dung ecj chu khong dung javac: ecj la trinh bien dich ma PDE dung,
   nen ket qua khop voi build trong IDE - cung bo cau hinh loi/canh bao, cung
@@ -111,7 +111,7 @@ function Invoke-Ecj([string] $label, [string[]] $sources, [string] $dest, [strin
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-Write-Host "RSSOwl 2.2 | JDK $JavaHome | target $EclipseHome | compliance $Compliance"
+Write-Host "RSSOwl 2.3 | JDK $JavaHome | target $EclipseHome | compliance $Compliance"
 
 $main = Join-Path $OutDir "main"
 $ok = Invoke-Ecj "core+ui" @((Join-Path $root "org.rssowl.core\src"), (Join-Path $root "org.rssowl.ui\src")) $main @()

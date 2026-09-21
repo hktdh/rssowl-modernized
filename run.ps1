@@ -1,5 +1,5 @@
 <#
-  Deploy RSSOwl 2.2 thanh mot Eclipse RCP runtime doc lap roi chay.
+  Deploy RSSOwl 2.3 thanh mot Eclipse RCP runtime doc lap roi chay.
 
   Cach hoat dong: chep bundle vao plugins/ roi ghi ten chung vao bundles.info,
   danh sach ma org.eclipse.equinox.simpleconfigurator doc luc khoi dong. Day la
