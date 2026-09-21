@@ -77,6 +77,13 @@ public class BrowserPreferencePage extends PreferencePage implements IWorkbenchP
   private Button fEnablePopupBlockerCheck;
   private Button fDisableJavaScriptCheck;
   private Button fDisableJavaScriptExceptionsButton;
+
+  /*
+   * Decided once while the controls are built and kept. The backend can become
+   * known between opening this page and pressing OK, and performOk must not
+   * reach for controls that were never created.
+   */
+  private boolean fShowIESettings;
   private IPreferenceScope fEclipseScope;
   private LocalResourceManager fResources = new LocalResourceManager(JFaceResources.getResources());
 
@@ -239,7 +246,8 @@ public class BrowserPreferencePage extends PreferencePage implements IWorkbenchP
     }
 
     /* Block Popups on Windows / Disable JavaScript in Browser */
-    if (Application.IS_WINDOWS && !CBrowser.isMozillaRunningOnWindows()) {
+    fShowIESettings = showInternetExplorerSettings();
+    if (fShowIESettings) {
       Label label = new Label(browserGroup, SWT.NONE);
       label.setText(Messages.BrowserPreferencePage_CONTENT);
       label.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT));
@@ -373,7 +381,7 @@ public class BrowserPreferencePage extends PreferencePage implements IWorkbenchP
     fGlobalScope.putBoolean(DefaultPreferences.REOPEN_BROWSER_TABS, fReOpenBrowserTabs.getSelection());
     fGlobalScope.putBoolean(DefaultPreferences.ALWAYS_REUSE_BROWSER, fAlwaysReuseBrowser.getSelection());
     fGlobalScope.putBoolean(DefaultPreferences.OPEN_BROWSER_IN_BACKGROUND, fLoadBrowserTabInBackground.getSelection());
-    if (Application.IS_WINDOWS && !CBrowser.isMozillaRunningOnWindows()) {
+    if (fShowIESettings) {
       fGlobalScope.putBoolean(DefaultPreferences.ENABLE_IE_POPUP_BLOCKER, fEnablePopupBlockerCheck.getSelection());
       fGlobalScope.putBoolean(DefaultPreferences.DISABLE_JAVASCRIPT, fDisableJavaScriptCheck.getSelection());
       fDisableJavaScriptExceptionsButton.setEnabled(fDisableJavaScriptCheck.getSelection());
@@ -414,7 +422,7 @@ public class BrowserPreferencePage extends PreferencePage implements IWorkbenchP
     fReOpenBrowserTabs.setSelection(defaultScope.getBoolean(DefaultPreferences.REOPEN_BROWSER_TABS));
     fAlwaysReuseBrowser.setSelection(defaultScope.getBoolean(DefaultPreferences.ALWAYS_REUSE_BROWSER));
     fLoadBrowserTabInBackground.setSelection(defaultScope.getBoolean(DefaultPreferences.OPEN_BROWSER_IN_BACKGROUND));
-    if (Application.IS_WINDOWS && !CBrowser.isMozillaRunningOnWindows()) {
+    if (fShowIESettings) {
       fEnablePopupBlockerCheck.setSelection(defaultScope.getBoolean(DefaultPreferences.ENABLE_IE_POPUP_BLOCKER));
       fDisableJavaScriptCheck.setSelection(defaultScope.getBoolean(DefaultPreferences.DISABLE_JAVASCRIPT));
       fDisableJavaScriptExceptionsButton.setEnabled(fDisableJavaScriptCheck.getSelection());
@@ -454,5 +462,29 @@ public class BrowserPreferencePage extends PreferencePage implements IWorkbenchP
   public void applyData(Object data) {
     if (Boolean.TRUE.equals(data) && fDisableJavaScriptExceptionsButton != null && !fDisableJavaScriptExceptionsButton.isDisposed())
       fDisableJavaScriptExceptionsButton.setFocus();
+  }
+
+  /**
+   * Whether to offer the settings that only Internet Explorer honours.
+   *
+   * Blocking popups goes through CoInternetSetFeatureEnabled and disabling
+   * JavaScript through a patched SWT method, and both are no-ops unless the
+   * embedded browser really is Internet Explorer. SWT resolves an embedded
+   * browser to Edge wherever the WebView2 runtime is present, so showing these
+   * two checkboxes there gives the user controls that quietly do nothing.
+   *
+   * @return <code>true</code> if the settings should be shown.
+   */
+  private static boolean showInternetExplorerSettings() {
+    if (!Application.IS_WINDOWS)
+      return false;
+
+    /*
+     * Null means no browser has been created yet, so the backend is not known.
+     * Show the settings in that case rather than hiding something the user may
+     * actually be able to use.
+     */
+    Boolean isIE = CBrowser.isIEBackend();
+    return isIE == null || isIE.booleanValue();
   }
 }

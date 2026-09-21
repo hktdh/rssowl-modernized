@@ -118,6 +118,14 @@ public class CBrowser {
   /* Track if the Popup Blocker Feature was set */
   private static boolean fgPopupBlockerEnabled;
 
+  /*
+   * The backend SWT actually resolved, remembered from the first browser that
+   * was created. There is no way to ask SWT which backend it would pick
+   * without creating a browser, and creating a throwaway one costs a WebView2
+   * start-up, so callers that only want to know get told once one exists.
+   */
+  private static volatile String fgResolvedBrowserType;
+
   /* Windows IE Only Features (CoInternetSetFeatureEnabled) */
   private static final int FEATURE_WEBOC_POPUPMANAGEMENT = 5;
   private static final int FEATURE_SECURITYBAND = 9;
@@ -192,6 +200,7 @@ public class CBrowser {
      * getBrowserType(), see isIE().
      */
     Browser browser = new Browser(parent, style);
+    fgResolvedBrowserType = browser.getBrowserType();
 
     /* Add Focusless Scroll Hook on Windows */
     if (Application.IS_WINDOWS)
@@ -597,6 +606,22 @@ public class CBrowser {
      * always 0 there, so remembering the scroll position silently did nothing.
      */
     return browser != null && !browser.isDisposed() && "ie".equals(browser.getBrowserType()); //$NON-NLS-1$
+  }
+
+  /**
+   * Whether the embedded browser is known to run on Internet Explorer, without
+   * needing a browser instance to ask.
+   *
+   * @return {@link Boolean#TRUE} or {@link Boolean#FALSE} once any browser has
+   * been created, and <code>null</code> while no browser has been created yet
+   * and the backend is therefore still unknown.
+   */
+  public static Boolean isIEBackend() {
+    String type = fgResolvedBrowserType;
+    if (type == null)
+      return null;
+
+    return Boolean.valueOf("ie".equals(type)); //$NON-NLS-1$
   }
 
   /**
