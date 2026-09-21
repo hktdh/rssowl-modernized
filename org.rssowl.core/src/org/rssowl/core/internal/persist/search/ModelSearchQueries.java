@@ -25,21 +25,21 @@
 package org.rssowl.core.internal.persist.search;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.Token;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.DateTools.Resolution;
 
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.QueryParser.Operator;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.IndexSearcher.TooManyClauses;
-import org.apache.lucene.search.ConstantScoreRangeQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
@@ -314,7 +314,7 @@ public class ModelSearchQueries {
 
   private static BooleanClause createAllNewsFieldsClause(Analyzer analyzer, ISearchCondition condition, boolean matchAllConditions) throws IOException {
     IModelFactory factory = Owl.getModelFactory();
-    BooleanQuery allFieldsQuery = new BooleanQuery();
+    BooleanQuery.Builder allFieldsQuery = new BooleanQuery.Builder();
 
     /* Require all words to be contained or not contained */
     if (condition.getSpecifier() == SearchSpecifier.CONTAINS_ALL) {
@@ -338,11 +338,11 @@ public class ModelSearchQueries {
         BooleanClause tokenClause = createAllNewsFieldsClause(analyzer, tokenCondition, matchAllConditions);
 
         /* Ignore empty clauses (e.g. due to Stop Words) */
-        if (tokenClause.query() instanceof BooleanQuery && ((BooleanQuery) tokenClause.query()).getClauses().length == 0)
+        if (tokenClause.query() instanceof BooleanQuery && ((BooleanQuery) tokenClause.query()).clauses().isEmpty())
           continue;
 
-        tokenClause.setOccur(Occur.MUST);
-        allFieldsQuery.add(tokenClause);
+        /* BooleanClause is immutable now, so re-wrap instead of setting the occur */
+        allFieldsQuery.add(new BooleanClause(tokenClause.query(), Occur.MUST));
       }
     }
 
@@ -381,11 +381,12 @@ public class ModelSearchQueries {
       List<BooleanClause> clauses = new ArrayList<>();
       for (ISearchCondition allFieldCondition : allFieldsConditions) {
         BooleanClause clause = createBooleanClause(analyzer, allFieldCondition, matchAllConditions);
-        clause.setOccur(Occur.SHOULD);
+        /* BooleanClause is immutable now, so re-wrap instead of setting the occur */
+        clause = new BooleanClause(clause.query(), Occur.SHOULD);
         clauses.add(clause);
 
         /* Ignore empty clauses (e.g. due to Stop Words) */
-        if (clause.query() instanceof BooleanQuery && ((BooleanQuery) clause.query()).getClauses().length == 0)
+        if (clause.query() instanceof BooleanQuery && ((BooleanQuery) clause.query()).clauses().isEmpty())
           anyClauseIsEmpty = true;
       }
 
@@ -399,7 +400,7 @@ public class ModelSearchQueries {
 
     /* Determine Occur (MUST, SHOULD, MUST NOT) */
     Occur occur = getOccur(condition.getSpecifier(), matchAllConditions);
-    return new BooleanClause(allFieldsQuery, occur);
+    return new BooleanClause(allFieldsQuery.build(), occur);
   }
 
   /*
@@ -512,14 +513,14 @@ public class ModelSearchQueries {
         Term lowerBound = new Term(fieldname, MIN_DATE);
         Term upperBound = new Term(fieldname, value);
 
-        return new ConstantScoreRangeQuery(fieldname, lowerBound.text(), upperBound.text(), false, false);
+        return TermRangeQuery.newStringRange(fieldname, lowerBound.text(), upperBound.text(), false, false);
       }
 
       case IS_LESS_THAN: {
         Term lowerBound = new Term(fieldname, value);
         Term upperBound = new Term(fieldname, MAX_DATE);
 
-        return new ConstantScoreRangeQuery(fieldname, lowerBound.text(), upperBound.text(), false, false);
+        return TermRangeQuery.newStringRange(fieldname, lowerBound.text(), upperBound.text(), false, false);
       }
     }
 
@@ -528,7 +529,8 @@ public class ModelSearchQueries {
 
   /* This Clause needs to be generated dynamically */
   private static BooleanQuery createLocationClause(ISearchCondition condition) {
-    BooleanQuery bQuery = new BooleanQuery();
+    /* Collected first: a Builder does not let us check whether it is empty */
+    List<BooleanClause> clauses = new ArrayList<>();
     Long[][] value = (Long[][]) condition.getValue();
     if (value != null) {
 
@@ -537,7 +539,7 @@ public class ModelSearchQueries {
         if (value[0][i] != null) {
           IFolder folder = new FolderReference(value[0][i]).resolve();
           if (folder != null)
-            addFolderLocationClause(bQuery, folder);
+            addFolderLocationClause(clauses, folder);
         }
       }
 
@@ -546,7 +548,7 @@ public class ModelSearchQueries {
         if (value[1][i] != null) {
           IBookMark bookmark = new BookMarkReference(value[1][i]).resolve();
           if (bookmark != null)
-            addBookMarkLocationClause(bQuery, bookmark);
+            addBookMarkLocationClause(clauses, bookmark);
         }
       }
 
@@ -556,40 +558,44 @@ public class ModelSearchQueries {
           if (value[2][i] != null) {
             INewsBin newsbin = new NewsBinReference(value[2][i]).resolve();
             if (newsbin != null)
-              addNewsBinLocationClause(bQuery, newsbin);
+              addNewsBinLocationClause(clauses, newsbin);
           }
         }
       }
     }
 
     /* The folder could be empty, make sure to add at least 1 Clause */
-    if (bQuery.clauses().isEmpty())
-      bQuery.add(new TermQuery(new Term(String.valueOf(INews.FEED), "")), Occur.SHOULD); //$NON-NLS-1$
+    if (clauses.isEmpty())
+      clauses.add(new BooleanClause(new TermQuery(new Term(String.valueOf(INews.FEED), "")), Occur.SHOULD)); //$NON-NLS-1$
 
-    return bQuery;
+    BooleanQuery.Builder bQuery = new BooleanQuery.Builder();
+    for (BooleanClause clause : clauses)
+      bQuery.add(clause);
+
+    return bQuery.build();
   }
 
-  private static void addFolderLocationClause(BooleanQuery bQuery, IFolder folder) {
+  private static void addFolderLocationClause(List<BooleanClause> clauses, IFolder folder) {
     if (folder != null) {
       List<IFolder> folders = folder.getFolders();
       List<IMark> marks = folder.getMarks();
 
       /* Child Folders */
       for (IFolder childFolder : folders)
-        addFolderLocationClause(bQuery, childFolder);
+        addFolderLocationClause(clauses, childFolder);
 
       /* BookMarks and Newsbins */
       for (IMark mark : marks)
         if (mark instanceof IBookMark)
-          addBookMarkLocationClause(bQuery, (IBookMark) mark);
+          addBookMarkLocationClause(clauses, (IBookMark) mark);
         else if (mark instanceof INewsBin)
-          addNewsBinLocationClause(bQuery, (INewsBin) mark);
+          addNewsBinLocationClause(clauses, (INewsBin) mark);
     }
   }
 
-  private static void addBookMarkLocationClause(BooleanQuery bQuery, IBookMark bookmark) {
+  private static void addBookMarkLocationClause(List<BooleanClause> clauses, IBookMark bookmark) {
     if (bookmark != null) {
-      BooleanQuery bookMarkLocationQuery = new BooleanQuery();
+      BooleanQuery.Builder bookMarkLocationQuery = new BooleanQuery.Builder();
 
       /* Match on Feed */
       String feed = bookmark.getFeedLinkReference().getLinkAsText().toLowerCase();
@@ -598,13 +604,13 @@ public class ModelSearchQueries {
       /* But ignore News from Bins */
       bookMarkLocationQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), SortableLong.toString(0))), Occur.MUST);
 
-      bQuery.add(bookMarkLocationQuery, Occur.SHOULD);
+      clauses.add(new BooleanClause(bookMarkLocationQuery.build(), Occur.SHOULD));
     }
   }
 
-  private static void addNewsBinLocationClause(BooleanQuery bQuery, INewsBin newsbin) {
+  private static void addNewsBinLocationClause(List<BooleanClause> clauses, INewsBin newsbin) {
     if (newsbin != null)
-      bQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), SortableLong.toString(newsbin.getId()))), Occur.SHOULD);
+      clauses.add(new BooleanClause(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), SortableLong.toString(newsbin.getId()))), Occur.SHOULD));
   }
 
   private static Query createStringQuery(Analyzer analyzer, ISearchCondition condition) throws ParseException, IOException {
@@ -656,18 +662,25 @@ public class ModelSearchQueries {
 
       /* Fuzzy Query */
       case SIMILIAR_TO: {
-        BooleanQuery similarityQuery = new BooleanQuery();
+        BooleanQuery.Builder similarityQuery = new BooleanQuery.Builder();
 
+        /*
+         * Tokens are read through attributes now rather than returned from
+         * next(), and the stream has to be reset before and ended after use.
+         */
         LowercaseWhitespaceAnalyzer similarAnalyzer = new LowercaseWhitespaceAnalyzer();
-        TokenStream tokenStream = similarAnalyzer.tokenStream(String.valueOf(IEntity.ALL_FIELDS), new StringReader(value));
-        Token token = null;
-        while ((token = tokenStream.next()) != null) {
-          String termText = new String(token.termBuffer(), 0, token.termLength());
-          Term term = new Term(fieldname, termText);
-          similarityQuery.add(new BooleanClause(new FuzzyQuery(term), Occur.MUST));
+        try (TokenStream tokenStream = similarAnalyzer.tokenStream(String.valueOf(IEntity.ALL_FIELDS), new StringReader(value))) {
+          CharTermAttribute termAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+
+          tokenStream.reset();
+          while (tokenStream.incrementToken()) {
+            Term term = new Term(fieldname, termAttribute.toString());
+            similarityQuery.add(new BooleanClause(new FuzzyQuery(term), Occur.MUST));
+          }
+          tokenStream.end();
         }
 
-        return similarityQuery;
+        return similarityQuery.build();
       }
     }
 
@@ -701,14 +714,14 @@ public class ModelSearchQueries {
         Term lowerBound = new Term(fieldname, value);
         Term upperBound = new Term(fieldname, MAX_DATE);
 
-        return new ConstantScoreRangeQuery(fieldname, lowerBound.text(), upperBound.text(), false, false);
+        return TermRangeQuery.newStringRange(fieldname, lowerBound.text(), upperBound.text(), false, false);
       }
 
       case IS_BEFORE: {
         Term lowerBound = new Term(fieldname, MIN_DATE);
         Term upperBound = new Term(fieldname, value);
 
-        return new ConstantScoreRangeQuery(fieldname, lowerBound.text(), upperBound.text(), false, false);
+        return TermRangeQuery.newStringRange(fieldname, lowerBound.text(), upperBound.text(), false, false);
       }
     }
 
@@ -729,14 +742,14 @@ public class ModelSearchQueries {
         Term lowerBound = new Term(fieldname, value);
         Term upperBound = new Term(fieldname, MAX_NUMBER);
 
-        return new ConstantScoreRangeQuery(fieldname, lowerBound.text(), upperBound.text(), false, false);
+        return TermRangeQuery.newStringRange(fieldname, lowerBound.text(), upperBound.text(), false, false);
       }
 
       case IS_LESS_THAN: {
         Term lowerBound = new Term(fieldname, MIN_NUMBER);
         Term upperBound = new Term(fieldname, value);
 
-        return new ConstantScoreRangeQuery(fieldname, lowerBound.text(), upperBound.text(), false, false);
+        return TermRangeQuery.newStringRange(fieldname, lowerBound.text(), upperBound.text(), false, false);
       }
     }
 

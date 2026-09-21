@@ -274,8 +274,8 @@ litigation.
          unpack="false"/>
 
    <plugin
-         id="org.rssowl.lib.lucene"
-         download-size="195"
+         id="org.rssowl.lib.lucene.queryparser"
+         download-size="416"
          install-size="0"
          version="0.0.0"
          unpack="false"/>

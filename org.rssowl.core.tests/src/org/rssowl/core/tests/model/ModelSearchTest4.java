@@ -29,6 +29,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.junit.Test;
@@ -1074,7 +1075,7 @@ public class ModelSearchTest4 extends AbstractModelSearchTest {
    */
   @Test
   public void testMaxClauseCount() throws Exception {
-    int maxClauseCount = BooleanQuery.getMaxClauseCount();
+    int maxClauseCount = IndexSearcher.getMaxClauseCount();
 
     IFeed feed = fFactory.createFeed(null, new URI("http://www.feed.com/feed.xml"));
     createNews(feed, "Foo", "http://www.news.com/news3.html", State.READ);
@@ -1096,7 +1097,7 @@ public class ModelSearchTest4 extends AbstractModelSearchTest {
     assertEquals(1, result.size());
     assertEquals("Foo", result.get(0).getResult().resolve().getTitle());
 
-    BooleanQuery.setMaxClauseCount(maxClauseCount);
+    IndexSearcher.setMaxClauseCount(maxClauseCount);
   }
 
   /**
@@ -1104,8 +1105,8 @@ public class ModelSearchTest4 extends AbstractModelSearchTest {
    */
   @Test
   public void testMaxClauseCountForQuery() throws Exception {
-    int maxClauseCount = BooleanQuery.getMaxClauseCount();
-    BooleanQuery.setMaxClauseCount(3);
+    int maxClauseCount = IndexSearcher.getMaxClauseCount();
+    IndexSearcher.setMaxClauseCount(3);
 
     IFolderChild root = fFactory.createFolder(null, null, "Root");
     IFeed feed1 = DynamicDAO.save(fFactory.createFeed(null, new URI("http://www.feed.com/feed1.xml")));
@@ -1125,7 +1126,7 @@ public class ModelSearchTest4 extends AbstractModelSearchTest {
     Query query = ModelSearchQueries.createQuery(conditions, null, false);
     assertNotNull(query);
 
-    BooleanQuery.setMaxClauseCount(maxClauseCount);
+    IndexSearcher.setMaxClauseCount(maxClauseCount);
   }
 
   /**

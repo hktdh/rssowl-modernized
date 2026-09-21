@@ -95,12 +95,30 @@ foreach ($b in @(
 # Chep theo dung bin.includes cua tung bundle: chi cay .class va META-INF.
 # Cac file .jar khong nam tren Bundle-ClassPath (chung chi de tham chieu source),
 # nen bo qua de runtime nhe hon.
-foreach ($lib in @("db4o", "httpclient", "jdom", "lucene")) {
-  $proj = "org.rssowl.lib.$lib"
-  $dest = Join-Path $plugins "${proj}_2.1.0.qualifier"
+foreach ($lib in @(
+  # The three legacy bundles ship unpacked class trees; their .jar files are
+  # only there for source reference and are not on the Bundle-ClassPath.
+  @{ Proj = "org.rssowl.lib.db4o";       Skip = @("*.jar", "src.zip") },
+  @{ Proj = "org.rssowl.lib.httpclient"; Skip = @("*.jar", "src.zip") },
+  @{ Proj = "org.rssowl.lib.jdom";       Skip = @("*.jar", "src.zip") },
+
+  # The query parser wraps a jar that IS on its Bundle-ClassPath, so keep it.
+  @{ Proj = "org.rssowl.lib.lucene.queryparser"; Skip = @() }
+)) {
+  $src = Join-Path $root $lib.Proj
+
+  # Read the version off the bundle rather than assuming they all share one.
+  $manifest = Get-Content (Join-Path $src "META-INF\MANIFEST.MF")
+  $version = ($manifest | Where-Object { $_ -match '^Bundle-Version:\s*(.+)$' } |
+              ForEach-Object { $Matches[1].Trim() } | Select-Object -First 1)
+
+  $dest = Join-Path $plugins "$($lib.Proj)_$version"
   if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-  Copy-Tree (Join-Path $root $proj) $dest @("*.jar", "src.zip", "build.properties", ".classpath", ".project")
-  Write-Host ("  {0,-20} {1} class" -f $proj, @(Get-ChildItem $dest -Recurse -Filter *.class).Count)
+  Copy-Tree $src $dest ($lib.Skip + @("build.properties", ".classpath", ".project"))
+
+  $classes = @(Get-ChildItem $dest -Recurse -Filter *.class).Count
+  $jars = @(Get-ChildItem $dest -Filter *.jar).Count
+  Write-Host ("  {0,-34} {1} class{2}" -f $lib.Proj, $classes, $(if ($jars) { ", $jars jar" } else { "" }))
 }
 
 # --- 4. config.ini -----------------------------------------------------------
@@ -119,11 +137,17 @@ $bundlesInfo = Join-Path $cfgDir "org.eclipse.equinox.simpleconfigurator\bundles
 if (-not (Test-Path $bundlesInfo)) { Fail "Khong thay bundles.info. Runtime nay khong phai ban p2?" }
 
 $lines = @(Get-Content $bundlesInfo | Where-Object { $_ -notmatch '^org\.rssowl\.' })
-foreach ($dir in Get-ChildItem $plugins -Directory -Filter "org.rssowl.*_2.1.0.qualifier") {
-  $id = $dir.Name -replace '_2\.1\.0\.qualifier$', ''
+foreach ($dir in Get-ChildItem $plugins -Directory -Filter "org.rssowl.*") {
+
+  # Folder name is <symbolic-name>_<version>; split on the last underscore
+  # because the symbolic names contain underscores of their own.
+  $split = $dir.Name.LastIndexOf('_')
+  $id = $dir.Name.Substring(0, $split)
+  $version = $dir.Name.Substring($split + 1)
+
   # Dinh dang: id,version,duong-dan,start-level,da-start.
   # Bundle dang thu muc phai co dau / o cuoi duong dan.
-  $lines += "$id,2.1.0.qualifier,plugins/$($dir.Name)/,4,false"
+  $lines += "$id,$version,plugins/$($dir.Name)/,4,false"
 }
 $lines -join "`r`n" | Set-Content $bundlesInfo -Encoding ASCII
 

@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %Bundle-Name
+Bundle-SymbolicName: org.rssowl.lib.lucene.queryparser
+Bundle-Version: 10.5.1
+Bundle-Vendor: %Bundle-Vendor
+Bundle-ClassPath: lucene-queryparser-10.5.1.jar
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.apache.lucene.core
+Export-Package: org.apache.lucene.queryparser.classic,
+ org.apache.lucene.queryparser.charstream
+Bundle-Localization: plugin

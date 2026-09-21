@@ -67,6 +67,11 @@ $cp = @(
   "org.rssowl.lib.db4o", "org.rssowl.lib.httpclient", "org.rssowl.lib.jdom"
 ) | ForEach-Object { Join-Path $root $_ }
 
+# The query parser is the one Lucene piece the target platform does not ship,
+# so it is wrapped as a bundle here and stays a jar on its Bundle-ClassPath.
+$cp += Get-ChildItem (Join-Path $root "org.rssowl.lib.lucene.queryparser") -Filter *.jar |
+       ForEach-Object { $_.FullName }
+
 $cp += Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter *.jar |
        Where-Object { $_.Name -notlike "*.source_*" } |
        ForEach-Object { $_.FullName }

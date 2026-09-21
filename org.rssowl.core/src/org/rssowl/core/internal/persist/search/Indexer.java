@@ -564,6 +564,14 @@ public class Indexer {
     config.setOpenMode(create ? OpenMode.CREATE : OpenMode.CREATE_OR_APPEND);
 
     IndexWriter indexWriter = new IndexWriter(directory, config);
+
+    /*
+     * Opening a writer used to write the segments file straight away; now
+     * nothing is on disk until the first commit. Without this, the searcher
+     * that is opened next fails with "no segments* file found" on a profile
+     * that has no index yet. Committing an empty index is cheap.
+     */
+    indexWriter.commit();
     fFlushRequired = false;
     return indexWriter;
   }

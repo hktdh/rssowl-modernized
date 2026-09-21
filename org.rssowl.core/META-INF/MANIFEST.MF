@@ -12,6 +12,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.net,
  org.apache.lucene.core,
  org.apache.lucene.analysis-common,
+ org.rssowl.lib.lucene.queryparser,
  org.eclipse.equinox.security;bundle-version="1.0.0"
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: %Bundle-Vendor
