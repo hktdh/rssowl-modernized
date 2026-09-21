@@ -29,6 +29,12 @@ import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.Query;
+import org.rssowl.core.persist.INews;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * A {@link QueryParser} that strips diacritics from the terms the parser builds
@@ -54,6 +60,30 @@ public class FoldingQueryParser extends QueryParser {
     super(field, analyzer);
   }
 
+  /*
+   * The fields whose terms are folded on the way into the index. Everything
+   * else is indexed as written apart from being lowercased, so folding a query
+   * against those fields would search for terms the index does not hold. Keep
+   * this in step with Indexer.createAnalyzer and with the LABEL field in
+   * NewsDocument, which folds by hand because it is indexed un-tokenized.
+   */
+  private static final Set<String> FOLDED_FIELDS = new HashSet<>(Arrays.asList(
+      String.valueOf(INews.TITLE),
+      String.valueOf(INews.DESCRIPTION),
+      String.valueOf(INews.ATTACHMENTS_CONTENT),
+      String.valueOf(INews.AUTHOR),
+      String.valueOf(INews.CATEGORIES),
+      String.valueOf(INews.LABEL)));
+
+  /**
+   * @param field the field a term is searched in.
+   * @return <code>true</code> if the index holds this field folded, and a
+   * query term for it therefore has to be folded too.
+   */
+  public static boolean foldsField(String field) {
+    return FOLDED_FIELDS.contains(field);
+  }
+
   /**
    * Folds a term the same way the indexing analyzer does.
    *
@@ -64,8 +94,13 @@ public class FoldingQueryParser extends QueryParser {
     if (term == null)
       return null;
 
-    /* Same order as the analyzer: lowercase first, then fold */
-    char[] input = term.toLowerCase().toCharArray();
+    /*
+     * Same order as the analyzer: lowercase first, then fold. LowerCaseFilter
+     * maps each character on its own, so ask for the same here rather than the
+     * default locale: a Turkish locale would otherwise turn 'I' into a dotless
+     * 'i' that the index never contains.
+     */
+    char[] input = term.toLowerCase(Locale.ROOT).toCharArray();
 
     /* Folding can expand a character into several, so leave room */
     char[] output = new char[input.length * 4];
@@ -74,12 +109,17 @@ public class FoldingQueryParser extends QueryParser {
     return new String(output, 0, length);
   }
 
+  /* Fold only where the index is folded, see FOLDED_FIELDS */
+  private static String foldFor(String field, String termStr) {
+    return foldsField(field) ? fold(termStr) : termStr;
+  }
+
   /*
    * @see org.apache.lucene.queryparser.classic.QueryParserBase#getWildcardQuery(java.lang.String, java.lang.String)
    */
   @Override
   protected Query getWildcardQuery(String field, String termStr) throws ParseException {
-    return super.getWildcardQuery(field, fold(termStr));
+    return super.getWildcardQuery(field, foldFor(field, termStr));
   }
 
   /*
@@ -87,7 +127,7 @@ public class FoldingQueryParser extends QueryParser {
    */
   @Override
   protected Query getPrefixQuery(String field, String termStr) throws ParseException {
-    return super.getPrefixQuery(field, fold(termStr));
+    return super.getPrefixQuery(field, foldFor(field, termStr));
   }
 
   /*
@@ -95,7 +135,7 @@ public class FoldingQueryParser extends QueryParser {
    */
   @Override
   protected Query getFuzzyQuery(String field, String termStr, float minSimilarity) throws ParseException {
-    return super.getFuzzyQuery(field, fold(termStr), minSimilarity);
+    return super.getFuzzyQuery(field, foldFor(field, termStr), minSimilarity);
   }
 
   /*
@@ -103,6 +143,6 @@ public class FoldingQueryParser extends QueryParser {
    */
   @Override
   protected Query getRegexpQuery(String field, String termStr) throws ParseException {
-    return super.getRegexpQuery(field, fold(termStr));
+    return super.getRegexpQuery(field, foldFor(field, termStr));
   }
 }

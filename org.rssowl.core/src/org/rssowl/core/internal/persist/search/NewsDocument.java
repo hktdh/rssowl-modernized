@@ -99,7 +99,12 @@ public class NewsDocument extends SearchDocument<INews> {
     Set<ILabel> labels = news.getLabels();
     for (ILabel label : labels) {
       if (label != null) //Can happen on next start if Label was deleted and RSSOwl instantly shutdown
-        addField(fields, createStringField(INews.LABEL, label.getName().toLowerCase(), Store.NO, Index.UN_TOKENIZED));
+        /*
+         * Un-tokenized, so the folding analyzer registered for this field never
+         * runs. Fold by hand instead, or a label written with diacritics could
+         * only be found by typing them: the query side folds this field.
+         */
+        addField(fields, createStringField(INews.LABEL, FoldingQueryParser.fold(label.getName()), Store.NO, Index.UN_TOKENIZED));
     }
 
     /* Add Guid, only if it's not null and is a permaLink */

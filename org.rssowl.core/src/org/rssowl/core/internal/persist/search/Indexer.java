@@ -147,7 +147,7 @@ public class Indexer {
     }
   }
 
-  /* The Default Analyzer: the whole value as one lowercased, folded term */
+  /* The Default Analyzer: the whole value as one lowercased term */
   private static class DefaultAnalyzer extends Analyzer {
 
     /*
@@ -158,9 +158,15 @@ public class Indexer {
       Tokenizer source = new KeywordTokenizer();
       TokenStream result = new LowerCaseFilter(source);
 
-      /* Fold diacritics so that a query typed without them still matches */
-      result = new ASCIIFoldingFilter(result);
-
+      /*
+       * Deliberately no folding here. This analyzer is the fallback for the
+       * fields that carry machine values - link, feed, guid, source, state,
+       * dates and numbers - and those are written to the index un-tokenized,
+       * which bypasses the analyzer altogether. Folding on the query side
+       * alone would search for terms the index cannot contain, and folding
+       * both sides would make two links that differ only in their diacritics
+       * look like the same article. See FoldingQueryParser.FOLDED_FIELDS.
+       */
       return new TokenStreamComponents(source, result);
     }
   }
