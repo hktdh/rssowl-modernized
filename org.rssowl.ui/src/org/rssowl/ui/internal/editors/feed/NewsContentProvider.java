@@ -103,6 +103,17 @@ public class NewsContentProvider implements ITreeContentProvider {
   /* The maximum number of items returned from a FolderNewsMark */
   static final int MAX_FOLDER_ELEMENTS = 500;
 
+  /*
+   * The maximum number of items returned from a single Bookmark, News Bin or
+   * Saved Search.
+   *
+   * Every item shown becomes a native TreeItem, so the cost of opening a feed
+   * grows with the number of news it holds, not with what fits on screen: a
+   * feed holding 2000 news takes about 3.5 seconds to display. Folders were
+   * already capped, single marks were not.
+   */
+  static final int MAX_NEWSMARK_ELEMENTS = 200;
+
   /* The maximum number of items that will get resolved from a FolderNewsMark */
   private static final int MAX_RESOLVED_FOLDER_ELEMENTS = 5000;
 
@@ -114,6 +125,44 @@ public class NewsContentProvider implements ITreeContentProvider {
 
   /* System Property to override the limits above */
   private static final String NO_FOLDER_LIMIT_PROPERTY = "noFolderLimit"; //$NON-NLS-1$
+
+  /* System Property to override the per-mark limit */
+  private static final String NO_NEWSMARK_LIMIT_PROPERTY = "noNewsMarkLimit"; //$NON-NLS-1$
+
+  /* Set once at class initialisation, same lifetime as the system property */
+  private static final boolean NO_NEWSMARK_LIMIT = System.getProperty(NO_NEWSMARK_LIMIT_PROPERTY) != null;
+
+  /**
+   * The number of news that will be displayed at most for the given input.
+   *
+   * @param mark the input of the feed view.
+   * @return the maximum number of news to display, or -1 when unlimited.
+   */
+  static int getDisplayLimit(INewsMark mark) {
+    if (mark instanceof FolderNewsMark)
+      return System.getProperty(NO_FOLDER_LIMIT_PROPERTY) != null ? -1 : MAX_FOLDER_ELEMENTS;
+
+    return NO_NEWSMARK_LIMIT ? -1 : MAX_NEWSMARK_ELEMENTS;
+  }
+
+  /**
+   * Whether the given input holds more news than will be displayed.
+   *
+   * Callers that sort or search inside the feed view must ask this: when the
+   * result is capped, the cache holds only the top N for the current sort
+   * order, so changing the sort or searching has to re-resolve from the model
+   * instead of working on what is cached.
+   *
+   * @param mark the input of the feed view.
+   * @return <code>true</code> if some news of this input are not displayed.
+   */
+  static boolean isDisplayLimited(INewsMark mark) {
+    if (mark == null)
+      return false;
+
+    int limit = getDisplayLimit(mark);
+    return limit != -1 && mark.getNewsCount(INews.State.getVisible()) > limit;
+  }
 
   private final NewsBrowserViewer fBrowserViewer;
   private final NewsTableViewer fTableViewer;
@@ -379,15 +428,15 @@ public class NewsContentProvider implements ITreeContentProvider {
           break;
       }
 
-      /* Special treat folders and limit them by size */
-      if (input instanceof FolderNewsMark)
-        resolvedNews = limitFolderNewsMark(resolvedNews, comparer != null ? comparer : fFeedView.getComparator());
     }
 
     /* Resolve directly by state (check for news counts as optimization) */
     else if (shouldResolve(input, filter)) {
       resolvedNews.addAll(input.getNews(states));
     }
+
+    /* Limit by size, whichever branch resolved the news */
+    resolvedNews = limitNewsMark(input, resolvedNews, comparer != null ? comparer : fFeedView.getComparator());
 
     /* Filter Elements as needed */
     if (needToFilter && isFilteredByOtherThanState())
@@ -776,10 +825,11 @@ public class NewsContentProvider implements ITreeContentProvider {
     return set;
   }
 
-  private List<INews> limitFolderNewsMark(List<INews> resolvedNews, NewsComparator comparer) {
+  private List<INews> limitNewsMark(INewsMark input, List<INews> resolvedNews, NewsComparator comparer) {
+    int maxElements = getDisplayLimit(input);
 
     /* Return if no capping is required at all */
-    if (fNoFolderLimit || resolvedNews.size() <= MAX_FOLDER_ELEMENTS)
+    if (maxElements == -1 || resolvedNews.size() <= maxElements)
       return resolvedNews;
 
     /* First add those news that are Labeled or Sticky if this group mode is active */
@@ -793,7 +843,7 @@ public class NewsContentProvider implements ITreeContentProvider {
     }
 
     /* Check if Labeled/Sticky News already at limit size and return then */
-    if (priorityItems.size() >= MAX_FOLDER_ELEMENTS)
+    if (priorityItems.size() >= maxElements)
       return priorityItems;
 
     /* Need to sort now to pick the top N remaining elements */
@@ -801,8 +851,8 @@ public class NewsContentProvider implements ITreeContentProvider {
     comparer.sort(null, elements);
 
     /* Pick top N remaining Elements */
-    int limit = MAX_FOLDER_ELEMENTS - priorityItems.size();
-    List<INews> limitedResult = new ArrayList<>(Math.min(elements.length, MAX_FOLDER_ELEMENTS));
+    int limit = maxElements - priorityItems.size();
+    List<INews> limitedResult = new ArrayList<>(Math.min(elements.length, maxElements));
     for (int i = 0, c = 0; i < elements.length && c < limit; i++) {
       INews news = (INews) elements[i];
       if (!priorityItems.contains(news)) {

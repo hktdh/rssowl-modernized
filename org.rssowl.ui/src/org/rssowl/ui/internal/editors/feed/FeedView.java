@@ -1171,10 +1171,17 @@ public class FeedView extends EditorPart implements IReusableEditor {
     if (fInput == null)
       return;
 
-    /* Folder News Mark might require cache refresh if sorting has changed and limit reached */
-    if (fInput.getMark() instanceof FolderNewsMark && fInput.getMark().getNewsCount(INews.State.getVisible()) > NewsContentProvider.MAX_FOLDER_ELEMENTS) {
-      FolderNewsMark folderMark = (FolderNewsMark) fInput.getMark();
-      IPreferenceScope preferences = Owl.getPreferenceService().getEntityScope(folderMark.getFolder());
+    /*
+     * When the input is capped the cache holds only the top N for the current
+     * sort order, so a changed sort order has to re-resolve from the model
+     * rather than re-sort what is cached.
+     */
+    if (NewsContentProvider.isDisplayLimited(fInput.getMark())) {
+      INewsMark mark = fInput.getMark();
+
+      /* A FolderNewsMark is synthetic and holds no preferences of its own. */
+      IEntity scope = (mark instanceof FolderNewsMark) ? ((FolderNewsMark) mark).getFolder() : mark;
+      IPreferenceScope preferences = Owl.getPreferenceService().getEntityScope(scope);
       NewsComparator comparator = getComparator();
 
       NewsColumn oldSortBy = comparator.getSortBy();
@@ -1189,7 +1196,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
         comparer.setSortBy(newSortBy);
         comparer.setAscending(newIsAscending);
 
-        fContentProvider.refreshCache(null, folderMark, comparer);
+        fContentProvider.refreshCache(null, mark, comparer);
       }
     }
 

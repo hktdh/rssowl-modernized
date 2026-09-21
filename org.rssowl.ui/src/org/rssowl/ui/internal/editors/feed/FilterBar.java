@@ -917,8 +917,12 @@ public class FilterBar {
   }
 
   private boolean needsCacheRevalidationFromSearch() {
+    /*
+     * When the input is capped the cache holds only the top N, so a search has
+     * to re-resolve from the model or it would only search what is displayed.
+     */
     INewsMark mark = ((FeedViewInput) fFeedView.getEditorInput()).getMark();
-    return (mark instanceof FolderNewsMark && mark.getNewsCount(INews.State.getVisible()) > NewsContentProvider.MAX_FOLDER_ELEMENTS);
+    return NewsContentProvider.isDisplayLimited(mark);
   }
 
   private void doSearch(final NewsFilter.SearchTarget target) {
