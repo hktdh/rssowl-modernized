@@ -164,12 +164,8 @@ public class CBrowser {
     hookListeners();
 
     /* Add custom Context Menu on OS where this is not supported */
-    if (Application.IS_LINUX || (useMozilla()))
+    if (Application.IS_LINUX)
       hookMenu();
-  }
-
-  private boolean useMozilla() {
-    return Application.IS_WINDOWS && fgMozillaAvailable && !fDisableXulrunner;
   }
 
   /**
@@ -184,43 +180,18 @@ public class CBrowser {
   }
 
   private Browser createBrowser(Composite parent, int style) {
-    Browser browser = null;
-
-    /* Properly configure Proxy for Firefox/XULRunner if required */
-    if (Application.IS_LINUX || (useMozilla())) {
-      String proxyHost = fEclipsePreferences.getString(DefaultPreferences.ECLIPSE_PROXY_HOST);
-      String proxyPort = fEclipsePreferences.getString(DefaultPreferences.ECLIPSE_PROXY_PORT);
-      if (useProxy() && StringUtils.isSet(proxyHost) && StringUtils.isSet(proxyPort)) {
-        System.setProperty(XULRUNNER_PROXY_HOST, proxyHost);
-        System.setProperty(XULRUNNER_PROXY_PORT, proxyPort);
-      }
-    }
-
-    /* Try Mozilla over IE on Windows */
-    if (useMozilla()) {
-      try {
-        browser = new Browser(parent, style | SWT.MOZILLA);
-        fgMozillaRunningOnWindows = true;
-      } catch (SWTError e) {
-        fgMozillaAvailable = false;
-
-        if (!"No more handles [Could not detect registered XULRunner to use]".equals(e.getMessage())) //This happens too often to log it //$NON-NLS-1$
-          Activator.getDefault().getLog().log(Activator.getDefault().createInfoStatus(e.getMessage(), null));
-      }
-    }
-
-    /* Linux: Check for deployed XULRunner runtime and use */
-    if (Application.IS_LINUX && System.getProperty(XULRUNNER_PATH_PROPERTY) == null && !fgXulrunnerRuntimeSet) {
-      File xulRunnerRuntimeDir = getXULRunnerRuntimeDir();
-      if (xulRunnerRuntimeDir != null)
-        System.setProperty(XULRUNNER_PATH_PROPERTY, xulRunnerRuntimeDir.toString());
-
-      fgXulrunnerRuntimeSet= true; //Avoid redundant lookup if XULRunner runtime not found
-    }
-
-    /* Any other OS, or Mozilla unavailable, use default */
-    if (browser == null)
-      browser = new Browser(parent, styleForLinux(style));
+    /*
+     * The XULRunner/Mozilla path this method used to take first is dead: SWT
+     * ships only two browser backends now, Edge and IE, so SWT.MOZILLA can
+     * never produce a browser.
+     *
+     * Do not name a backend here. On Windows SWT already resolves an unstyled
+     * Browser to Edge (WebView2) and keeps its own fallback to IE for machines
+     * without the WebView2 runtime; asking for SWT.EDGE outright would bypass
+     * that fallback. Which backend was really created is answered by
+     * getBrowserType(), see isIE().
+     */
+    Browser browser = new Browser(parent, style);
 
     /* Add Focusless Scroll Hook on Windows */
     if (Application.IS_WINDOWS)
@@ -281,16 +252,9 @@ public class CBrowser {
     }
   }
 
-  /* If RSSOwl runs with SWT 3.7, force use of Mozilla over WebKit */
-  private int styleForLinux(int style) {
-    if (Application.IS_LINUX && SWT.getVersion() >= 3700)
-      return style | SWT.MOZILLA;
-
-    return style;
-  }
-
   private Method callCoInternetSetFeatureEnabled(Method method, int feature, int scope, boolean enable) {
-    if (!fgCoInternetSetFeatureError && Application.IS_WINDOWS && !useMozilla()) {
+    /* CoInternetSetFeatureEnabled configures IE, so only call it for IE. */
+    if (!fgCoInternetSetFeatureError && isIE()) {
       try {
         Class<?> clazz = Class.forName("org.eclipse.swt.internal.win32.OS"); //$NON-NLS-1$
 
@@ -562,7 +526,7 @@ public class CBrowser {
         if (OwlUI.useExternalBrowser()) {
 
           /* Avoid IE being loaded from SWT on Windows */
-          final Browser tempBrowser = new Browser(fBrowser.getShell(), useMozilla() ? SWT.MOZILLA : styleForLinux(SWT.NONE));
+          final Browser tempBrowser = new Browser(fBrowser.getShell(), SWT.NONE);
           tempBrowser.setVisible(false);
           event.browser = tempBrowser;
           tempBrowser.getDisplay().timerExec(BROWSER_URL_DELAY, new Runnable() {
@@ -588,7 +552,7 @@ public class CBrowser {
 
         /* Open internal Browser in same Browser */
         else {
-          final Browser tempBrowser = new Browser(fBrowser.getShell(), useMozilla() ? SWT.MOZILLA : styleForLinux(SWT.NONE));
+          final Browser tempBrowser = new Browser(fBrowser.getShell(), SWT.NONE);
           tempBrowser.setVisible(false);
           event.browser = tempBrowser;
           tempBrowser.getDisplay().timerExec(BROWSER_URL_DELAY, new Runnable() {
@@ -611,16 +575,26 @@ public class CBrowser {
    * otherwise.
    */
   public boolean isIE() {
-    return Application.IS_WINDOWS && !fBrowser.isDisposed() && (fBrowser.getStyle() & SWT.MOZILLA) == 0;
+    /*
+     * Ask the widget which backend it actually created. The old test was
+     * "on Windows and not Mozilla", which reported IE for every Windows
+     * browser. Since SWT dropped Mozilla and defaults to Edge, that made the
+     * callers feed IE quirks to a Chromium engine - document.body.scrollTop is
+     * always 0 there, so remembering the scroll position silently did nothing.
+     */
+    return !fBrowser.isDisposed() && "ie".equals(fBrowser.getBrowserType()); //$NON-NLS-1$
   }
 
   /**
    * @return <code>true</code> if this browser is Mozilla on Windows and
-   * <code>false</code> otherwise. Note that this will always return
-   * <code>false</code> as long as a Browser has not been created.
+   * <code>false</code> otherwise.
+   * @deprecated SWT no longer ships a Mozilla/XULRunner backend, so this can
+   * only ever be <code>false</code>. Kept so the XULRunner workarounds at the
+   * call sites stay readable until they are removed one by one.
    */
+  @Deprecated
   public static boolean isMozillaRunningOnWindows() {
-    return fgMozillaRunningOnWindows;
+    return false;
   }
 
   /**
@@ -630,7 +604,7 @@ public class CBrowser {
   public void setScriptDisabled(Boolean disabled) {
 
     /* Only supported on Windows IE */
-    if (!Application.IS_WINDOWS || (fBrowser.getStyle() & SWT.MOZILLA) != 0)
+    if (!isIE())
       return;
 
     /* Toggle via Reflection due to patched SWT */
