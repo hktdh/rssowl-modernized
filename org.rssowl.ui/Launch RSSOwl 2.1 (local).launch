@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ban launch sua lai tu "Launch RSSOwl 2.0.launch" cho moi truong hien tai.
+  Ban goc giu nguyen, khong sua.
+
+  Ba thay doi:
+    1. default=true  -> dung TAT CA plugin trong workspace va target platform,
+       thay vi danh sach cung. Ban goc liet ke org.eclipse.swt.win32.win32.x86
+       (32-bit) trong khi target platform va JDK deu la x86_64; SWT lech kien
+       truc thi app khong khoi dong duoc. De default=true thi PDE tu chon
+       dung fragment theo kien truc.
+    2. Bo selected_workspace_plugins: danh sach do co org.rssowl.contrib.nntp,
+       project khong ton tai trong cay source nay.
+    3. Xmx 96m -> 192m, dung dinh muc khai trong rssowl.product.
+-->
+<launchConfiguration type="org.eclipse.pde.ui.RuntimeWorkbench">
+<stringAttribute key="application" value="org.rssowl.ui.rssowl"/>
+<booleanAttribute key="askclear" value="false"/>
+<booleanAttribute key="automaticAdd" value="true"/>
+<booleanAttribute key="automaticValidate" value="false"/>
+<stringAttribute key="bootstrap" value=""/>
+<stringAttribute key="checked" value="[NONE]"/>
+<booleanAttribute key="clearConfig" value="true"/>
+<booleanAttribute key="clearws" value="false"/>
+<booleanAttribute key="clearwslog" value="false"/>
+<stringAttribute key="configLocation" value="${workspace_loc}/.metadata/.plugins/org.eclipse.pde.core/Launch RSSOwl 2.1 (local)"/>
+<booleanAttribute key="default" value="true"/>
+<stringAttribute key="deselected_workspace_plugins" value="org.rssowl.core.tests"/>
+<booleanAttribute key="includeOptional" value="true"/>
+<stringAttribute key="location" value="${workspace_loc}/../runtime-RSSOwl"/>
+<booleanAttribute key="org.eclipse.debug.core.appendEnvironmentVariables" value="true"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-consoleLog"/>
+<stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xms40m -Xmx192m -DmultiInstance"/>
+<booleanAttribute key="tracing" value="false"/>
+<booleanAttribute key="useDefaultConfig" value="true"/>
+<booleanAttribute key="useDefaultConfigArea" value="true"/>
+<booleanAttribute key="useProduct" value="true"/>
+<stringAttribute key="product" value="org.rssowl.ui.product"/>
+<booleanAttribute key="usefeatures" value="false"/>
+</launchConfiguration>

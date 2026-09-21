@@ -1,0 +1,5 @@
+# ket qua bien dich cua build.ps1
+build-out/
+
+# thu muc output cua Eclipse PDE
+bin/
