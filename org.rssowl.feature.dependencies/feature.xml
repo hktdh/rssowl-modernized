@@ -2,7 +2,7 @@
 <feature
       id="org.rssowl.dependencies"
       label="RSSOwl Dependencies"
-      version="2.0.0"
+      version="2.2.0"
       provider-name="RSSOwl.org">
 
    <description>
@@ -257,25 +257,6 @@ litigation.
          unpack="false"/>
 
    <plugin
-         id="org.eclipse.core.net.win32.x86"
-         os="win32"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
-         unpack="false"/>
-
-   <plugin
-         id="org.eclipse.core.net.linux.x86"
-         os="linux"
-         arch="x86"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
-         unpack="false"/>
-
-   <plugin
          id="org.eclipse.equinox.security.macosx"
          os="macosx"
          download-size="0"
@@ -285,7 +266,7 @@ litigation.
          unpack="false"/>
 
    <plugin
-         id="org.eclipse.equinox.security.win32.x86"
+         id="org.eclipse.equinox.security.win32"
          os="win32"
          download-size="0"
          install-size="0"

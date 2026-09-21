@@ -1,11 +1,11 @@
 <#
-  Bien dich RSSOwl 2.1 bang ecj cua Eclipse, khong can mo IDE.
+  Bien dich RSSOwl 2.2 bang ecj cua Eclipse, khong can mo IDE.
 
-  Vi sao dung ecj chu khong dung javac: manifest khai compliance J2SE-1.5,
-  va ecj ho tro muc nay trong khi javac doi moi da bo. ecj cung la trinh
-  bien dich ma PDE dung, nen ket qua khop voi build trong IDE.
+  Vi sao dung ecj chu khong dung javac: ecj la trinh bien dich ma PDE dung,
+  nen ket qua khop voi build trong IDE - cung bo cau hinh loi/canh bao, cung
+  cach doc MANIFEST.MF.
 
-  NHANH NAY (migrate-eclipse-4x) build tren Eclipse 4.41 + JDK 21.
+  Build tren Eclipse 4.41 + JDK 21.
   Subsystem Update Manager da duoc go bo, nen khong con rang buoc vao
   org.eclipse.update.* (cac bundle do da bien mat khoi Eclipse 4.x).
   Code o nhanh nay KHONG con bien dich duoc tren 3.8.2: no dung
@@ -76,7 +76,7 @@ $cp += Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter *.jar |
        Where-Object { $_.Name -notlike "*.source_*" } |
        ForEach-Object { $_.FullName }
 
-# Vai bundle (vd org.junit4) la thu muc chua jar long nhau.
+# Vai bundle la thu muc chua jar long nhau chu khong phai mot jar duy nhat.
 $cp += Get-ChildItem (Join-Path $EclipseHome "plugins") -Directory |
        ForEach-Object { Get-ChildItem $_.FullName -Filter *.jar -ErrorAction SilentlyContinue |
                         ForEach-Object { $_.FullName } }
@@ -111,7 +111,7 @@ function Invoke-Ecj([string] $label, [string[]] $sources, [string] $dest, [strin
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-Write-Host "RSSOwl 2.1 | JDK $JavaHome | target $EclipseHome | compliance $Compliance"
+Write-Host "RSSOwl 2.2 | JDK $JavaHome | target $EclipseHome | compliance $Compliance"
 
 $main = Join-Path $OutDir "main"
 $ok = Invoke-Ecj "core+ui" @((Join-Path $root "org.rssowl.core\src"), (Join-Path $root "org.rssowl.ui\src")) $main @()
