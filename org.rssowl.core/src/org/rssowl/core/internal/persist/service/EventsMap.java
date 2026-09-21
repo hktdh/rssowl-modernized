@@ -73,21 +73,6 @@ public class EventsMap {
     eventRunnable.addCheckedRemoveEvent(event);
   }
 
-  public final boolean containsPersistEvent(Class<? extends ModelEvent> eventClass, IEntity entity) {
-    EventRunnable<? extends ModelEvent> eventRunnable = getEventRunnable(eventClass);
-    return eventRunnable.getPersistEvents().contains(entity);
-  }
-
-  public final boolean containsUpdateEvent(Class<? extends ModelEvent> eventClass, IEntity entity) {
-    EventRunnable<? extends ModelEvent> eventRunnable = getEventRunnable(eventClass);
-    return eventRunnable.getUpdateEvents().contains(entity);
-  }
-
-  public final boolean containsRemoveEvent(Class<? extends ModelEvent> eventClass, IEntity entity) {
-    EventRunnable<? extends ModelEvent> eventRunnable = getEventRunnable(eventClass);
-    return eventRunnable.getRemoveEvents().contains(entity);
-  }
-
   private EventRunnable<? extends ModelEvent> getEventRunnable(Class<? extends ModelEvent> eventClass) {
     InternalMap map = fEvents.get();
     if (map == null) {

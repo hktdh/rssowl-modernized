@@ -331,10 +331,11 @@ public class Activator extends AbstractUIPlugin {
   /* Server already running. Pass a message to the running Server and exit. */
   private void doHandshake(String message) {
     try {
-      Socket socket = new Socket(InetAddress.getByName(ApplicationServer.LOCALHOST), ApplicationServer.DEFAULT_SOCKET_PORT);
-      PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-      writer.println(isSet(message) ? message : ApplicationServer.STARTUP_HANDSHAKE);
-      writer.flush();
+      try (Socket socket = new Socket(InetAddress.getByName(ApplicationServer.LOCALHOST), ApplicationServer.DEFAULT_SOCKET_PORT)) {
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+        writer.println(isSet(message) ? message : ApplicationServer.STARTUP_HANDSHAKE);
+        writer.flush();
+      }
 
       /*
        * Send a message to the other running instance of RSSOwl and wait some

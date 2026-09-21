@@ -275,11 +275,9 @@ public class NewsBrowserLabelProvider extends LabelProvider {
         String preHighlight = "<span style=\"background-color:rgb(" + OwlUI.toString(searchRGB) + ");\">"; //$NON-NLS-1$ //$NON-NLS-2$
         String postHighlight = "</span>"; //$NON-NLS-1$
 
-        ExpandingReader resultHighlightReader = new ExpandingReader(new StringReader(str), wordsToHighlight, preHighlight, postHighlight, true);
-
         int len = 0;
         char[] buf = new char[1000];
-        try {
+        try (ExpandingReader resultHighlightReader = new ExpandingReader(new StringReader(str), wordsToHighlight, preHighlight, postHighlight, true)) {
           while ((len = resultHighlightReader.read(buf)) != -1)
             highlightedResult.append(buf, 0, len);
 
