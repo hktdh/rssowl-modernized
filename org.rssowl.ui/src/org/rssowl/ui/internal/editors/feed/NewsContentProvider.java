@@ -394,22 +394,42 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    * sorted or arranged into groups.
    */
   private synchronized void rebuildVisibleElements() {
-    List<INews> news = new ArrayList<>(fCachedNews.size());
-    for (INews item : fCachedNews.values()) {
-      if (item.isVisible() && fFilter.select(item, false))
+    fVisibleElements = computeVisibleElements(fCachedNews.values(), fFilter, fGrouping, fFeedView.getComparator());
+  }
+
+  /**
+   * Works out what the news table shows, in the order it shows it.
+   *
+   * Kept free of the viewer on purpose: this is the whole of the "what is on
+   * screen" decision, and having it as a function of its inputs is what makes
+   * it testable without a workbench - see NewsVisibleElementsTest. The viewer
+   * only ever asks for a count and for the element at an index, so if this is
+   * right the table is right, whichever widget draws it.
+   *
+   * @param cached the news currently held by the content provider.
+   * @param filter the filter of the feed view.
+   * @param grouping the grouping of the feed view.
+   * @param comparator the sort order, or <code>null</code> to leave the order
+   * of <code>cached</code> alone.
+   * @return the elements to display: news when ungrouped, otherwise
+   * {@link EntityGroup} instances that carry the news.
+   */
+  public static Object[] computeVisibleElements(Collection<INews> cached, NewsFilter filter, NewsGrouping grouping, NewsComparator comparator) {
+    List<INews> news = new ArrayList<>(cached.size());
+    for (INews item : cached) {
+      if (item.isVisible() && filter.select(item, false))
         news.add(item);
     }
 
     /* Grouping brings its own order, otherwise sort the news */
-    if (fGrouping.getType() == NewsGrouping.Type.NO_GROUPING) {
-      NewsComparator comparator = fFeedView.getComparator();
+    if (grouping.getType() == NewsGrouping.Type.NO_GROUPING) {
       if (comparator != null)
         Collections.sort(news, comparator);
 
-      fVisibleElements = news.toArray();
-    } else {
-      fVisibleElements = fGrouping.group(news).toArray();
+      return news.toArray();
     }
+
+    return grouping.group(news).toArray();
   }
 
   /**

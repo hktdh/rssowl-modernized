@@ -117,4 +117,15 @@
       </provider>
    </extension>
 
+   <extension
+         id="headless"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run class="org.rssowl.core.tests.HeadlessTestApplication"/>
+      </application>
+   </extension>
+
 </plugin>
