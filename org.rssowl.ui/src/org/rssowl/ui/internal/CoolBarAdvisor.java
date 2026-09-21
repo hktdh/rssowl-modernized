@@ -572,8 +572,12 @@ public class CoolBarAdvisor {
 
     try {
 
-      /* First Remove All */
-      fManager.removeAll();
+      /* First Remove All.
+       * CoolBarToTrimManager, which backs ICoolBarManager on Eclipse 4.x, throws
+       * UnsupportedOperationException from removeAll(), remove(String) and
+       * setItems(). Removing the items one by one is supported, so do that. */
+      for (IContributionItem item : fManager.getItems())
+        fManager.remove(item);
 
       /* Load Toolbar Mode */
       CoolBarMode mode = CoolBarMode.values()[fPreferences.getInteger(DefaultPreferences.TOOLBAR_MODE)];
@@ -588,10 +592,13 @@ public class CoolBarAdvisor {
         final CoolBarItem item = CoolBarItem.values()[id];
         if (item != null) {
 
-          /* Separator: Start a new Toolbar */
+          /* Separator.
+           * On Eclipse 3.x each separator started a fresh ToolBarManager, giving
+           * the coolbar one draggable toolbar per group. CoolBarToTrimManager on
+           * Eclipse 4.x keeps only one of those, so everything before the last
+           * separator disappeared. Use a single toolbar with plain separators. */
           if (item == CoolBarItem.SEPARATOR) {
-            fManager.add(currentToolBar);
-            currentToolBar = new ToolBarManager(mode == CoolBarMode.IMAGE_TEXT_HORIZONTAL ? (SWT.FLAT | SWT.RIGHT) : SWT.FLAT);
+            currentToolBar.add(new Separator());
           }
 
           /* Spacer */

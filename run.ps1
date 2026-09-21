@@ -16,7 +16,7 @@
 #>
 [CmdletBinding()]
 param(
-  [string] $RuntimeHome = "D:\CDS\tools\rssowl-run",
+  [string] $RuntimeHome = "D:\CDS\tools\rssowl-run-4x",
   [string] $JavaHome    = $env:JAVA_HOME,
   [string] $DataDir     = "D:\CDS\build\rssowl-data",
   [switch] $SkipBuild,
@@ -29,11 +29,10 @@ $build = Join-Path $root "build-out\main"
 
 function Fail($msg) { Write-Host "LOI: $msg" -ForegroundColor Red; exit 1 }
 
-# Ghim JDK 8 giong build.ps1: Equinox 3.8 co truoc Java 9 va khong khoi dong
-# dang tin cay tren JDK moi. JAVA_HOME cap May bi trinh cai JDK khac ghi de.
+# Ghim JDK theo runtime, khong tin JAVA_HOME (trinh cai JDK ghi de bien nay).
 if (-not $JavaHome) {
   $JavaHome = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
-              Where-Object { $_.Name -like "jdk-8*" -and (Test-Path (Join-Path $_.FullName "bin\java.exe")) } |
+              Where-Object { $_.Name -like "jdk-21*" -and (Test-Path (Join-Path $_.FullName "bin\java.exe")) } |
               Select-Object -First 1 -ExpandProperty FullName
 }
 if (-not $JavaHome) { $JavaHome = [Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine") }
@@ -112,11 +111,30 @@ if (-not $osgi) { Fail "Khong thay bundle org.eclipse.osgi trong $plugins" }
 $cfgDir = Join-Path $RuntimeHome "configuration"
 New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
 
-# Khong khai org.eclipse.update.reconcile=false: can configurator quet plugins/
-# moi lan chay thi no moi thay cac bundle RSSOwl vua deploy.
+# Eclipse 4.x dung p2/simpleconfigurator, khong dung org.eclipse.update.configurator
+# nua. Co gang khoi dong bang configurator cu tren ban 4.41 thi core.runtime khong
+# resolve duoc (thieu core.jobs) va app chet ngay luc khoi dong. Cach dung la them
+# bundle cua minh vao bundles.info, la danh sach ma simpleconfigurator doc.
+$bundlesInfo = Join-Path $cfgDir "org.eclipse.equinox.simpleconfigurator\bundles.info"
+if (-not (Test-Path $bundlesInfo)) { Fail "Khong thay bundles.info. Runtime nay khong phai ban p2?" }
+
+$lines = @(Get-Content $bundlesInfo | Where-Object { $_ -notmatch '^org\.rssowl\.' })
+foreach ($dir in Get-ChildItem $plugins -Directory -Filter "org.rssowl.*_2.1.0.qualifier") {
+  $id = $dir.Name -replace '_2\.1\.0\.qualifier$', ''
+  # Dinh dang: id,version,duong-dan,start-level,da-start.
+  # Bundle dang thu muc phai co dau / o cuoi duong dan.
+  $lines += "$id,2.1.0.qualifier,plugins/$($dir.Name)/,4,false"
+}
+$lines -join "`r`n" | Set-Content $bundlesInfo -Encoding ASCII
+
+$simple = (Get-ChildItem $plugins -Filter "org.eclipse.equinox.simpleconfigurator_*.jar" |
+           Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1).Name
+if (-not $simple) { Fail "Khong thay bundle simpleconfigurator trong $plugins" }
+
 @(
   "osgi.framework=file\:plugins/$osgi"
-  "osgi.bundles=org.eclipse.equinox.common@2\:start,org.eclipse.update.configurator@3\:start,org.eclipse.core.runtime@start"
+  "osgi.bundles=reference\:file\:$simple@1\:start"
+  "org.eclipse.equinox.simpleconfigurator.configUrl=file\:org.eclipse.equinox.simpleconfigurator/bundles.info"
   "osgi.bundles.defaultStartLevel=4"
   "eclipse.product=org.rssowl.ui.product"
   "eclipse.application=org.rssowl.ui.rssowl"
@@ -135,9 +153,14 @@ New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
   "-vm"
   "$JavaHome\bin\javaw.exe"
   "-vmargs"
-  "-Xms15m"
-  "-Xmx192m"        # dung dinh muc trong rssowl.product
-  # Khong dat -XX:MaxPermSize: JDK 8 da bo PermGen, chi to ra canh bao thua.
+  "-Xms40m"
+  "-Xmx512m"   # 192m cua rssowl.product la dinh muc doi 2011, Eclipse 4.x nang hon
+  # db4o 6.1 reflect vao field noi bo cua java.lang.Enum de luu enum. Tu JDK 16
+  # strong encapsulation chan viec do, nem InaccessibleObjectException ngay khi
+  # doc preferences luc khoi dong. Phai mo dung cac package db4o cham toi.
+  "--add-opens=java.base/java.lang=ALL-UNNAMED"
+  "--add-opens=java.base/java.util=ALL-UNNAMED"
+  "--add-opens=java.base/java.io=ALL-UNNAMED"
 ) -join "`r`n" | Set-Content (Join-Path $RuntimeHome "eclipse.ini") -Encoding ASCII
 
 Write-Host "Deploy xong vao $RuntimeHome" -ForegroundColor Green
