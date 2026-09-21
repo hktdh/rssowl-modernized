@@ -26,7 +26,6 @@ package org.rssowl.ui.internal.handler;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.IHandler;
 import org.rssowl.ui.internal.OwlUI;
 
 /**
@@ -35,7 +34,7 @@ import org.rssowl.ui.internal.OwlUI;
  *
  * @author bpasero
  */
-public class ToggleFullScreenHandler extends AbstractHandler implements IHandler {
+public class ToggleFullScreenHandler extends AbstractHandler {
 
   /*
    * @see org.eclipse.core.commands.IHandler#execute(org.eclipse.core.commands.ExecutionEvent)

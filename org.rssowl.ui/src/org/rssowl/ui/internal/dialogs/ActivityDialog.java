@@ -74,7 +74,6 @@ public class ActivityDialog extends TitleAreaDialog {
   /* Minimum Height in DLUs */
   private static final int MIN_DIALOG_HEIGHT_DLU = 160;
 
-  @SuppressWarnings("restriction")
   private org.eclipse.ui.internal.progress.DetailedProgressViewer fViewer;
   private LocalResourceManager fResources;
   private IDialogSettings fDialogSettings;
@@ -149,7 +148,6 @@ public class ActivityDialog extends TitleAreaDialog {
   /*
    * @see org.eclipse.jface.dialogs.TitleAreaDialog#createDialogArea(org.eclipse.swt.widgets.Composite)
    */
-  @SuppressWarnings("restriction")
   @Override
   protected Control createDialogArea(Composite parent) {
 
@@ -204,7 +202,6 @@ public class ActivityDialog extends TitleAreaDialog {
     return composite;
   }
 
-  @SuppressWarnings("restriction")
   private void updateViewerSize() {
     Point size = fViewer.getControl().computeSize(SWT.DEFAULT, SWT.DEFAULT);
     size.x += IDialogConstants.HORIZONTAL_SPACING;
@@ -261,7 +258,6 @@ public class ActivityDialog extends TitleAreaDialog {
     return buttonBar;
   }
 
-  @SuppressWarnings("restriction")
   private void refreshProgressViewer(boolean hideCompleted) {
     fViewer.setContentProvider(new org.eclipse.ui.internal.progress.ProgressViewerContentProvider(fViewer, false, !hideCompleted));
   }

@@ -57,7 +57,6 @@ import java.util.Set;
  *
  * @author bpasero
  */
-@SuppressWarnings("restriction")
 public class PlatformCredentialsProvider implements ICredentialsProvider {
 
   /* Node for feed related security preferences */

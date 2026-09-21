@@ -75,7 +75,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author bpasero
  */
-@SuppressWarnings("restriction")
 public class InformationPropertyPage implements IEntityPropertyPage {
   private List<IEntity> fEntities;
   private final DateFormat fDateFormat = OwlUI.getShortDateFormat();

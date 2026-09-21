@@ -54,7 +54,6 @@ import org.rssowl.ui.internal.util.LayoutUtils;
  *
  * @author bpasero
  */
-@SuppressWarnings("restriction")
 public class MasterPasswordDialog extends TitleAreaDialog {
   private final LocalResourceManager fResources;
   private Text fPassword;

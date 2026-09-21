@@ -253,7 +253,6 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
 
     /* Hook into Selection Listeners to open Activiy Dialog if needed (this is a hack :-) ) */
     shell.getDisplay().addFilter(SWT.Selection, new Listener() {
-      @SuppressWarnings("restriction")
       public void handleEvent(Event event) {
         if (event.item == null && event.widget instanceof ToolItem) {
           ToolItem item = (ToolItem) event.widget;

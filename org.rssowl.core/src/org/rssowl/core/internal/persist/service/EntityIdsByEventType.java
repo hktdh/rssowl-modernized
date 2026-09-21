@@ -28,7 +28,6 @@ import org.rssowl.core.internal.persist.LongArrayList;
 import org.rssowl.core.internal.persist.Persistable;
 import org.rssowl.core.internal.persist.SortedLongArrayList;
 import org.rssowl.core.persist.IEntity;
-import org.rssowl.core.persist.IPersistable;
 import org.rssowl.core.persist.event.ModelEvent;
 import org.rssowl.core.persist.reference.NewsReference;
 
@@ -39,7 +38,7 @@ import java.util.List;
 /**
  * Maps entity identifiers to event types.
  */
-public final class EntityIdsByEventType extends Persistable implements IPersistable {
+public final class EntityIdsByEventType extends Persistable {
   private static final int DEFAULT_CAPACITY = 5;
 
   private LongArrayList fPersistedEntities;

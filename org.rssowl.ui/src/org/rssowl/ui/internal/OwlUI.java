@@ -2380,7 +2380,6 @@ public class OwlUI {
   }
 
   /* Find a Image for the given Extension using Program API from SWT */
-  @SuppressWarnings("restriction")
   private static ImageDescriptor getImageForExtension(String extension) {
     if (StringUtils.isSet(extension)) {
       Program p = Program.findProgram(extension);
@@ -2554,7 +2553,6 @@ public class OwlUI {
    * @param zoomIn
    * @param reset
    */
-  @SuppressWarnings("restriction")
   public static void zoomNewsText(boolean zoomIn, boolean reset) {
 
     /* Retrieve Font */

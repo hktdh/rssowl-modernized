@@ -309,7 +309,6 @@ public class FeedView extends EditorPart implements IReusableEditor {
       saveAsHtml(fileName);
   }
 
-  @SuppressWarnings("restriction")
   private void saveAsXml(final String fileName) {
     final IBookMark bm = (IBookMark) fInput.getMark();
     final URI feedLink = bm.getFeedLinkReference().getLink();

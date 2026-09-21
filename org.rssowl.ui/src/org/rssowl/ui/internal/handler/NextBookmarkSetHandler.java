@@ -26,7 +26,6 @@ package org.rssowl.ui.internal.handler;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.IHandler;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.ui.IViewSite;
 import org.rssowl.ui.internal.OwlUI;
@@ -38,7 +37,7 @@ import org.rssowl.ui.internal.views.explorer.BookMarkExplorer;
  *
  * @author bpasero
  */
-public class NextBookmarkSetHandler extends AbstractHandler implements IHandler {
+public class NextBookmarkSetHandler extends AbstractHandler {
 
   /*
    * @see org.eclipse.core.commands.IHandler#execute(org.eclipse.core.commands.ExecutionEvent)

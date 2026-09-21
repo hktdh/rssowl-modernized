@@ -98,7 +98,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author bpasero
  */
-@SuppressWarnings("restriction")
 public class NewsContentProvider implements ITreeContentProvider {
 
   /* The maximum number of items returned from a FolderNewsMark */

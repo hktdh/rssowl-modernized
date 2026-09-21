@@ -26,7 +26,6 @@ package org.rssowl.ui.internal.handler;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.IHandler;
 import org.eclipse.swt.widgets.Shell;
 import org.rssowl.ui.internal.OwlUI;
 import org.rssowl.ui.internal.dialogs.welcome.TutorialWizard;
@@ -37,7 +36,7 @@ import org.rssowl.ui.internal.dialogs.welcome.TutorialWizard;
  *
  * @author bpasero
  */
-public class TutorialHandler extends AbstractHandler implements IHandler {
+public class TutorialHandler extends AbstractHandler {
 
   /** Command ID the Handler is responsible for */
   public static String ID = "org.rssowl.ui.TutorialCommand"; //$NON-NLS-1$

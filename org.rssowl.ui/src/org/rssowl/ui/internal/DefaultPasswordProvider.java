@@ -44,7 +44,6 @@ import javax.crypto.spec.PBEKeySpec;
  *
  * @author bpasero
  */
-@SuppressWarnings("restriction")
 public class DefaultPasswordProvider extends PasswordProvider {
   private static final String DIGEST_ALGORITHM = "MD5"; //$NON-NLS-1$
 

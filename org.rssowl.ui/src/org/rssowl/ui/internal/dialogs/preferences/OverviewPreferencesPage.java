@@ -82,7 +82,6 @@ public class OverviewPreferencesPage extends PreferencePage implements IWorkbenc
   /*
    * @see org.eclipse.jface.preference.PreferencePage#createContents(org.eclipse.swt.widgets.Composite)
    */
-  @SuppressWarnings("restriction")
   @Override
   protected Control createContents(Composite parent) {
     final IWorkbenchPreferenceContainer preferences = (IWorkbenchPreferenceContainer) getContainer();

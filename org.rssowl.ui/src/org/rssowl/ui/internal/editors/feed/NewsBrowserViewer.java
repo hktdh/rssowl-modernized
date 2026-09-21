@@ -406,7 +406,6 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
     MenuManager manager = new MenuManager();
     manager.setRemoveAllWhenShown(true);
     manager.addMenuListener(new IMenuListener() {
-      @SuppressWarnings("restriction")
       public void menuAboutToShow(IMenuManager manager) {
 
         /* Open */
@@ -1434,7 +1433,6 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
     return result.toString().trim();
   }
 
-  @SuppressWarnings("unchecked")
   private void revealNextPage(boolean scrollIntoView) {
 
     /* Get next page from View Model */
@@ -1445,7 +1443,6 @@ public class NewsBrowserViewer extends ContentViewer implements ILinkHandler {
     revealItems(revealedGroups, revealedNews, scrollIntoView);
   }
 
-  @SuppressWarnings("unchecked")
   private void revealItems(List<Long> revealedGroups, List<Long> revealedNews, boolean scrollIntoView) {
 
     /* Return early if no more news to reveal */

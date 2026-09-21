@@ -580,7 +580,6 @@ public class ModelSearchQueries {
       bQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), NumberTools.longToString(newsbin.getId()))), Occur.SHOULD);
   }
 
-  @SuppressWarnings("unchecked")
   private static Query createStringQuery(Analyzer analyzer, ISearchCondition condition) throws ParseException, IOException {
     SearchSpecifier specifier = condition.getSpecifier();
     String fieldname = String.valueOf(condition.getField().getId());
@@ -648,7 +647,6 @@ public class ModelSearchQueries {
     throw new UnsupportedOperationException("Unsupported Specifier for Parsed Queries"); //$NON-NLS-1$
   }
 
-  @SuppressWarnings("unchecked")
   private static Query createTermQuery(ISearchCondition condition) {
     String value;
     if (condition.getValue() instanceof Enum)

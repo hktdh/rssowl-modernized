@@ -82,7 +82,6 @@ public final class IndexingTask implements ITask {
     return news;
   }
 
-  @SuppressWarnings("unchecked")
   IndexingTask(Indexer indexer, Collection<INews> news, EventType taskType) {
     fIndexer = indexer;
 

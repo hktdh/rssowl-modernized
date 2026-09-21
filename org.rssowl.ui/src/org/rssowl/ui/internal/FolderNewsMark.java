@@ -71,7 +71,6 @@ import java.util.Set;
  *
  * @author bpasero
  */
-@SuppressWarnings("restriction")
 public class FolderNewsMark extends Mark implements INewsMark {
   private final Set<Long> fNewsContainer;
   private final IFolder fFolder;

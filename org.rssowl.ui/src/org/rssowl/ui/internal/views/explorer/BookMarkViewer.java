@@ -170,7 +170,6 @@ public class BookMarkViewer extends TreeViewer {
   /*
    * @see org.eclipse.jface.viewers.AbstractTreeViewer#setSelectionToWidget(java.util.List, boolean)
    */
-  @SuppressWarnings("unchecked")
   @Override
   protected void setSelectionToWidget(List v, boolean reveal) {
     super.setSelectionToWidget(v, reveal);
