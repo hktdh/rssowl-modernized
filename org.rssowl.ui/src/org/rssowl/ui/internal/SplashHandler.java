@@ -94,10 +94,39 @@ public class SplashHandler extends AbstractSplashHandler {
     versionLabel.setLayoutData(new GridData(SWT.END, SWT.BEGINNING, true, false));
     versionLabel.setFont(fVersionFont);
     versionLabel.setForeground(fVersionColor);
-    versionLabel.setText(NLS.bind(Messages.SplashHandler_BUILD, "2.1")); //$NON-NLS-1$
+    versionLabel.setText(NLS.bind(Messages.SplashHandler_BUILD, getDisplayVersion()));
 
     /* Layout All */
     shell.layout(true, true);
+  }
+
+  /**
+   * The version to show on the splash screen.
+   *
+   * Read from the bundle rather than written out here: this line used to carry
+   * the literal "2.1" and was still saying so long after the bundle had moved
+   * on, because a stale string on a splash screen breaks nothing and so nobody
+   * notices. The same number now comes from one place, Bundle-Version.
+   *
+   * @return the version as major.minor.micro, without the OSGi qualifier.
+   */
+  private static String getDisplayVersion() {
+    Object header = Activator.getDefault().getBundle().getHeaders().get("Bundle-Version"); //$NON-NLS-1$
+    if (header == null)
+      return ""; //$NON-NLS-1$
+
+    /*
+     * Bundle-Version is major.minor.micro[.qualifier]. The qualifier is a build
+     * stamp ("qualifier" itself while developing), which has no place here.
+     */
+    String version = header.toString();
+
+    /* Cat o dau cham thu ba: khong dung regex de khoi phai escape */
+    int first = version.indexOf('.');
+    int second = (first < 0) ? -1 : version.indexOf('.', first + 1);
+    int third = (second < 0) ? -1 : version.indexOf('.', second + 1);
+
+    return (third < 0) ? version : version.substring(0, third);
   }
 
   /*
