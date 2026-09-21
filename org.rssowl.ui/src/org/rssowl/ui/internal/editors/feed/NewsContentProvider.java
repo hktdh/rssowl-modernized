@@ -25,6 +25,7 @@
 package org.rssowl.ui.internal.editors.feed;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.viewers.ILazyTreeContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
@@ -98,7 +99,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author bpasero
  */
-public class NewsContentProvider implements ITreeContentProvider {
+public class NewsContentProvider implements ITreeContentProvider, ILazyTreeContentProvider {
 
   /* The maximum number of items returned from a FolderNewsMark */
   static final int MAX_FOLDER_ELEMENTS = 500;
@@ -180,6 +181,17 @@ public class NewsContentProvider implements ITreeContentProvider {
 
   /* Cache displayed News */
   private final Map<Long, INews> fCachedNews;
+
+  /*
+   * What the table shows, in display order.
+   *
+   * A lazy content provider is asked for the element at a given index, so the
+   * order has to be decided here. The viewer's own comparator and filters are
+   * only consulted on the non lazy path, which is why both are applied below
+   * instead. They stay installed on the viewer so that code asking it for the
+   * current sort order keeps working.
+   */
+  private Object[] fVisibleElements = new Object[0];
 
   /* Enumeration of possible news event types */
   private static enum NewsEventType {
@@ -311,6 +323,97 @@ public class NewsContentProvider implements ITreeContentProvider {
    */
   public boolean hasChildren(Object element) {
     return element instanceof EntityGroup;
+  }
+
+  /*
+   * @see org.eclipse.jface.viewers.ILazyTreeContentProvider#updateChildCount(java.lang.Object, int)
+   */
+  public void updateChildCount(Object element, int currentChildCount) {
+
+    /* Children of a group are already known */
+    if (element instanceof EntityGroup) {
+      fTableViewer.setChildCount(element, ((EntityGroup) element).getItems().size());
+      return;
+    }
+
+    /*
+     * Anything else is the input. Rebuilding here rather than on every model
+     * change is what keeps a changed sort order correct: the viewer answers a
+     * refresh by asking for the child count again.
+     */
+    if (element != null && element.equals(fTableViewer.getInput())) {
+      rebuildVisibleElements();
+      fTableViewer.setChildCount(element, fVisibleElements.length);
+      return;
+    }
+
+    fTableViewer.setChildCount(element, 0);
+  }
+
+  /*
+   * @see org.eclipse.jface.viewers.ILazyTreeContentProvider#updateElement(java.lang.Object, int)
+   */
+  public void updateElement(Object parent, int index) {
+    Object element = null;
+
+    /* News inside a group */
+    if (parent instanceof EntityGroup) {
+      List<EntityGroupItem> items = ((EntityGroup) parent).getItems();
+      if (index < items.size())
+        element = items.get(index).getEntity();
+    }
+
+    /* Top level */
+    else {
+      Object[] elements = fVisibleElements;
+      if (index < elements.length)
+        element = elements[index];
+    }
+
+    if (element == null)
+      return;
+
+    fTableViewer.replace(parent, index, element);
+
+    /* A group needs its child count before it can be expanded */
+    if (element instanceof EntityGroup)
+      updateChildCount(element, -1);
+  }
+
+  /**
+   * Recomputes what the table shows: the cached news, filtered, then either
+   * sorted or arranged into groups.
+   */
+  private synchronized void rebuildVisibleElements() {
+    List<INews> news = new ArrayList<>(fCachedNews.size());
+    for (INews item : fCachedNews.values()) {
+      if (item.isVisible() && fFilter.select(item, false))
+        news.add(item);
+    }
+
+    /* Grouping brings its own order, otherwise sort the news */
+    if (fGrouping.getType() == NewsGrouping.Type.NO_GROUPING) {
+      NewsComparator comparator = fFeedView.getComparator();
+      if (comparator != null)
+        Collections.sort(news, comparator);
+
+      fVisibleElements = news.toArray();
+    } else {
+      fVisibleElements = fGrouping.group(news).toArray();
+    }
+  }
+
+  /**
+   * Tells the table that what it shows has changed structurally.
+   *
+   * A lazy viewer is refreshed by asking it to fetch the child count and the
+   * elements again, rather than by adding or removing items one by one.
+   */
+  private void refreshVisibleElements() {
+    if (fTableViewer == null || fTableViewer.getControl().isDisposed())
+      return;
+
+    fTableViewer.refresh();
   }
 
   /*
@@ -1311,7 +1414,12 @@ public class NewsContentProvider implements ITreeContentProvider {
 
       tree.setRedraw(false);
       try {
-        fTableViewer.add(fTableViewer.getInput(), addedNews.toArray());
+        /*
+         * A lazy viewer does not take items one by one: it is told to fetch
+         * the child count and the elements again. Only the rows on screen are
+         * actually rebuilt, so this is not the full redraw it looks like.
+         */
+        refreshVisibleElements();
         if (topItem != null && indexOfTopItem != 0)
           tree.setTopItem(topItem);
       } finally {
@@ -1432,7 +1540,7 @@ public class NewsContentProvider implements ITreeContentProvider {
 
     /* Otherwise: Remove from Table-Viewer */
     if (fFeedView.isTableViewerVisible())
-      fTableViewer.remove(visibleNews.toArray());
+      refreshVisibleElements();
 
     /* And: Remove from Browser-Viewer */
     if (fFeedView.isBrowserViewerVisible() && contains(fBrowserViewer.getInput(), visibleNews))

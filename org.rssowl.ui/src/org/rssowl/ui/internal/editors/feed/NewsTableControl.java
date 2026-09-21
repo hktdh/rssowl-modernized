@@ -268,7 +268,13 @@ public class NewsTableControl implements IFeedViewPart {
    * @see org.rssowl.ui.internal.editors.feed.IFeedViewPart#createPart(org.eclipse.swt.widgets.Composite)
    */
   public void createPart(Composite parent) {
-    int style = SWT.MULTI | SWT.FULL_SELECTION;
+    /*
+     * SWT.VIRTUAL, together with the lazy content provider, means a TreeItem is
+     * created only for the rows on screen. Without it every news in the feed
+     * became a native widget up front, which is what made opening a large feed
+     * take seconds.
+     */
+    int style = SWT.MULTI | SWT.FULL_SELECTION | SWT.VIRTUAL;
 
     fCustomTree = new CTree(parent, style);
     fCustomTree.getControl().setHeaderVisible(true);
