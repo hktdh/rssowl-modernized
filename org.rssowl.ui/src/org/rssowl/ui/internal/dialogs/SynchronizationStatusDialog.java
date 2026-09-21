@@ -46,7 +46,6 @@ import org.rssowl.core.util.DateUtils;
 import org.rssowl.core.util.StringUtils;
 import org.rssowl.ui.internal.OwlUI;
 import org.rssowl.ui.internal.actions.ImportAction;
-import org.rssowl.ui.internal.services.SyncService;
 import org.rssowl.ui.internal.services.SyncService.SyncStatus;
 import org.rssowl.ui.internal.util.BrowserUtils;
 import org.rssowl.ui.internal.util.LayoutUtils;

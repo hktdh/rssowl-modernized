@@ -51,7 +51,6 @@ import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.window.SameShellProvider;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;

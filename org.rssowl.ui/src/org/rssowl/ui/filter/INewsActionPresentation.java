@@ -25,9 +25,7 @@
 package org.rssowl.ui.filter;
 
 import org.eclipse.swt.widgets.Composite;
-import org.rssowl.core.INewsAction;
 
-import java.util.Properties;
 
 /**
  * Instances of {@link INewsActionPresentation} provide a custom UI presentation

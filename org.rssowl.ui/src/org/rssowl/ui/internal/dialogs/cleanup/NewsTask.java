@@ -28,7 +28,6 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.osgi.util.NLS;
 import org.rssowl.core.persist.IBookMark;
-import org.rssowl.core.persist.INews;
 import org.rssowl.core.persist.reference.NewsReference;
 import org.rssowl.ui.internal.OwlUI;
 

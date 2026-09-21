@@ -25,7 +25,6 @@
 package org.rssowl.core.persist;
 
 import org.rssowl.core.persist.reference.ModelReference;
-import org.rssowl.core.persist.service.IDGenerator;
 
 import java.io.Serializable;
 import java.util.Map;

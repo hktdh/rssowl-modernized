@@ -27,7 +27,6 @@ package org.rssowl.ui.internal.editors.feed;
 import org.rssowl.core.persist.INews;
 import org.rssowl.core.persist.dao.DynamicDAO;
 import org.rssowl.core.util.Pair;
-import org.rssowl.core.util.Triple;
 import org.rssowl.ui.internal.EntityGroup;
 
 import java.util.ArrayList;

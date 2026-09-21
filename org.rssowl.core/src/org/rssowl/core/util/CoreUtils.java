@@ -55,7 +55,6 @@ import org.rssowl.core.persist.INewsBin;
 import org.rssowl.core.persist.IPerson;
 import org.rssowl.core.persist.ISearch;
 import org.rssowl.core.persist.ISearchCondition;
-import org.rssowl.core.persist.ISearchField;
 import org.rssowl.core.persist.ISearchFilter;
 import org.rssowl.core.persist.ISearchMark;
 import org.rssowl.core.persist.ISearchValueType;

@@ -24,7 +24,6 @@
 
 package org.rssowl.core.persist;
 
-import org.rssowl.core.persist.dao.IFolderDAO;
 
 import java.util.Date;
 

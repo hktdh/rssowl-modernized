@@ -26,7 +26,6 @@ package org.rssowl.core;
 
 import org.rssowl.core.persist.IEntity;
 import org.rssowl.core.persist.INews;
-import org.rssowl.core.util.CoreUtils;
 
 import java.util.List;
 import java.util.Map;

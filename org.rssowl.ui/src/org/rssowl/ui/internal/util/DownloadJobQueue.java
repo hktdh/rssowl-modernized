@@ -36,7 +36,6 @@ import org.eclipse.ui.progress.IProgressConstants;
 import org.rssowl.core.util.ITask;
 import org.rssowl.core.util.LoggingSafeRunnable;
 import org.rssowl.ui.internal.Activator;
-import org.rssowl.ui.internal.services.DownloadService;
 
 import java.util.Collections;
 import java.util.List;

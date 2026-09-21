@@ -36,7 +36,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.rssowl.core.INewsAction;
 import org.rssowl.core.Owl;
 import org.rssowl.core.persist.IFilterAction;
 import org.rssowl.core.persist.IModelFactory;

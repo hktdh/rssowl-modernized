@@ -24,7 +24,6 @@
 
 package org.rssowl.core.persist;
 
-import org.rssowl.core.INewsAction;
 
 /**
  * Instances of {@link IFilterAction} are stored in a {@link ISearchFilter} and

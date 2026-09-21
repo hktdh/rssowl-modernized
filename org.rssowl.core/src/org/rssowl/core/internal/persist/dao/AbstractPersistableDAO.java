@@ -29,7 +29,6 @@ import org.rssowl.core.internal.persist.service.DBHelper;
 import org.rssowl.core.internal.persist.service.DBManager;
 import org.rssowl.core.internal.persist.service.DatabaseEvent;
 import org.rssowl.core.internal.persist.service.DatabaseListener;
-import org.rssowl.core.persist.IEntity;
 import org.rssowl.core.persist.IPersistable;
 import org.rssowl.core.persist.dao.IPersistableDAO;
 import org.rssowl.core.persist.service.PersistenceException;

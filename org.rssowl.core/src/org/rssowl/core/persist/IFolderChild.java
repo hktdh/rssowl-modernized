@@ -24,7 +24,6 @@
 
 package org.rssowl.core.persist;
 
-import org.rssowl.core.persist.dao.IFolderDAO;
 
 /**
  * The base interface for IFolder children. It's basically a named IEntity.

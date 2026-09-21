@@ -25,7 +25,6 @@
 package org.rssowl.core.util;
 
 import org.eclipse.core.runtime.Assert;
-import org.rssowl.core.persist.dao.IFolderDAO;
 
 /**
  * An object that holds information regarding a reparenting operation.

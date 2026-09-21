@@ -29,7 +29,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
-import org.rssowl.core.persist.IFolderChild;
 import org.rssowl.ui.internal.OwlUI;
 import org.rssowl.ui.internal.dialogs.exporter.ExportWizard;
 

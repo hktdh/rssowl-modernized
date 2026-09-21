@@ -26,7 +26,6 @@ package org.rssowl.core.internal.persist.service;
 
 import com.db4o.ObjectContainer;
 
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**

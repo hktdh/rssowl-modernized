@@ -25,7 +25,6 @@
 package org.rssowl.core.persist.service;
 
 import org.eclipse.core.runtime.Assert;
-import org.rssowl.core.persist.IFeed;
 import org.rssowl.core.persist.IPersistable;
 
 /**

@@ -26,10 +26,8 @@ package org.rssowl.ui.internal.handler;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.IHandler;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.rssowl.ui.internal.OwlUI;
-import org.rssowl.ui.internal.actions.MarkTypesReadAction;
 import org.rssowl.ui.internal.actions.ToggleReadStateAction;
 
 /**

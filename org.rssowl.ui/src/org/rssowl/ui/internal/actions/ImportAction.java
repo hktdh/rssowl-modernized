@@ -32,7 +32,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.rssowl.core.persist.IFolder;
-import org.rssowl.core.persist.IFolderChild;
 import org.rssowl.core.util.StringUtils;
 import org.rssowl.ui.internal.Activator;
 import org.rssowl.ui.internal.dialogs.CustomWizardDialog;

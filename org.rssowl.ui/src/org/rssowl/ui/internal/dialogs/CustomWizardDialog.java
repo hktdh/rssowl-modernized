@@ -25,7 +25,6 @@
 package org.rssowl.ui.internal.dialogs;
 
 import org.eclipse.jface.wizard.IWizard;
-import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Shell;

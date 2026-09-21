@@ -24,7 +24,6 @@
 
 package org.rssowl.core.internal.persist;
 
-import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.Platform;
 import org.rssowl.core.persist.IPersistable;
 

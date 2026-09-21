@@ -25,8 +25,6 @@
 package org.rssowl.core.persist.service;
 
 import org.rssowl.core.persist.dao.DAOService;
-import org.rssowl.core.persist.dao.DynamicDAO;
-import org.rssowl.core.persist.dao.IEntityDAO;
 import org.rssowl.core.util.LongOperationMonitor;
 
 /**

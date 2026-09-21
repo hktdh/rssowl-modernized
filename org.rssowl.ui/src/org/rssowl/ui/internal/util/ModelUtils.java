@@ -41,7 +41,6 @@ import org.rssowl.core.persist.ISearchField;
 import org.rssowl.core.persist.SearchSpecifier;
 import org.rssowl.core.persist.pref.IPreferenceScope;
 import org.rssowl.core.persist.reference.NewsReference;
-import org.rssowl.core.persist.service.IModelSearch;
 import org.rssowl.core.util.CoreUtils;
 import org.rssowl.core.util.DateUtils;
 import org.rssowl.core.util.Pair;

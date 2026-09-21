@@ -26,7 +26,6 @@ package org.rssowl.core.internal.persist;
 
 import org.eclipse.core.runtime.Assert;
 import org.rssowl.core.persist.IFilterAction;
-import org.rssowl.core.persist.ISearchFilter;
 
 /**
  * An implementation of {@link IFilterAction} that is stored in a

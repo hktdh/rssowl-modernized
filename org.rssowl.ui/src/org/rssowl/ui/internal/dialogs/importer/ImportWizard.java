@@ -56,7 +56,6 @@ import org.rssowl.ui.internal.Controller;
 import org.rssowl.ui.internal.OwlUI;
 import org.rssowl.ui.internal.actions.ReloadTypesAction;
 import org.rssowl.ui.internal.dialogs.importer.ImportSourcePage.Source;
-import org.rssowl.ui.internal.dialogs.welcome.WelcomeWizard;
 import org.rssowl.ui.internal.editors.feed.NewsGrouping;
 import org.rssowl.ui.internal.util.ImportUtils;
 import org.rssowl.ui.internal.util.JobRunner;

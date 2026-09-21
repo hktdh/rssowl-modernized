@@ -25,7 +25,6 @@
 package org.rssowl.ui.internal.dialogs.welcome;
 
 import org.eclipse.jface.wizard.IWizardPage;
-import org.eclipse.jface.wizard.Wizard;
 import org.rssowl.ui.internal.dialogs.importer.ImportSourcePage;
 import org.rssowl.ui.internal.dialogs.importer.ImportWizard;
 import org.rssowl.ui.internal.dialogs.importer.ImportSourcePage.Source;

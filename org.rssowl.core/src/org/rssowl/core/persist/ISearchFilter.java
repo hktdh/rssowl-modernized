@@ -24,7 +24,6 @@
 
 package org.rssowl.core.persist;
 
-import org.rssowl.core.INewsAction;
 
 import java.util.List;
 

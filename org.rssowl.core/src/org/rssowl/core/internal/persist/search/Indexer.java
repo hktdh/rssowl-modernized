@@ -61,7 +61,6 @@ import org.rssowl.core.persist.event.NewsListener;
 import org.rssowl.core.persist.event.runnable.EventType;
 import org.rssowl.core.persist.reference.ModelReference;
 import org.rssowl.core.persist.reference.NewsReference;
-import org.rssowl.core.persist.service.IModelSearch;
 import org.rssowl.core.persist.service.PersistenceException;
 import org.rssowl.core.util.CoreUtils;
 import org.rssowl.core.util.JobQueue;

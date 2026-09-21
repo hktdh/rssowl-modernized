@@ -24,8 +24,6 @@
 
 package org.rssowl.core.internal.persist.dao;
 
-import org.rssowl.core.internal.persist.Description;
-import org.rssowl.core.internal.persist.service.EntityIdsByEventType;
 import org.rssowl.core.persist.IAttachment;
 import org.rssowl.core.persist.IBookMark;
 import org.rssowl.core.persist.ICategory;

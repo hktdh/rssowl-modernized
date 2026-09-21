@@ -57,7 +57,6 @@ import org.rssowl.ui.internal.ApplicationWorkbenchAdvisor;
 import org.rssowl.ui.internal.ApplicationWorkbenchWindowAdvisor;
 import org.rssowl.ui.internal.Controller;
 import org.rssowl.ui.internal.OwlUI;
-import org.rssowl.ui.internal.dialogs.preferences.NotifierPreferencesPage;
 import org.rssowl.ui.internal.util.JobRunner;
 
 import java.util.Collection;

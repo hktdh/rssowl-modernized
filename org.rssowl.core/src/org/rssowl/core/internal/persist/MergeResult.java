@@ -26,7 +26,6 @@ package org.rssowl.core.internal.persist;
 
 import org.eclipse.core.runtime.Assert;
 import org.rssowl.core.persist.IEntity;
-import org.rssowl.core.persist.MergeCapable;
 
 import java.util.Collections;
 import java.util.HashSet;

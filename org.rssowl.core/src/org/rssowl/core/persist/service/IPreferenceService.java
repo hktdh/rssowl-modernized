@@ -24,11 +24,8 @@
 
 package org.rssowl.core.persist.service;
 
-import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.rssowl.core.persist.IEntity;
 import org.rssowl.core.persist.pref.IPreferenceScope;
-import org.rssowl.core.persist.pref.IPreferencesInitializer;
 
 /**
  * <p>

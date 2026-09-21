@@ -25,7 +25,6 @@
 package org.rssowl.core.persist.event;
 
 import org.rssowl.core.persist.IEntity;
-import org.rssowl.core.persist.dao.DynamicDAO;
 
 import java.util.Set;
 
