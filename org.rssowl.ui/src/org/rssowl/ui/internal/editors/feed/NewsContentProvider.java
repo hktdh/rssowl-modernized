@@ -330,6 +330,16 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
    */
   public void updateChildCount(Object element, int currentChildCount) {
 
+    /*
+     * News are leaves. Saying so explicitly matters: a virtual Tree reuses its
+     * items, so an item that is not told it has no children keeps the count the
+     * slot held before, which showed every news as expandable.
+     */
+    if (element instanceof INews) {
+      fTableViewer.setChildCount(element, 0);
+      return;
+    }
+
     /* Children of a group are already known */
     if (element instanceof EntityGroup) {
       fTableViewer.setChildCount(element, ((EntityGroup) element).getItems().size());
@@ -341,13 +351,8 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
      * change is what keeps a changed sort order correct: the viewer answers a
      * refresh by asking for the child count again.
      */
-    if (element != null && element.equals(fTableViewer.getInput())) {
-      rebuildVisibleElements();
-      fTableViewer.setChildCount(element, fVisibleElements.length);
-      return;
-    }
-
-    fTableViewer.setChildCount(element, 0);
+    rebuildVisibleElements();
+    fTableViewer.setChildCount(element, fVisibleElements.length);
   }
 
   /*
@@ -364,7 +369,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
     }
 
     /* Top level */
-    else {
+    else if (!(parent instanceof INews)) {
       Object[] elements = fVisibleElements;
       if (index < elements.length)
         element = elements[index];
@@ -375,9 +380,13 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyTreeConte
 
     fTableViewer.replace(parent, index, element);
 
-    /* A group needs its child count before it can be expanded */
-    if (element instanceof EntityGroup)
-      updateChildCount(element, -1);
+    /*
+     * Every element that was just put into a slot needs its child count set,
+     * not only the groups: the slot may have been used for something else
+     * before, and the count left over from that would decide whether this row
+     * looks expandable.
+     */
+    updateChildCount(element, -1);
   }
 
   /**
