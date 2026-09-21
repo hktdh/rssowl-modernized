@@ -47,6 +47,7 @@ import org.rssowl.core.internal.persist.NewsBin;
 import org.rssowl.core.internal.persist.Preference;
 import org.rssowl.core.internal.persist.SearchFilter;
 import org.rssowl.core.internal.persist.migration.MigrationResult;
+import org.rssowl.core.internal.persist.search.ModelSearchImpl;
 import org.rssowl.core.internal.persist.migration.Migrations;
 import org.rssowl.core.persist.INews;
 import org.rssowl.core.persist.INews.State;
@@ -499,6 +500,14 @@ public class DBManager {
 
     /* Second look if the reindex file exists */
     if (!shouldReindex && getReIndexFile().exists())
+      shouldReindex = true;
+
+    /*
+     * Third, an index left by an older Lucene cannot be opened at all. The
+     * database format did not change when the search engine did, so no
+     * migration reports this; ask the index itself.
+     */
+    if (!shouldReindex && ModelSearchImpl.isIndexFormatTooOld())
       shouldReindex = true;
 
     if (shouldReindex) { //Need to set system property as model search relies on it

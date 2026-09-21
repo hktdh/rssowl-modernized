@@ -28,6 +28,7 @@ import org.apache.lucene.document.Document;
 
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -168,6 +169,41 @@ public class ModelSearchImpl implements IModelSearch {
       throw new ProfileLockedException(e.getMessage(), e);
     } catch (IOException e) {
       throw new PersistenceException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Whether the index on disk was written by a Lucene too old for this build to
+   * read.
+   * <p>
+   * RSSOwl moved from Lucene 2.3 to Lucene 10, and Lucene refuses an index in a
+   * format that far behind rather than upgrading it. Nothing in the profile
+   * says which Lucene wrote the index - the database format did not change with
+   * it, so the migrations never run - which left the first start after an
+   * upgrade failing outright instead of rebuilding. The index is derived data
+   * and can always be rebuilt from the news in the database, so report it here
+   * and let the normal reindex path deal with it.
+   * </p>
+   *
+   * @return <code>true</code> if an index exists that cannot be read.
+   */
+  public static boolean isIndexFormatTooOld() {
+    String path = Activator.getDefault().getStateLocation().toOSString();
+
+    /* Read only: opening a directory takes no write lock, only IndexWriter does */
+    try (Directory directory = FSDirectory.open(new File(path).toPath())) {
+      if (!DirectoryReader.indexExists(directory))
+        return false;
+
+      DirectoryReader.open(directory).close();
+      return false;
+    } catch (IndexFormatTooOldException e) {
+      Activator.safeLogInfo("Search index is in an older Lucene format, rebuilding it"); //$NON-NLS-1$
+      return true;
+    } catch (IOException e) {
+
+      /* Anything else is left to the normal start-up path to report */
+      return false;
     }
   }
 
