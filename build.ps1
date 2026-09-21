@@ -11,10 +11,9 @@
   Code o nhanh nay KHONG con bien dich duoc tren 3.8.2: no dung
   getAdapter(Class<T>) dang generic, chi co tu Eclipse 4.x.
 
-  Vi sao loai org.apache.lucene* khoi classpath: Eclipse ship san Lucene 2.9.1
-  cho Help search, con RSSOwl can 2.3.2 cua rieng no (org.rssowl.lib.lucene).
-  Trong OSGi that thi Require-Bundle tach bach hai cai; o classpath phang
-  thi phai loai thu cong, neu khong se dung nham 2.9.1 va gay loi bien dich.
+  Truoc day phai loai org.apache.lucene* khoi classpath vi RSSOwl mang theo
+  Lucene 2.3.2 rieng va no dung do voi ban Lucene cua Eclipse. Gio org.rssowl.core
+  dung thang Lucene cua target platform nen khong con xung dot, khong con loai tru.
 
   Vi du:
     .\build.ps1
@@ -64,14 +63,12 @@ if (-not $ecj) { Fail "Khong thay bundle ecj trong $EclipseHome\plugins" }
 if ($Clean -and (Test-Path $OutDir)) { Remove-Item $OutDir -Recurse -Force }
 
 # --- classpath ---------------------------------------------------------------
-# Thu vien cua RSSOwl phai dung TRUOC de thang Lucene 2.9.1 cua Eclipse.
 $cp = @(
-  "org.rssowl.lib.db4o", "org.rssowl.lib.httpclient",
-  "org.rssowl.lib.jdom", "org.rssowl.lib.lucene"
+  "org.rssowl.lib.db4o", "org.rssowl.lib.httpclient", "org.rssowl.lib.jdom"
 ) | ForEach-Object { Join-Path $root $_ }
 
 $cp += Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter *.jar |
-       Where-Object { $_.Name -notlike "*.source_*" -and $_.Name -notlike "org.apache.lucene*" } |
+       Where-Object { $_.Name -notlike "*.source_*" } |
        ForEach-Object { $_.FullName }
 
 # Vai bundle (vd org.junit4) la thu muc chua jar long nhau.

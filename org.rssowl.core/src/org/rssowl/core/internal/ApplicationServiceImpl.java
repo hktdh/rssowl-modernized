@@ -25,13 +25,19 @@
 package org.rssowl.core.internal;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.search.HitCollector;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.StoredFields;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.NoLockFactory;
-import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtensionRegistry;
@@ -456,16 +462,16 @@ public class ApplicationServiceImpl implements IApplicationService {
       return false;
 
     /* Need to index News and perform Searches */
-    RAMDirectory directory = null;
+    /* RAMDirectory was replaced by ByteBuffersDirectory, which needs no lock */
+    ByteBuffersDirectory directory = null;
     final IndexSearcher[] searcher = new IndexSearcher[1];
     if (needToIndex(enabledFilters)) {
       boolean indexDescription = needToIndexDescription(enabledFilters);
-      directory = new RAMDirectory();
-      directory.setLockFactory(NoLockFactory.getNoLockFactory());
+      directory = new ByteBuffersDirectory(NoLockFactory.INSTANCE);
 
       /* Index News */
       try {
-        IndexWriter indexWriter = new IndexWriter(directory, Indexer.createAnalyzer());
+        IndexWriter indexWriter = new IndexWriter(directory, new IndexWriterConfig(Indexer.createAnalyzer()));
         for (int i = 0; i < news.size(); i++) {
 
           /* Return early on cancellation */
@@ -474,12 +480,21 @@ public class ApplicationServiceImpl implements IApplicationService {
 
           NewsDocument document = new NewsDocument(news.get(i));
           document.addFields(indexDescription);
-          document.getDocument().getField(SearchDocument.ENTITY_ID_TEXT).setValue(String.valueOf(i));
-          indexWriter.addDocument(document.getDocument());
+
+          /*
+           * Index the position in the list rather than the entity id, so that a
+           * hit maps straight back to the news it came from. Fields are
+           * immutable now, so replace the field instead of setting its value.
+           */
+          Document luceneDocument = document.getDocument();
+          luceneDocument.removeField(SearchDocument.ENTITY_ID_TEXT);
+          luceneDocument.add(new StringField(SearchDocument.ENTITY_ID_TEXT, String.valueOf(i), Store.YES));
+
+          indexWriter.addDocument(luceneDocument);
         }
         indexWriter.close();
 
-        searcher[0] = new IndexSearcher(directory);
+        searcher[0] = new IndexSearcher(DirectoryReader.open(directory));
       } catch (Exception e) {
         directory.close();
         throw e;
@@ -516,22 +531,19 @@ public class ApplicationServiceImpl implements IApplicationService {
         try {
           final List<INews> matchingNews = new ArrayList<>();
 
-          /* Perform Query */
+          /*
+           * Perform Query. HitCollector is gone; asking for the top n hits does
+           * the same job here because the index only holds these news, so n can
+           * never exceed the size of the list.
+           */
           Query query = ModelSearchQueries.createQuery(filter.getSearch());
-          searcher[0].search(query, new HitCollector() {
-            @Override
-            public void collect(int doc, float score) {
-              try {
-                Document document = searcher[0].doc(doc);
-                int index = Integer.valueOf(document.get(SearchDocument.ENTITY_ID_TEXT));
-                matchingNews.add(news.get(index));
-              } catch (CorruptIndexException e) {
-                Activator.getDefault().logError(e.getMessage(), e);
-              } catch (IOException e) {
-                Activator.getDefault().logError(e.getMessage(), e);
-              }
-            }
-          });
+          TopDocs topDocs = searcher[0].search(query, Math.max(1, news.size()));
+          StoredFields storedFields = searcher[0].storedFields();
+          for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+            Document document = storedFields.document(scoreDoc.doc);
+            int index = Integer.parseInt(document.get(SearchDocument.ENTITY_ID_TEXT));
+            matchingNews.add(news.get(index));
+          }
 
           /* Apply Filter */
           matchingNews.removeAll(filteredNews);

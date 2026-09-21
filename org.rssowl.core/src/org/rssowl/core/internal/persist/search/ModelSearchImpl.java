@@ -25,16 +25,19 @@
 package org.rssowl.core.internal.persist.search;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.NumberTools;
+
 import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexFileNameFilter;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BooleanQuery.TooManyClauses;
-import org.apache.lucene.search.HitCollector;
+import org.apache.lucene.search.IndexSearcher.TooManyClauses;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SimpleCollector;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
@@ -94,6 +97,14 @@ public class ModelSearchImpl implements IModelSearch {
   /* An increased clauses count to set in case of a MaxClouseCountException */
   static final int MAX_CLAUSE_COUNT = 65536;
 
+  /*
+   * The most results a single news search will return. A broad keyword over a
+   * large archive can match most of the index, and every match costs a stored
+   * field read plus the objects that carry it to the UI. Lucene ranks, so the
+   * results dropped here are the weakest matches.
+   */
+  private static final int MAX_SEARCH_RESULTS = 2000;
+
   private volatile IndexSearcher fSearcher;
   private volatile Indexer fIndexer;
   private volatile Directory fDirectory;
@@ -120,10 +131,19 @@ public class ModelSearchImpl implements IModelSearch {
          */
         if (clearIndex) {
           File directory = new File(path);
-          File[] indexFiles = directory.listFiles(new IndexFileNameFilter());
+
+          /*
+           * IndexFileNameFilter is gone and Lucene no longer publishes the set
+           * of names it uses. Everything in this directory belongs to the
+           * index, so clear it wholesale rather than guess at the naming.
+           */
+          File[] indexFiles = directory.listFiles();
           try {
-            for (File file : indexFiles) {
-              file.delete();
+            if (indexFiles != null) {
+              for (File file : indexFiles) {
+                if (file.isFile())
+                  file.delete();
+              }
             }
           } catch (Exception e) {
             Activator.getDefault().logError(e.getMessage(), e);
@@ -131,8 +151,8 @@ public class ModelSearchImpl implements IModelSearch {
         }
 
         /* Create Directory */
-        LockFactory lockFactory = new NativeFSLockFactory(path);
-        fDirectory = FSDirectory.getDirectory(path, lockFactory);
+        LockFactory lockFactory = NativeFSLockFactory.INSTANCE;
+        fDirectory = FSDirectory.open(new File(path).toPath(), lockFactory);
       }
 
       if (fIndexer == null)
@@ -210,16 +230,23 @@ public class ModelSearchImpl implements IModelSearch {
 
   private BooleanClause createIsCopyTermQuery(boolean copy) {
     String field = String.valueOf(INews.PARENT_ID);
-    TermQuery termQuery = new TermQuery(new Term(field, NumberTools.longToString(0)));
+    TermQuery termQuery = new TermQuery(new Term(field, SortableLong.toString(0)));
     Occur occur = copy ? Occur.MUST_NOT : Occur.MUST;
     return new BooleanClause(termQuery, occur);
   }
 
-  private static final class SimpleHitCollector extends HitCollector {
+  /*
+   * Collects every match rather than a top N, because the callers resolve news
+   * by guid or link and need all of them. SimpleCollector replaces the removed
+   * HitCollector; note that collect() now receives a docId that is relative to
+   * the current leaf, so the leaf offset has to be added back.
+   */
+  private static final class SimpleHitCollector extends SimpleCollector {
 
     private final IndexSearcher fSearcher;
     private final List<NewsReference> fResultList;
     private final Map<Long, Long> fSearchResultNewsIds = new HashMap<>();
+    private int fDocBase;
 
     SimpleHitCollector(IndexSearcher searcher, List<NewsReference> resultList) {
       fSearcher = searcher;
@@ -227,9 +254,19 @@ public class ModelSearchImpl implements IModelSearch {
     }
 
     @Override
-    public void collect(int doc, float score) {
+    protected void doSetNextReader(org.apache.lucene.index.LeafReaderContext context) {
+      fDocBase = context.docBase;
+    }
+
+    @Override
+    public org.apache.lucene.search.ScoreMode scoreMode() {
+      return org.apache.lucene.search.ScoreMode.COMPLETE_NO_SCORES;
+    }
+
+    @Override
+    public void collect(int doc) {
       try {
-        Document document = fSearcher.doc(doc);
+        Document document = fSearcher.storedFields().document(fDocBase + doc);
 
         /* Receive Stored Fields */
         long newsId = Long.parseLong(document.get(SearchDocument.ENTITY_ID_TEXT));
@@ -319,10 +356,10 @@ public class ModelSearchImpl implements IModelSearch {
   }
 
   private BooleanQuery createNewsByLinkBooleanQuery(URI link, boolean copy) {
-    BooleanQuery query = new BooleanQuery(true);
+    BooleanQuery.Builder query = new BooleanQuery.Builder();
     query.add(new TermQuery(new Term(String.valueOf(INews.LINK), link.toString().toLowerCase())), Occur.MUST);
     query.add(createIsCopyTermQuery(copy));
-    return query;
+    return query.build();
   }
 
   /**
@@ -337,10 +374,10 @@ public class ModelSearchImpl implements IModelSearch {
   }
 
   private BooleanQuery createGuidQuery(IGuid guid, boolean copy) {
-    BooleanQuery query = new BooleanQuery(true);
+    BooleanQuery.Builder query = new BooleanQuery.Builder();
     query.add(new TermQuery(new Term(String.valueOf(INews.GUID), guid.getValue().toLowerCase())), Occur.MUST);
     query.add(createIsCopyTermQuery(copy));
-    return query;
+    return query.build();
   }
 
   private List<NewsReference> simpleSearch(Query query) {
@@ -414,8 +451,8 @@ public class ModelSearchImpl implements IModelSearch {
     catch (TooManyClauses e) {
 
       /* Disable Clauses Limit */
-      if (BooleanQuery.getMaxClauseCount() != ModelSearchImpl.MAX_CLAUSE_COUNT) {
-        BooleanQuery.setMaxClauseCount(MAX_CLAUSE_COUNT);
+      if (IndexSearcher.getMaxClauseCount() != ModelSearchImpl.MAX_CLAUSE_COUNT) {
+        IndexSearcher.setMaxClauseCount(MAX_CLAUSE_COUNT);
         return doSearchNews(conditions, scope, matchAllConditions);
       }
 
@@ -436,39 +473,46 @@ public class ModelSearchImpl implements IModelSearch {
       final Map<Long, Long> searchResultNewsIds = new HashMap<>();
 
       /* Use custom hit collector for performance reasons */
-      HitCollector collector = new HitCollector() {
-        @Override
-        public void collect(int doc, float score) {
-          try {
-            Document document = currentSearcher.doc(doc);
+      /*
+       * Perform the Search.
+       *
+       * This used to collect every match, which on a large archive meant tens
+       * of thousands of results were materialised and handed to the UI for a
+       * single query. Asking for the best MAX_SEARCH_RESULTS instead bounds
+       * both the work and the memory, and the ranking means what is dropped is
+       * what matched least well.
+       *
+       * Only two fields are stored, but naming them keeps the stored field
+       * reader from having to walk the rest of the document.
+       */
+      try {
+        TopDocs topDocs = currentSearcher.search(bQuery, MAX_SEARCH_RESULTS);
+        StoredFields storedFields = currentSearcher.storedFields();
+        Set<String> fieldsToLoad = Set.of(SearchDocument.ENTITY_ID_TEXT, NewsDocument.STATE_ID_TEXT);
 
-            /* Receive Stored Fields */
-            long newsId = Long.parseLong(document.get(SearchDocument.ENTITY_ID_TEXT));
-            INews.State newsState = NEWS_STATES[Integer.parseInt(document.get(NewsDocument.STATE_ID_TEXT))];
+        for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+          Document document = storedFields.document(scoreDoc.doc, fieldsToLoad);
 
-            Map<Integer, INews.State> data = new HashMap<>(1);
-            data.put(INews.STATE, newsState);
+          /* Receive Stored Fields */
+          long newsId = Long.parseLong(document.get(SearchDocument.ENTITY_ID_TEXT));
+          INews.State newsState = NEWS_STATES[Integer.parseInt(document.get(NewsDocument.STATE_ID_TEXT))];
 
-            /*
-             * Under some circumstances the index might contain the same news
-             * twice. This can happen in situations where RSSOwl is quitting in
-             * an emergent way (e.g. the OS shutting down while RSSOwl is
-             * running). To avoid issues, we filter out duplicate results from
-             * the search. See http://dev.rssowl.org/show_bug.cgi?id=1264
-             */
-            if (!searchResultNewsIds.containsKey(newsId)) {
-              resultList.add(new SearchHit<>(new NewsReference(newsId), score, data));
-              searchResultNewsIds.put(newsId, newsId);
-            }
-          } catch (IOException e) {
-            Activator.safeLogError(e.getMessage(), e);
+          Map<Integer, INews.State> data = new HashMap<>(1);
+          data.put(INews.STATE, newsState);
+
+          /*
+           * Under some circumstances the index might contain the same news
+           * twice. This can happen in situations where RSSOwl is quitting in
+           * an emergent way (e.g. the OS shutting down while RSSOwl is
+           * running). To avoid issues, we filter out duplicate results from
+           * the search. See http://dev.rssowl.org/show_bug.cgi?id=1264
+           */
+          if (!searchResultNewsIds.containsKey(newsId)) {
+            resultList.add(new SearchHit<>(new NewsReference(newsId), scoreDoc.score, data));
+            searchResultNewsIds.put(newsId, newsId);
           }
         }
-      };
 
-      /* Perform the Search */
-      try {
-        currentSearcher.search(bQuery, collector);
         return resultList;
       } finally {
         disposeIfNecessary(currentSearcher);
@@ -479,7 +523,7 @@ public class ModelSearchImpl implements IModelSearch {
   }
 
   private IndexSearcher createIndexSearcher() throws CorruptIndexException, IOException {
-    IndexSearcher searcher = new IndexSearcher(IndexReader.open(fDirectory));
+    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(fDirectory));
     fSearchers.put(searcher, new AtomicInteger(0));
     return searcher;
   }
@@ -500,8 +544,10 @@ public class ModelSearchImpl implements IModelSearch {
          * has reopened the reader while we were blocked waiting for the lock.
          */
         if (flushed && currentSearcher == fSearcher) {
-          IndexReader currentReader = fSearcher.getIndexReader();
-          IndexReader newReader = currentReader.reopen();
+          DirectoryReader currentReader = (DirectoryReader) fSearcher.getIndexReader();
+          /* reopen() became the static openIfChanged(), returning null when unchanged */
+          DirectoryReader reopened = DirectoryReader.openIfChanged(currentReader);
+          IndexReader newReader = (reopened != null) ? reopened : currentReader;
           if (newReader != currentReader) {
 
             IndexSearcher newSearcher = new IndexSearcher(newReader);
@@ -546,7 +592,7 @@ public class ModelSearchImpl implements IModelSearch {
    */
   private void dispose(IndexSearcher searcher) throws IOException {
     fSearchers.remove(searcher);
-    searcher.close();
+    /* IndexSearcher no longer owns a closeable; the reader below is the resource */
     searcher.getIndexReader().close();
   }
 

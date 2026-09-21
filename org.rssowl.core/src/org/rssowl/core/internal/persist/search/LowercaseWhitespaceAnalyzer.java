@@ -27,27 +27,30 @@ package org.rssowl.core.internal.persist.search;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.WhitespaceTokenizer;
-
-import java.io.Reader;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 
 /**
  * The <code>LowercaseWhitespaceAnalyzer</code> will tokenize the input by
- * whitespaces. In addition, all <code>Token</code>s get lowercased.
+ * whitespaces. In addition, all tokens get lowercased and stripped of their
+ * diacritics.
  *
  * @author bpasero
  */
 public class LowercaseWhitespaceAnalyzer extends Analyzer {
 
   /*
-   * @see org.apache.lucene.analysis.KeywordAnalyzer#tokenStream(java.lang.String,
-   * java.io.Reader)
+   * @see org.apache.lucene.analysis.Analyzer#createComponents(java.lang.String)
    */
   @Override
-  public TokenStream tokenStream(String fieldName, Reader reader) {
-    TokenStream result = new WhitespaceTokenizer(reader);
-    result = new LowerCaseFilter(result);
+  protected TokenStreamComponents createComponents(String fieldName) {
+    Tokenizer source = new WhitespaceTokenizer();
+    TokenStream result = new LowerCaseFilter(source);
 
-    return result;
+    /* Fold diacritics so that a query typed without them still matches */
+    result = new ASCIIFoldingFilter(result);
+
+    return new TokenStreamComponents(source, result);
   }
 }

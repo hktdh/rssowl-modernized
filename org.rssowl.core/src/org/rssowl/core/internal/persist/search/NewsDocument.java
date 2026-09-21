@@ -26,7 +26,6 @@ package org.rssowl.core.internal.persist.search;
 
 import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.rssowl.core.persist.IAttachment;
 import org.rssowl.core.persist.ILabel;

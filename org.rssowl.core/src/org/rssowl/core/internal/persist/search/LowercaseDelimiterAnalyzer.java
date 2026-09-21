@@ -25,15 +25,16 @@
 package org.rssowl.core.internal.persist.search;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.CharTokenizer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
-
-import java.io.Reader;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
+import org.apache.lucene.analysis.util.CharTokenizer;
 
 /**
  * The <code>LowercaseDelimiterAnalyzer</code> will tokenize the input by the
- * given delimiter char. In addition, all <code>Token</code>s get lowercased.
+ * given delimiter char. In addition, all tokens get lowercased and stripped of
+ * their diacritics.
  *
  * @author bpasero
  */
@@ -42,8 +43,7 @@ public class LowercaseDelimiterAnalyzer extends Analyzer {
 
   /**
    * The <code>LowercaseDelimiterAnalyzer</code> will tokenize the input by
-   * the given delimiter char. In addition, all <code>Token</code>s get
-   * lowercased.
+   * the given delimiter char. In addition, all tokens get lowercased.
    *
    * @param delim the char that is used to separate tokens.
    */
@@ -52,24 +52,26 @@ public class LowercaseDelimiterAnalyzer extends Analyzer {
   }
 
   /*
-   * @see org.apache.lucene.analysis.KeywordAnalyzer#tokenStream(java.lang.String,
-   * java.io.Reader)
+   * @see org.apache.lucene.analysis.Analyzer#createComponents(java.lang.String)
    */
   @Override
-  public TokenStream tokenStream(String fieldName, Reader reader) {
+  protected TokenStreamComponents createComponents(String fieldName) {
 
-    /* Split at delim Char */
-    TokenStream result = new CharTokenizer(reader) {
+    /* Split at delim Char. CharTokenizer works on code points now, not chars. */
+    Tokenizer source = new CharTokenizer() {
 
       @Override
-      protected boolean isTokenChar(char c) {
+      protected boolean isTokenChar(int c) {
         return c != fDelim;
       }
     };
 
     /* Lowercase */
-    result = new LowerCaseFilter(result);
+    TokenStream result = new LowerCaseFilter(source);
 
-    return result;
+    /* Fold diacritics so that a query typed without them still matches */
+    result = new ASCIIFoldingFilter(result);
+
+    return new TokenStreamComponents(source, result);
   }
 }

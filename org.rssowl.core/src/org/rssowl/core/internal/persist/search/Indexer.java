@@ -25,13 +25,20 @@
 package org.rssowl.core.internal.persist.search;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.KeywordTokenizer;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.StopFilter;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.store.Directory;
@@ -71,8 +78,10 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ListIterator;
 import java.util.Set;
 
@@ -108,30 +117,51 @@ public class Indexer {
   private final EntityIdsByEventType fUncommittedNews;
   private volatile boolean fFlushRequired;
 
-  /* The Default Analyzer */
-  private static class DefaultAnalyzer extends KeywordAnalyzer {
+  /* Analyzer for free text fields such as title and description */
+  private static class TextAnalyzer extends Analyzer {
 
     /*
-     * @see
-     * org.apache.lucene.analysis.KeywordAnalyzer#tokenStream(java.lang.String,
-     * java.io.Reader)
+     * @see org.apache.lucene.analysis.Analyzer#createComponents(java.lang.String)
      */
     @Override
-    public TokenStream tokenStream(String fieldName, Reader reader) {
-      TokenStream result = super.tokenStream(fieldName, reader);
-      result = new LowerCaseFilter(result);
+    protected TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer source = new StandardTokenizer();
+      TokenStream result = new LowerCaseFilter(source);
 
-      return result;
+      /*
+       * StandardAnalyzer no longer drops English stop words by default, so name
+       * them here to keep the disableStopWords switch meaningful.
+       */
+      if (!DISABLE_STOP_WORDS)
+        result = new StopFilter(result, EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
+
+      /*
+       * Fold diacritics, so that a query typed without them finds text that has
+       * them and the other way round. Without this "tieng viet" never matches
+       * "tiếng việt", which makes the search unusable for languages that mark
+       * tone or accent.
+       */
+      result = new ASCIIFoldingFilter(result);
+
+      return new TokenStreamComponents(source, result);
     }
+  }
+
+  /* The Default Analyzer: the whole value as one lowercased, folded term */
+  private static class DefaultAnalyzer extends Analyzer {
 
     /*
-     * @see
-     * org.apache.lucene.analysis.KeywordAnalyzer#reusableTokenStream(java.lang
-     * .String, java.io.Reader)
+     * @see org.apache.lucene.analysis.Analyzer#createComponents(java.lang.String)
      */
     @Override
-    public TokenStream reusableTokenStream(String fieldName, Reader reader) {
-      return tokenStream(fieldName, reader);
+    protected TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer source = new KeywordTokenizer();
+      TokenStream result = new LowerCaseFilter(source);
+
+      /* Fold diacritics so that a query typed without them still matches */
+      result = new ASCIIFoldingFilter(result);
+
+      return new TokenStreamComponents(source, result);
     }
   }
 
@@ -294,7 +324,7 @@ public class Indexer {
     fUncommittedNews.clear();
 
     /* Re-Create the Index */
-    if (IndexReader.indexExists(fIndexDirectory))
+    if (DirectoryReader.indexExists(fIndexDirectory))
       fIndexWriter = createIndexWriter(fIndexDirectory, true);
   }
 
@@ -305,7 +335,8 @@ public class Indexer {
    * @throws IOException
    */
   synchronized void optimize() throws CorruptIndexException, IOException {
-    fIndexWriter.optimize();
+    /* optimize() is now an explicit merge down to a single segment */
+    fIndexWriter.forceMerge(1);
   }
 
   /**
@@ -316,28 +347,25 @@ public class Indexer {
    * of Fields and Queries.
    */
   public static Analyzer createAnalyzer() {
-    PerFieldAnalyzerWrapper analyzer = new PerFieldAnalyzerWrapper(new DefaultAnalyzer());
+    Analyzer textAnalyzer = new TextAnalyzer();
+    Analyzer simpleAnalyzer = new LowercaseWhitespaceAnalyzer();
 
-    /* Standard (Lowercase, Letter, Stop,...) */
-    StandardAnalyzer stdAnalyzer;
-    if (DISABLE_STOP_WORDS)
-      stdAnalyzer = new StandardAnalyzer(Collections.EMPTY_SET);
-    else
-      stdAnalyzer = new StandardAnalyzer();
+    /* PerFieldAnalyzerWrapper takes the whole per field mapping up front now */
+    Map<String, Analyzer> fieldAnalyzers = new HashMap<>();
 
-    analyzer.addAnalyzer(String.valueOf(INews.TITLE), stdAnalyzer);
-    analyzer.addAnalyzer(String.valueOf(INews.DESCRIPTION), stdAnalyzer);
-    analyzer.addAnalyzer(String.valueOf(INews.ATTACHMENTS_CONTENT), stdAnalyzer);
+    /* Free text */
+    fieldAnalyzers.put(String.valueOf(INews.TITLE), textAnalyzer);
+    fieldAnalyzers.put(String.valueOf(INews.DESCRIPTION), textAnalyzer);
+    fieldAnalyzers.put(String.valueOf(INews.ATTACHMENTS_CONTENT), textAnalyzer);
 
-    /* Simple (Lowercase, Whitespace Tokzenizer) */
-    LowercaseWhitespaceAnalyzer simpleAnalyzer = new LowercaseWhitespaceAnalyzer();
-    analyzer.addAnalyzer(String.valueOf(INews.AUTHOR), simpleAnalyzer);
-    analyzer.addAnalyzer(String.valueOf(INews.LABEL), simpleAnalyzer);
+    /* Simple (Lowercase, Whitespace Tokenizer) */
+    fieldAnalyzers.put(String.valueOf(INews.AUTHOR), simpleAnalyzer);
+    fieldAnalyzers.put(String.valueOf(INews.LABEL), simpleAnalyzer);
 
     /* Simple (Lowercase, Delim Tokenizer) */
-    analyzer.addAnalyzer(String.valueOf(INews.CATEGORIES), new LowercaseDelimiterAnalyzer('\n'));
+    fieldAnalyzers.put(String.valueOf(INews.CATEGORIES), new LowercaseDelimiterAnalyzer('\n'));
 
-    return analyzer;
+    return new PerFieldAnalyzerWrapper(new DefaultAnalyzer(), fieldAnalyzers);
   }
 
   private void init(boolean clearIndex) throws PersistenceException {
@@ -411,7 +439,7 @@ public class Indexer {
 
     /* Create the Index if required */
     try {
-      fIndexWriter = createIndexWriter(fIndexDirectory, clearIndex || !IndexReader.indexExists(fIndexDirectory));
+      fIndexWriter = createIndexWriter(fIndexDirectory, clearIndex || !DirectoryReader.indexExists(fIndexDirectory));
     } catch (IOException e) {
       throw new PersistenceException(e.getMessage(), e);
     }
@@ -527,8 +555,15 @@ public class Indexer {
   }
 
   private IndexWriter createIndexWriter(Directory directory, boolean create) throws IOException {
-    IndexWriter indexWriter = new IndexWriter(directory, false, createAnalyzer(), create);
-    indexWriter.setMergeFactor(6);
+    /*
+     * The writer is configured through IndexWriterConfig now. setMergeFactor
+     * moved onto the merge policy and is left at its default here: the old
+     * value of 6 was tuned for Lucene 2.3 and the defaults have changed since.
+     */
+    IndexWriterConfig config = new IndexWriterConfig(createAnalyzer());
+    config.setOpenMode(create ? OpenMode.CREATE : OpenMode.CREATE_OR_APPEND);
+
+    IndexWriter indexWriter = new IndexWriter(directory, config);
     fFlushRequired = false;
     return indexWriter;
   }

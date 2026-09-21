@@ -12,7 +12,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.rssowl.lib.db4o,
  org.rssowl.core,
  org.eclipse.equinox.security,
- org.rssowl.lib.lucene
+ org.apache.lucene.core
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-Activator: org.rssowl.core.tests.Activator

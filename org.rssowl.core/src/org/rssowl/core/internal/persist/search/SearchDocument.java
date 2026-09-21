@@ -28,9 +28,10 @@ import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.NumberTools;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.eclipse.core.runtime.Assert;
 import org.rssowl.core.persist.IAttachment;
 import org.rssowl.core.persist.ICategory;
@@ -51,6 +52,26 @@ import java.util.List;
  * @param <T> the {@link IEntity} that fills this document.
  */
 public abstract class SearchDocument<T extends IEntity> {
+
+  /**
+   * How a field value is turned into index terms.
+   * <p>
+   * Lucene used to express this with <code>Field.Index</code>, which was
+   * removed in favour of concrete field classes. This keeps the distinction at
+   * the one place that builds fields, so the callers below stay declarative.
+   * </p>
+   */
+  public enum Index {
+
+    /** Run the value through the analyzer, producing one term per token. */
+    TOKENIZED,
+
+    /** Index the value as a single term, exactly as given. */
+    UN_TOKENIZED,
+
+    /** Store the value but do not index it. */
+    NO
+  }
 
   /** The value of an Entitie's ID as integer */
   protected static final int ENTITY_ID = -2;
@@ -122,13 +143,35 @@ public abstract class SearchDocument<T extends IEntity> {
   }
 
   /**
+   * Builds the Lucene field that carries the given value.
+   *
+   * @param name the name of the field.
+   * @param value the value of the field.
+   * @param store one of the {@link Store} constants.
+   * @param index one of the {@link Index} constants.
+   * @return the {@link Field} that can be used for indexing.
+   */
+  private static Field newField(String name, String value, Store store, Index index) {
+    switch (index) {
+      case TOKENIZED:
+        return new TextField(name, value, store);
+
+      case UN_TOKENIZED:
+        return new StringField(name, value, store);
+
+      default:
+        return new StoredField(name, value);
+    }
+  }
+
+  /**
    * Creates a new <code>Field</code> representing the entities ID this Document
    * wraps around.
    *
    * @return Field
    */
   protected Field createDocumentIDField() {
-    return new Field(ENTITY_ID_TEXT, String.valueOf(getType().getId()), Store.YES, Index.UN_TOKENIZED);
+    return newField(ENTITY_ID_TEXT, String.valueOf(getType().getId()), Store.YES, Index.UN_TOKENIZED);
   }
 
   /**
@@ -140,7 +183,7 @@ public abstract class SearchDocument<T extends IEntity> {
    * @return Field the {@link Field} that can be used for indexing.
    */
   protected Field createIDField(int fieldConstant, IEntity entity, Store store) {
-    return new Field(String.valueOf(fieldConstant), String.valueOf(entity.getId()), store, Index.UN_TOKENIZED);
+    return newField(String.valueOf(fieldConstant), String.valueOf(entity.getId()), store, Index.UN_TOKENIZED);
   }
 
   /**
@@ -152,8 +195,8 @@ public abstract class SearchDocument<T extends IEntity> {
    * @return Field the {@link Field} that can be used for indexing.
    */
   protected Field createLongField(int fieldConstant, long value, Store store) {
-    String valueText = NumberTools.longToString(value);
-    return new Field(String.valueOf(fieldConstant), valueText, store, Index.UN_TOKENIZED);
+    String valueText = SortableLong.toString(value);
+    return newField(String.valueOf(fieldConstant), valueText, store, Index.UN_TOKENIZED);
   }
 
   /**
@@ -165,7 +208,7 @@ public abstract class SearchDocument<T extends IEntity> {
    * @return Field the {@link Field} that can be used for indexing.
    */
   protected Field createBooleanField(int fieldConstant, boolean value, Store store) {
-    return new Field(String.valueOf(fieldConstant), String.valueOf(value), store, Index.UN_TOKENIZED);
+    return newField(String.valueOf(fieldConstant), String.valueOf(value), store, Index.UN_TOKENIZED);
   }
 
   /**
@@ -194,7 +237,7 @@ public abstract class SearchDocument<T extends IEntity> {
       return null;
 
     String valueText = DateTools.dateToString(value, resolution);
-    return new Field(String.valueOf(fieldConstant), valueText, store, Index.UN_TOKENIZED);
+    return newField(String.valueOf(fieldConstant), valueText, store, Index.UN_TOKENIZED);
   }
 
   /**
@@ -210,7 +253,7 @@ public abstract class SearchDocument<T extends IEntity> {
     if (value == null)
       return null;
 
-    return new Field(String.valueOf(fieldConstant), value.toLowerCase(), store, index);
+    return newField(String.valueOf(fieldConstant), value.toLowerCase(), store, index);
   }
 
   /**
@@ -226,7 +269,7 @@ public abstract class SearchDocument<T extends IEntity> {
     if (value == null)
       return null;
 
-    return new Field(String.valueOf(fieldConstant), value, store, index);
+    return newField(String.valueOf(fieldConstant), value, store, index);
   }
 
   /**
@@ -242,7 +285,8 @@ public abstract class SearchDocument<T extends IEntity> {
     if (value == null)
       return null;
 
-    return new Field(String.valueOf(fieldConstant), new HTMLStripReader(new StringReader(value)));
+    /* A Reader backed field is always tokenized and cannot be stored */
+    return new Field(String.valueOf(fieldConstant), new HTMLStripReader(new StringReader(value)), TextField.TYPE_NOT_STORED);
   }
 
   /**
@@ -257,7 +301,7 @@ public abstract class SearchDocument<T extends IEntity> {
     if (value == null)
       return null;
 
-    return new Field(String.valueOf(fieldConstant), String.valueOf(value.ordinal()), store, Index.UN_TOKENIZED);
+    return newField(String.valueOf(fieldConstant), String.valueOf(value.ordinal()), store, Index.UN_TOKENIZED);
   }
 
   /**

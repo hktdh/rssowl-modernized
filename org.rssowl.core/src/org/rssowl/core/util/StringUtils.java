@@ -24,7 +24,8 @@
 
 package org.rssowl.core.util;
 
-import org.apache.lucene.analysis.StopAnalyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.rssowl.core.connection.MonitorCanceledException;
 import org.rssowl.core.internal.Activator;
 
@@ -49,7 +50,20 @@ public class StringUtils {
    * An array containing some common English words that are not usually useful
    * for searching.
    */
-  public static final String[] ENGLISH_STOP_WORDS = StopAnalyzer.ENGLISH_STOP_WORDS;
+  /*
+   * Lucene dropped StopAnalyzer.ENGLISH_STOP_WORDS (a String[]) in favour of
+   * EnglishAnalyzer.ENGLISH_STOP_WORDS_SET, a CharArraySet holding char[].
+   * Callers here expect Strings, so convert once at class initialisation.
+   */
+  public static final String[] ENGLISH_STOP_WORDS = toStringArray(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
+
+  private static String[] toStringArray(CharArraySet stopWords) {
+    List<String> words = new ArrayList<>(stopWords.size());
+    for (Object word : stopWords)
+      words.add(word instanceof char[] ? new String((char[]) word) : String.valueOf(word));
+
+    return words.toArray(new String[0]);
+  }
 
   /* This utility class constructor is hidden */
   private StringUtils() {

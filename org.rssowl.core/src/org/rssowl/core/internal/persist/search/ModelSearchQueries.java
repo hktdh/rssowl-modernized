@@ -29,7 +29,7 @@ import org.apache.lucene.analysis.Token;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.DateTools.Resolution;
-import org.apache.lucene.document.NumberTools;
+
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -37,7 +37,8 @@ import org.apache.lucene.queryParser.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BooleanQuery.TooManyClauses;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.IndexSearcher.TooManyClauses;
 import org.apache.lucene.search.ConstantScoreRangeQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
@@ -88,10 +89,10 @@ public class ModelSearchQueries {
   private static final String MIN_DATE = DateTools.dateToString(new Date(0), Resolution.DAY);
 
   /* Maximum Number as String */
-  private static final String MAX_NUMBER = NumberTools.longToString(Long.MAX_VALUE);
+  private static final String MAX_NUMBER = SortableLong.toString(Long.MAX_VALUE);
 
   /* Minimum Number as String */
-  private static final String MIN_NUMBER = NumberTools.longToString(Long.MIN_VALUE);
+  private static final String MIN_NUMBER = SortableLong.toString(Long.MIN_VALUE);
 
   /* One Day in Millis */
   private static final Long DAY = 1000 * 3600 * 24L;
@@ -136,8 +137,8 @@ public class ModelSearchQueries {
     catch (TooManyClauses e) {
 
       /* Disable Clauses Limit */
-      if (BooleanQuery.getMaxClauseCount() != ModelSearchImpl.MAX_CLAUSE_COUNT) {
-        BooleanQuery.setMaxClauseCount(ModelSearchImpl.MAX_CLAUSE_COUNT);
+      if (IndexSearcher.getMaxClauseCount() != ModelSearchImpl.MAX_CLAUSE_COUNT) {
+        IndexSearcher.setMaxClauseCount(ModelSearchImpl.MAX_CLAUSE_COUNT);
         return internalCreateQuery(conditions, scope, matchAllConditions);
       }
 
@@ -148,7 +149,7 @@ public class ModelSearchQueries {
 
   private static Query internalCreateQuery(Collection<ISearchCondition> conditions, ISearchCondition scope, boolean matchAllConditions) throws IOException {
     boolean isScoped = false;
-    BooleanQuery bQuery = new BooleanQuery();
+    BooleanQuery.Builder bQuery = new BooleanQuery.Builder();
     Analyzer analyzer = Indexer.createAnalyzer();
 
     /* Handle Location Scope Query separately */
@@ -164,45 +165,65 @@ public class ModelSearchQueries {
 
     /* Add Condition Scope Query as necessary */
     if (scope != null) {
-      addFieldClauses(Collections.singleton(scope), true, bQuery, analyzer);
+      for (BooleanClause clause : createFieldClauses(Collections.singleton(scope), true, analyzer))
+        bQuery.add(clause);
+
       isScoped = true;
     }
 
-    /* If scoped, the fieldQuery is a MUST-Clause to the outer Query */
-    BooleanQuery fieldQuery = bQuery;
-    if (isScoped)
-      fieldQuery = new BooleanQuery();
-
     /* Add Conditions into the Boolean Query */
-    addFieldClauses(conditions, matchAllConditions, fieldQuery, analyzer);
+    List<BooleanClause> fieldClauses = createFieldClauses(conditions, matchAllConditions, analyzer);
+
+    /* If scoped, the field clauses form a MUST-Clause of the outer Query */
+    if (!isScoped) {
+      for (BooleanClause clause : fieldClauses)
+        bQuery.add(clause);
+    }
 
     /* Only add if not empty if scoped */
-    if (isScoped && !fieldQuery.clauses().isEmpty())
-      bQuery.add(fieldQuery, Occur.MUST);
+    else if (!fieldClauses.isEmpty()) {
+      BooleanQuery.Builder fieldQuery = new BooleanQuery.Builder();
+      for (BooleanClause clause : fieldClauses)
+        fieldQuery.add(clause);
 
-    return bQuery;
+      bQuery.add(fieldQuery.build(), Occur.MUST);
+    }
+
+    return bQuery.build();
   }
 
-  private static void addFieldClauses(Collection<ISearchCondition> conditions, boolean matchAllConditions, BooleanQuery bQuery, Analyzer analyzer) throws IOException {
+  /*
+   * Returns the clauses instead of filling a query that was passed in: a
+   * BooleanQuery can no longer be attached to its parent and populated
+   * afterwards, because it is immutable and built once through a Builder.
+   */
+  private static List<BooleanClause> createFieldClauses(Collection<ISearchCondition> conditions, boolean matchAllConditions, Analyzer analyzer) throws IOException {
+    List<BooleanClause> result = new ArrayList<>(2);
+    Occur groupOccur = matchAllConditions ? Occur.MUST : Occur.SHOULD;
 
     /* Handle State-Field separately (group) */
-    BooleanQuery statesQuery = null;
+    BooleanQuery.Builder statesQuery = null;
     for (ISearchCondition condition : conditions) {
       if (requiresStateGrouping(condition)) {
 
         /* Create and add new BooleanQuery for State */
-        if (statesQuery == null) {
-          statesQuery = new BooleanQuery();
-          bQuery.add(statesQuery, matchAllConditions ? Occur.MUST : Occur.SHOULD);
-        }
+        if (statesQuery == null)
+          statesQuery = new BooleanQuery.Builder();
 
         /* Add Boolean Clause per State */
         addStateClause(statesQuery, condition);
       }
     }
 
+    if (statesQuery != null)
+      result.add(new BooleanClause(statesQuery.build(), groupOccur));
+
     /* Create a Query for each condition */
-    BooleanQuery fieldQuery = null;
+    BooleanQuery.Builder fieldQuery = null;
+
+    /* Kept alongside the builder, which does not expose what it holds */
+    List<BooleanClause> fieldClauses = new ArrayList<>();
+
     for (ISearchCondition condition : conditions) {
 
       /* State and Scope Queries already handled */
@@ -210,10 +231,8 @@ public class ModelSearchQueries {
         continue;
 
       /* Create and add new BooleanQuery for other Fields */
-      if (fieldQuery == null) {
-        fieldQuery = new BooleanQuery();
-        bQuery.add(fieldQuery, matchAllConditions ? Occur.MUST : Occur.SHOULD);
-      }
+      if (fieldQuery == null)
+        fieldQuery = new BooleanQuery.Builder();
 
       /* Create the Clause */
       BooleanClause clause = null;
@@ -223,7 +242,7 @@ public class ModelSearchQueries {
         clause = createBooleanClause(analyzer, condition, matchAllConditions);
 
       /* Check if the Clause has any valid Query */
-      Query query = clause.getQuery();
+      Query query = clause.query();
       if (query instanceof BooleanQuery && ((BooleanQuery) query).clauses().isEmpty())
         continue;
 
@@ -232,24 +251,27 @@ public class ModelSearchQueries {
        * the supplied conditions should match in the result set.
        */
       if (condition.getSpecifier().isNegation() && !matchAllConditions) {
-        BooleanQuery nestedquery = new BooleanQuery();
+        BooleanQuery.Builder nestedquery = new BooleanQuery.Builder();
         nestedquery.add(clause);
         nestedquery.add(new BooleanClause(new MatchAllDocsQuery(), Occur.MUST));
-        fieldQuery.add(new BooleanClause(nestedquery, Occur.SHOULD));
+
+        BooleanClause nestedClause = new BooleanClause(nestedquery.build(), Occur.SHOULD);
+        fieldQuery.add(nestedClause);
+        fieldClauses.add(nestedClause);
       }
 
       /* Normal Case */
       else {
         fieldQuery.add(clause);
+        fieldClauses.add(clause);
       }
     }
 
     /* Add the MatchAllDocsQuery (MUST_NOT is used, All Conditions match) */
     if (fieldQuery != null && matchAllConditions) {
       boolean requireAllDocsQuery = true;
-      BooleanClause[] clauses = fieldQuery.getClauses();
-      for (BooleanClause clause : clauses) {
-        if (clause.getOccur() != Occur.MUST_NOT) {
+      for (BooleanClause clause : fieldClauses) {
+        if (clause.occur() != Occur.MUST_NOT) {
           requireAllDocsQuery = false;
           break;
         }
@@ -259,10 +281,15 @@ public class ModelSearchQueries {
       if (requireAllDocsQuery)
         fieldQuery.add(new BooleanClause(new MatchAllDocsQuery(), Occur.MUST));
     }
+
+    if (fieldQuery != null)
+      result.add(new BooleanClause(fieldQuery.build(), groupOccur));
+
+    return result;
   }
 
   @SuppressWarnings("unchecked")
-  private static void addStateClause(BooleanQuery statesQuery, ISearchCondition condition) {
+  private static void addStateClause(BooleanQuery.Builder statesQuery, ISearchCondition condition) {
     String fieldName = String.valueOf(INews.STATE);
     Occur occur = condition.getSpecifier().isNegation() ? Occur.MUST_NOT : Occur.SHOULD;
     EnumSet<INews.State> newsStates = (EnumSet<State>) condition.getValue();
@@ -311,7 +338,7 @@ public class ModelSearchQueries {
         BooleanClause tokenClause = createAllNewsFieldsClause(analyzer, tokenCondition, matchAllConditions);
 
         /* Ignore empty clauses (e.g. due to Stop Words) */
-        if (tokenClause.getQuery() instanceof BooleanQuery && ((BooleanQuery) tokenClause.getQuery()).getClauses().length == 0)
+        if (tokenClause.query() instanceof BooleanQuery && ((BooleanQuery) tokenClause.query()).getClauses().length == 0)
           continue;
 
         tokenClause.setOccur(Occur.MUST);
@@ -358,7 +385,7 @@ public class ModelSearchQueries {
         clauses.add(clause);
 
         /* Ignore empty clauses (e.g. due to Stop Words) */
-        if (clause.getQuery() instanceof BooleanQuery && ((BooleanQuery) clause.getQuery()).getClauses().length == 0)
+        if (clause.query() instanceof BooleanQuery && ((BooleanQuery) clause.query()).getClauses().length == 0)
           anyClauseIsEmpty = true;
       }
 
@@ -569,7 +596,7 @@ public class ModelSearchQueries {
       bookMarkLocationQuery.add(new TermQuery(new Term(String.valueOf(INews.FEED), feed)), Occur.MUST);
 
       /* But ignore News from Bins */
-      bookMarkLocationQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), NumberTools.longToString(0))), Occur.MUST);
+      bookMarkLocationQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), SortableLong.toString(0))), Occur.MUST);
 
       bQuery.add(bookMarkLocationQuery, Occur.SHOULD);
     }
@@ -577,7 +604,7 @@ public class ModelSearchQueries {
 
   private static void addNewsBinLocationClause(BooleanQuery bQuery, INewsBin newsbin) {
     if (newsbin != null)
-      bQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), NumberTools.longToString(newsbin.getId()))), Occur.SHOULD);
+      bQuery.add(new TermQuery(new Term(String.valueOf(INews.PARENT_ID), SortableLong.toString(newsbin.getId()))), Occur.SHOULD);
   }
 
   private static Query createStringQuery(Analyzer analyzer, ISearchCondition condition) throws ParseException, IOException {
@@ -690,7 +717,7 @@ public class ModelSearchQueries {
 
   private static Query createNumberQuery(ISearchCondition condition) {
     SearchSpecifier specifier = condition.getSpecifier();
-    String value = NumberTools.longToString((Integer) condition.getValue());
+    String value = SortableLong.toString((Integer) condition.getValue());
     String fieldname = String.valueOf(condition.getField().getId());
 
     switch (specifier) {
