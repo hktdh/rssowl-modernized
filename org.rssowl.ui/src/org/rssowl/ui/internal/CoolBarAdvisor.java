@@ -27,6 +27,7 @@ package org.rssowl.ui.internal;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.CoolBarManager;
+import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.ICoolBarManager;
@@ -576,8 +577,29 @@ public class CoolBarAdvisor {
        * CoolBarToTrimManager, which backs ICoolBarManager on Eclipse 4.x, throws
        * UnsupportedOperationException from removeAll(), remove(String) and
        * setItems(). Removing the items one by one is supported, so do that. */
-      for (IContributionItem item : fManager.getItems())
-        fManager.remove(item);
+      for (IContributionItem item : fManager.getItems()) {
+
+        /*
+         * Not every item that manager hands out can be given back to it. For a
+         * separator placeholder restored from the persisted workbench model its
+         * getItems() invents a GroupMarker carrying the model element's id, and
+         * its remove() then throws IllegalStateException on exactly that id
+         * because no live contribution sits behind it. Those placeholders are
+         * not ours, so skip them - and guard the rest, because one stale model
+         * element used to abort this loop and with it the whole rebuild of the
+         * bar. That only ever happened from the second start onwards, once a
+         * workbench.xmi existed, which is also when a changed toolbar setting
+         * silently stopped taking effect.
+         */
+        if (item instanceof GroupMarker)
+          continue;
+
+        try {
+          fManager.remove(item);
+        } catch (IllegalStateException e) {
+          /* Model element with no live contribution behind it; nothing to remove */
+        }
+      }
 
       /* Load Toolbar Mode */
       CoolBarMode mode = CoolBarMode.values()[fPreferences.getInteger(DefaultPreferences.TOOLBAR_MODE)];
