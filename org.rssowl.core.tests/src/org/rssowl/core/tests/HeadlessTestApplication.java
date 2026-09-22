@@ -69,30 +69,30 @@ public class HeadlessTestApplication implements IApplication {
     }
 
     if (!unknown.isEmpty()) {
-      System.out.println("Khong tim thay lop test: " + unknown); //$NON-NLS-1$
+      System.out.println("Test class not found: " + unknown); //$NON-NLS-1$
       return Integer.valueOf(2);
     }
 
     if (classes.isEmpty()) {
-      System.out.println("Cach dung: -application org.rssowl.core.tests.headless <lop test> [<lop test> ...]"); //$NON-NLS-1$
+      System.out.println("Usage: -application org.rssowl.core.tests.headless <test class> [<test class> ...]"); //$NON-NLS-1$
       return Integer.valueOf(2);
     }
 
-    System.out.println("Chay " + classes.size() + " lop test"); //$NON-NLS-1$ //$NON-NLS-2$
+    System.out.println("Running " + classes.size() + " test classes"); //$NON-NLS-1$ //$NON-NLS-2$
     System.out.println();
 
     Result result = JUnitCore.runClasses(classes.toArray(new Class<?>[classes.size()]));
 
     for (Failure failure : result.getFailures()) {
-      System.out.println("SAI  " + failure.getTestHeader()); //$NON-NLS-1$
+      System.out.println("FAIL  " + failure.getTestHeader()); //$NON-NLS-1$
       System.out.println(failure.getTrace());
       System.out.println();
     }
 
-    System.out.println(String.format("Chay %d, sai %d, bo qua %d, %d ms", //$NON-NLS-1$
+    System.out.println(String.format("Ran %d, failed %d, ignored %d, %d ms", //$NON-NLS-1$
         Integer.valueOf(result.getRunCount()), Integer.valueOf(result.getFailureCount()),
         Integer.valueOf(result.getIgnoreCount()), Long.valueOf(result.getRunTime())));
-    System.out.println(result.wasSuccessful() ? "TAT CA DUNG" : "CO TEST SAI"); //$NON-NLS-1$ //$NON-NLS-2$
+    System.out.println(result.wasSuccessful() ? "ALL PASSED" : "THERE WERE FAILURES"); //$NON-NLS-1$ //$NON-NLS-2$
 
     return result.wasSuccessful() ? IApplication.EXIT_OK : Integer.valueOf(1);
   }

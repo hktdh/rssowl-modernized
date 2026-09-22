@@ -1,21 +1,22 @@
 <#
-  Bien dich RSSOwl 2.3 bang ecj cua Eclipse, khong can mo IDE.
+  Compile RSSOwl 2.3 with Eclipse's ecj, without opening the IDE.
 
-  Vi sao dung ecj chu khong dung javac: ecj la trinh bien dich ma PDE dung,
-  nen ket qua khop voi build trong IDE - cung bo cau hinh loi/canh bao, cung
-  cach doc MANIFEST.MF.
+  Why ecj and not javac: ecj is the compiler PDE uses, so the result matches
+  an in-IDE build - same error/warning configuration, same way of reading
+  MANIFEST.MF.
 
-  Build tren Eclipse 4.41 + JDK 21.
-  Subsystem Update Manager da duoc go bo, nen khong con rang buoc vao
-  org.eclipse.update.* (cac bundle do da bien mat khoi Eclipse 4.x).
-  Code o nhanh nay KHONG con bien dich duoc tren 3.8.2: no dung
-  getAdapter(Class<T>) dang generic, chi co tu Eclipse 4.x.
+  Builds against Eclipse 4.41 + JDK 21.
+  The Update Manager subsystem has been removed, so there is no dependency on
+  org.eclipse.update.* left (those bundles are gone from Eclipse 4.x).
+  Code on this branch can NO LONGER be compiled against 3.8.2: it uses the
+  generic form of getAdapter(Class<T>), which only exists from Eclipse 4.x on.
 
-  Truoc day phai loai org.apache.lucene* khoi classpath vi RSSOwl mang theo
-  Lucene 2.3.2 rieng va no dung do voi ban Lucene cua Eclipse. Gio org.rssowl.core
-  dung thang Lucene cua target platform nen khong con xung dot, khong con loai tru.
+  This script used to strip org.apache.lucene* from the classpath, because
+  RSSOwl carried its own Lucene 2.3.2 which clashed with Eclipse's copy. Now
+  org.rssowl.core uses the target platform's Lucene directly, so there is no
+  clash and nothing to strip.
 
-  Vi du:
+  Examples:
     .\build.ps1
     .\build.ps1 -IncludeTests
     .\build.ps1 -EclipseHome "C:\eclipse" -Clean
@@ -33,32 +34,32 @@ param(
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 
-function Fail($msg) { Write-Host "LOI: $msg" -ForegroundColor Red; exit 1 }
+function Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; exit 1 }
 
-# --- kiem tra moi truong -----------------------------------------------------
-# Ghim JDK theo target platform thay vi tin JAVA_HOME: moi lan cai them mot JDK
-# la trinh cai ghi de JAVA_HOME cap May, nen no khong dang tin.
+# --- environment check -------------------------------------------------------
+# Pin the JDK to the target platform instead of trusting JAVA_HOME: every JDK
+# installer overwrites the machine-level JAVA_HOME, so it is not reliable.
 if (-not $JavaHome) {
   $JavaHome = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
               Where-Object { $_.Name -like "jdk-21*" -and (Test-Path (Join-Path $_.FullName "bin\java.exe")) } |
               Select-Object -First 1 -ExpandProperty FullName
 }
 if (-not $JavaHome) { $JavaHome = [Environment]::GetEnvironmentVariable("JAVA_HOME", "Machine") }
-if (-not $JavaHome) { Fail "Chua co JAVA_HOME. Truyen -JavaHome hoac dat bien moi truong." }
+if (-not $JavaHome) { Fail "No JAVA_HOME. Pass -JavaHome or set the environment variable." }
 $JavaHome = $JavaHome.TrimEnd('\')
 $java = Join-Path $JavaHome "bin\java.exe"
-if (-not (Test-Path $java)) { Fail "Khong thay java.exe tai $java" }
-if (-not (Test-Path (Join-Path $EclipseHome "plugins"))) { Fail "Khong thay target platform tai $EclipseHome" }
+if (-not (Test-Path $java)) { Fail "No java.exe at $java" }
+if (-not (Test-Path (Join-Path $EclipseHome "plugins"))) { Fail "No target platform at $EclipseHome" }
 
-# Tu Eclipse 4.x, ecj tach khoi org.eclipse.jdt.core sang bundle rieng.
-# Tim ban tach truoc, roi moi lui ve ten cu cua dong 3.x.
+# As of Eclipse 4.x, ecj was split out of org.eclipse.jdt.core into its own
+# bundle. Look for the split-out one first, then fall back to the 3.x name.
 $ecj = Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter "org.eclipse.jdt.core.compiler.batch_*.jar" |
        Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1
 if (-not $ecj) {
   $ecj = Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter "org.eclipse.jdt.core_*.jar" |
          Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1
 }
-if (-not $ecj) { Fail "Khong thay bundle ecj trong $EclipseHome\plugins" }
+if (-not $ecj) { Fail "No ecj bundle found in $EclipseHome\plugins" }
 
 if ($Clean -and (Test-Path $OutDir)) { Remove-Item $OutDir -Recurse -Force }
 
@@ -76,12 +77,12 @@ $cp += Get-ChildItem (Join-Path $EclipseHome "plugins") -Filter *.jar |
        Where-Object { $_.Name -notlike "*.source_*" } |
        ForEach-Object { $_.FullName }
 
-# Vai bundle la thu muc chua jar long nhau chu khong phai mot jar duy nhat.
+# Some bundles are directories holding nested jars rather than a single jar.
 $cp += Get-ChildItem (Join-Path $EclipseHome "plugins") -Directory |
        ForEach-Object { Get-ChildItem $_.FullName -Filter *.jar -ErrorAction SilentlyContinue |
                         ForEach-Object { $_.FullName } }
 
-# --- chay mot luot bien dich -------------------------------------------------
+# --- one compiler pass -------------------------------------------------------
 function Invoke-Ecj([string] $label, [string[]] $sources, [string] $dest, [string[]] $extraCp) {
   New-Item -ItemType Directory -Force -Path $dest | Out-Null
   $argfile = Join-Path $env:TEMP "ecj-$label.args"
@@ -90,23 +91,24 @@ function Invoke-Ecj([string] $label, [string[]] $sources, [string] $dest, [strin
   $a = @("-$Compliance", "-nowarn", "-proc:none", "-encoding", "UTF-8",
          "-d", $dest, "-classpath", (($extraCp + $cp) -join ";")) + $sources
 
-  # UTF8Encoding($false): Set-Content -Encoding utf8 cua PS 5.1 them BOM,
-  # ecj doc BOM thanh mot phan cua tham so dau tien roi bao "Unrecognized option".
+  # UTF8Encoding($false): Set-Content -Encoding utf8 on PS 5.1 adds a BOM, and
+  # ecj reads the BOM as part of the first argument and reports
+  # "Unrecognized option".
   [IO.File]::WriteAllText($argfile, (($a | ForEach-Object { '"' + $_ + '"' }) -join "`r`n"),
                           (New-Object Text.UTF8Encoding $false))
 
-  # Goi qua cmd /c: PS 5.1 boc stderr cua native exe thanh ErrorRecord.
+  # Call through cmd /c: PS 5.1 wraps a native exe's stderr into ErrorRecords.
   cmd /c "`"$java`" -cp `"$($ecj.FullName)`" org.eclipse.jdt.internal.compiler.batch.Main `"@$argfile`" > `"$logfile`" 2>&1"
 
   $errs    = @(Select-String -Path $logfile -Pattern '^\d+\. ERROR' -ErrorAction SilentlyContinue)
   $classes = @(Get-ChildItem $dest -Recurse -Filter *.class -ErrorAction SilentlyContinue).Count
 
   if ($errs.Count -gt 0) {
-    Write-Host ("  {0,-12} {1} loi" -f $label, $errs.Count) -ForegroundColor Red
+    Write-Host ("  {0,-12} {1} error(s)" -f $label, $errs.Count) -ForegroundColor Red
     Get-Content $logfile | Select-Object -Last 40 | ForEach-Object { "    $_" }
     return $false
   }
-  Write-Host ("  {0,-12} OK, {1} class" -f $label, $classes) -ForegroundColor Green
+  Write-Host ("  {0,-12} OK, {1} classes" -f $label, $classes) -ForegroundColor Green
   return $true
 }
 
@@ -122,4 +124,4 @@ if ($IncludeTests) {
   if (-not $ok) { exit 1 }
 }
 
-Write-Host "Xong. Ket qua trong $OutDir" -ForegroundColor Green
+Write-Host "Done. Output in $OutDir" -ForegroundColor Green

@@ -1,17 +1,19 @@
 <#
-  Chay test cua RSSOwl trong runtime that, khong can mo IDE.
+  Run RSSOwl's tests in a real runtime, without opening the IDE.
 
-  Vi sao phai the: cac test trong org.rssowl.core.tests la plug-in test - chung
-  goi Owl.getModelFactory() va tang persistence, nen chi co nghia khi OSGi da
-  chay. PDE chay duoc chung nhung dieu khien tu IDE qua socket, khong dung tu
-  script duoc. Bundle test vi the mang mot application headless tu goi JUnit
-  (xem HeadlessTestApplication).
+  Why it has to work this way: the tests in org.rssowl.core.tests are plug-in
+  tests - they call Owl.getModelFactory() and the persistence layer, so they
+  only mean anything once OSGi is running. PDE can run them, but it drives them
+  from the IDE over a socket, which is not usable from a script. The test
+  bundle therefore carries a headless application that invokes JUnit itself
+  (see HeadlessTestApplication).
 
-  Moi lan chay dung mot data dir moi tinh roi xoa di: test ghi thang vao
-  database that, khong duoc dung chung voi profile dang dung de thu tay.
+  Every run uses a brand new data dir and then deletes it: the tests write
+  straight into a real database, and must not share the profile being used for
+  manual testing.
 
-  Vi du:
-    .\test.ps1                                     # chay bo test UI
+  Examples:
+    .\test.ps1                                     # run the UI test suite
     .\test.ps1 -Classes org.rssowl.core.tests.ui.NewsGroupFilterTest
     .\test.ps1 -SkipBuild
 #>
@@ -29,7 +31,7 @@ $ErrorActionPreference = "Stop"
 $root  = $PSScriptRoot
 $build = Join-Path $root "build-out"
 
-function Fail($msg) { Write-Host "LOI: $msg" -ForegroundColor Red; exit 1 }
+function Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; exit 1 }
 
 . (Join-Path $root "build-common.ps1")
 
@@ -37,17 +39,17 @@ if (-not $JavaHome) {
   $JavaHome = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
               Where-Object { $_.Name -like "jdk-21*" } | Select-Object -First 1 -ExpandProperty FullName
 }
-if (-not $JavaHome) { Fail "Khong thay JDK 21." }
-if (-not (Test-Path (Join-Path $RuntimeHome "plugins"))) { Fail "Khong thay runtime tai $RuntimeHome" }
+if (-not $JavaHome) { Fail "No JDK 21 found." }
+if (-not (Test-Path (Join-Path $RuntimeHome "plugins"))) { Fail "No runtime at $RuntimeHome" }
 
-# --- 1. bien dich ------------------------------------------------------------
+# --- 1. compile --------------------------------------------------------------
 if (-not $SkipBuild) {
   & (Join-Path $root "build.ps1") -IncludeTests
-  if ($LASTEXITCODE -ne 0) { Fail "Bien dich that bai." }
+  if ($LASTEXITCODE -ne 0) { Fail "Compilation failed." }
 }
-if (-not (Test-Path (Join-Path $build "tests"))) { Fail "Chua co build-out\tests. Chay .\build.ps1 -IncludeTests" }
+if (-not (Test-Path (Join-Path $build "tests"))) { Fail "No build-out\tests yet. Run .\build.ps1 -IncludeTests" }
 
-# --- 2. dat bundle cua RSSOwl va bundle test ---------------------------------
+# --- 2. lay down RSSOwl's bundles and the test bundle ------------------------
 $plugins = Join-Path $RuntimeHome "plugins"
 Copy-RssOwlBundles $root (Join-Path $build "main") $plugins
 
@@ -61,34 +63,35 @@ foreach ($f in @("plugin.xml", "plugin.properties", "about.html")) {
   if (Test-Path $p) { Copy-Item $p $dest -Force }
 }
 
-# data/ chua feed mau ma nhieu test doc toi
+# data/ holds the sample feeds a number of tests read
 Copy-Tree (Join-Path $src "data") (Join-Path $dest "data")
 Copy-Tree (Join-Path $build "tests\org\rssowl\core\tests") (Join-Path $dest "org\rssowl\core\tests")
 
-# Resource nam lan trong src giong hai bundle kia.
+# Resources live among the sources, same as in the other two bundles.
 Copy-Tree (Join-Path $src "src") $dest @("*.java")
 
-Write-Host ("  {0,-24} {1} class" -f "org.rssowl.core.tests", @(Get-ChildItem $dest -Recurse -Filter *.class).Count)
+Write-Host ("  {0,-24} {1} classes" -f "org.rssowl.core.tests", @(Get-ChildItem $dest -Recurse -Filter *.class).Count)
 
 # --- 3. bundles.info ---------------------------------------------------------
 $bundlesInfo = Join-Path $RuntimeHome "configuration\org.eclipse.equinox.simpleconfigurator\bundles.info"
-if (-not (Test-Path $bundlesInfo)) { Fail "Khong thay bundles.info trong $RuntimeHome" }
+if (-not (Test-Path $bundlesInfo)) { Fail "No bundles.info in $RuntimeHome" }
 Write-BundlesInfo $plugins $bundlesInfo $bundlesInfo (Get-StartLevels $bundlesInfo)
 
-# --- 4. chay -----------------------------------------------------------------
+# --- 4. run ------------------------------------------------------------------
 $temporary = -not $DataDir
 if ($temporary) { $DataDir = Join-Path ([IO.Path]::GetTempPath()) ("rssowl-test-" + [Guid]::NewGuid().ToString("N").Substring(0, 8)) }
 New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 
 Write-Host ""
-Write-Host "Chay test (data: $DataDir)"
+Write-Host "Running tests (data: $DataDir)"
 foreach ($c in $Classes) { Write-Host "  $c" }
 Write-Host ""
 
 $launcher = (Get-ChildItem $plugins -Filter "org.eclipse.equinox.launcher_*.jar" | Select-Object -First 1).FullName
 $java = Join-Path $JavaHome "bin\java.exe"
 
-# Chay thang qua launcher jar thay vi eclipsec.exe de bat duoc ma thoat.
+# Go straight through the launcher jar rather than eclipsec.exe, so the exit
+# code can be captured.
 $a = @(
   "-Xmx512m",
   "--add-opens=java.base/java.lang=ALL-UNNAMED",
@@ -100,8 +103,8 @@ $a = @(
   "-consolelog"
 ) + $Classes
 
-# Goi qua cmd /c: PS 5.1 boc stderr cua native exe thanh ErrorRecord, va JUnit
-# cung nhu Equinox deu ghi mot phan ra stderr.
+# Call through cmd /c: PS 5.1 wraps a native exe's stderr into ErrorRecords,
+# and both JUnit and Equinox write part of their output to stderr.
 $quoted = ($a | ForEach-Object { '"' + $_ + '"' }) -join " "
 cmd /c "`"$java`" $quoted 2>&1"
 $code = $LASTEXITCODE
@@ -109,5 +112,5 @@ $code = $LASTEXITCODE
 if ($temporary -and -not $KeepData) { Remove-Item $DataDir -Recurse -Force -ErrorAction SilentlyContinue }
 
 Write-Host ""
-if ($code -eq 0) { Write-Host "Test dat" -ForegroundColor Green } else { Write-Host "Test that bai (ma $code)" -ForegroundColor Red }
+if ($code -eq 0) { Write-Host "Tests passed" -ForegroundColor Green } else { Write-Host "Tests failed (code $code)" -ForegroundColor Red }
 exit $code

@@ -121,7 +121,7 @@ public class SplashHandler extends AbstractSplashHandler {
      */
     String version = header.toString();
 
-    /* Cat o dau cham thu ba: khong dung regex de khoi phai escape */
+    /* Cut at the third dot; no regex, so nothing needs escaping */
     int first = version.indexOf('.');
     int second = (first < 0) ? -1 : version.indexOf('.', first + 1);
     int third = (second < 0) ? -1 : version.indexOf('.', second + 1);

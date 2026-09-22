@@ -1,14 +1,14 @@
-; Trinh cai dat RSSOwl cho Windows, dung Inno Setup 6.
+; RSSOwl installer for Windows, built with Inno Setup 6.
 ;
-; Dau vao la thu muc do dist.ps1 dung ra (mac dinh .\dist). Bien dich bang:
+; The input is the folder produced by dist.ps1 (.\dist by default). Compile with:
 ;   .\dist.ps1
 ;   & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" rssowl.iss
 ;
-; Hoac goi package.ps1 de lam ca hai buoc.
+; Or call package.ps1 to do both steps.
 ;
-; Nhung gi o day tai lap lai dung phan dang ky cua trinh cai NSIS cu
-; (org.rssowl.ui/rssowl_installer.nsi): shortcut, muc go cai dat, va bo xu ly
-; giao thuc feed:.
+; What is here reproduces exactly the registration the old NSIS installer did
+; (org.rssowl.ui/rssowl_installer.nsi): shortcuts, the uninstall entry, and the
+; feed: protocol handler.
 
 #define AppName      "RSSOwl"
 #define AppPublisher "RSSOwl.org"
@@ -19,15 +19,16 @@
   #define DistDir "dist"
 #endif
 
-; package.ps1 doc phien ban tu MANIFEST.MF roi truyen vao bang /DAppVersion=...
-; Gia tri duoi day chi la duong lui khi goi ISCC truc tiep.
+; package.ps1 reads the version from MANIFEST.MF and passes it in with
+; /DAppVersion=... The value below is only a fallback for calling ISCC directly.
 #ifndef AppVersion
   #define AppVersion "2.2.0"
 #endif
 
 [Setup]
-; AppId dinh danh san pham qua cac ban nang cap - KHONG doi gia tri nay,
-; doi la Windows se coi day la mot phan mem khac va khong go ban cu.
+; AppId identifies the product across upgrades - do NOT change this value;
+; changing it makes Windows treat this as different software and leave the old
+; installation in place.
 AppId={{9F1B4C0E-6A2D-4E7A-9C3F-2B8E5D14A7C6}
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -46,14 +47,16 @@ LicenseFile={#DistDir}\LICENSE.txt
 WizardStyle=modern
 DisableProgramGroupPage=yes
 
-; Cai cho moi nguoi dung trong may -> can quyen admin.
+; Installs for every user on the machine -> needs admin rights.
 PrivilegesRequired=admin
 
-; Ban dung la 64-bit (fragment SWT va JRE deu x86_64), khong chay tren 32-bit.
+; The build is 64-bit (both the SWT fragment and the JRE are x86_64), it does
+; not run on 32-bit.
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
-; Nen manh: phan lon dung luong la JRE, nen rat tot.
+; Strong compression: most of the payload is the JRE, which compresses very
+; well.
 Compression=lzma2/max
 SolidCompression=yes
 
@@ -62,7 +65,7 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-Name: "feedprotocol"; Description: "Mo lien ket feed:// bang RSSOwl"; GroupDescription: "Lien ket he thong:"
+Name: "feedprotocol"; Description: "Open feed:// links with RSSOwl"; GroupDescription: "System integration:"
 
 [Files]
 Source: "{#DistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -73,7 +76,8 @@ Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; IconFilename: "{app}\rssowl.ico"; Tasks: desktopicon
 
 [Registry]
-; Bo xu ly giao thuc feed:, giong ban NSIS cu. Chi dang ky khi nguoi dung chon.
+; The feed: protocol handler, same as the old NSIS build. Only registered when
+; the user opts in.
 Root: HKLM; Subkey: "Software\Classes\feed"; ValueType: string; ValueName: ""; ValueData: "URL:feed Protocol"; Flags: uninsdeletekey; Tasks: feedprotocol
 Root: HKLM; Subkey: "Software\Classes\feed"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Tasks: feedprotocol
 Root: HKLM; Subkey: "Software\Classes\feed\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"""; Tasks: feedprotocol
@@ -83,20 +87,21 @@ Root: HKLM; Subkey: "Software\Classes\feed\shell\open\command"; ValueType: strin
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; Equinox co the ghi them vao configuration/ khi chay voi quyen admin; nhung
-; file do khong do trinh cai tao ra nen phai don tay.
+; Equinox may write into configuration/ when running with admin rights; those
+; files were not created by the installer, so they have to be removed by hand.
 Type: filesandordirs; Name: "{app}\configuration"
 Type: dirifempty; Name: "{app}"
 
-; Du lieu cua nguoi dung (feed, chi muc, tuy chon) nam o %USERPROFILE%\.rssowl2
-; va CO Y khong bi xoa: go cai dat roi cai lai thi nguoi dung van con feed.
+; User data (feeds, index, preferences) lives in %USERPROFILE%\.rssowl2 and is
+; deliberately NOT deleted: uninstalling and reinstalling keeps the feeds.
 
 [Code]
 
-{ RSSOwl dung SWT Browser, va tren Windows SWT chon Edge (WebView2) truoc, chi
-  lui ve Internet Explorer khi khong co WebView2 runtime. Nhanh IE do gan nhu
-  khong con duoc chay thu, va khung doc tin tung hong han o do, nen bao truoc
-  cho nguoi dung thay vi de ho gap giao dien vo. }
+{ RSSOwl uses the SWT Browser, and on Windows SWT picks Edge (WebView2) first,
+  falling back to Internet Explorer only when there is no WebView2 runtime.
+  That IE path is barely tested any more, and the reading pane has been broken
+  outright on it, so warn up front instead of letting the user run into a
+  broken UI. }
 function WebView2Installed(): Boolean;
 var
   Value: String;
@@ -112,17 +117,18 @@ begin
   Result := True;
   if not WebView2Installed() then
     Result := MsgBox(
-      'Khong tim thay Microsoft Edge WebView2 Runtime tren may nay.' + #13#10#13#10 +
-      'RSSOwl dung no de hien thi noi dung tin. Thieu no thi khung doc tin co the' + #13#10 +
-      'khong hien dung. Ban co the cai WebView2 Runtime tu trang cua Microsoft,' + #13#10 +
-      'roi chay lai trinh cai dat nay.' + #13#10#13#10 +
-      'Van tiep tuc cai dat?',
+      'Microsoft Edge WebView2 Runtime was not found on this machine.' + #13#10#13#10 +
+      'RSSOwl uses it to display news content. Without it the reading pane may' + #13#10 +
+      'not render correctly. You can install the WebView2 Runtime from' + #13#10 +
+      'Microsoft and then run this installer again.' + #13#10#13#10 +
+      'Continue with the installation anyway?',
       mbConfirmation, MB_YESNO) = IDYES;
 end;
 
-{ Ban cu de lai bundle cua phien ban truoc trong plugins/, va hai phien ban cua
-  cung mot bundle singleton thi OSGi khong resolve duoc - app khong khoi dong.
-  Vi vay phai xoa han ba thu muc nay truoc khi chep ban moi, thay vi chep de. }
+{ An older build leaves the previous version's bundles behind in plugins/, and
+  OSGi cannot resolve two versions of the same singleton bundle - the app does
+  not start. So these three folders have to be deleted outright before the new
+  files are copied, rather than copied over. }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   AppDir: String;

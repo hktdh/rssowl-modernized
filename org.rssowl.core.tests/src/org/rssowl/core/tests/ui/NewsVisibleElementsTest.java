@@ -168,7 +168,7 @@ public class NewsVisibleElementsTest {
       }
     }
 
-    assertTrue("Phai co it nhat mot nhom", groups > 0); //$NON-NLS-1$
+    assertTrue("There must be at least one group", groups > 0); //$NON-NLS-1$
     assertEquals(40, items);
     assertEquals(groups + items, elements.length);
 

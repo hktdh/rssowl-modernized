@@ -71,14 +71,14 @@ public class BigFeedSeeder {
 
     IFolder root = factory.createFolder(null, null, "Feeds"); //$NON-NLS-1$
     IFeed feed = factory.createFeed(null, new URI("http://127.0.0.1/bigfeed")); //$NON-NLS-1$
-    feed.setTitle("Feed rat nhieu tin"); //$NON-NLS-1$
+    feed.setTitle("Feed with very many news"); //$NON-NLS-1$
 
     long now = System.currentTimeMillis();
     for (int i = 0; i < NEWS_COUNT; i++) {
       INews news = factory.createNews(null, feed, new Date(now - i * 60000L));
-      news.setTitle("Tin thu " + i + " - tieng Viet co dau: chung khoan, dong bac"); //$NON-NLS-1$ //$NON-NLS-2$
+      news.setTitle("News item " + i + " - Vietnamese text: chung khoan, dong bac"); //$NON-NLS-1$ //$NON-NLS-2$
       news.setLink(new URI("http://127.0.0.1/bigfeed/" + i)); //$NON-NLS-1$
-      news.setDescription("Noi dung cua tin thu " + i); //$NON-NLS-1$
+      news.setDescription("Body of news item " + i); //$NON-NLS-1$
 
       /* A mix of states, so grouping by state has something to group */
       news.setState((i % 3 == 0) ? State.NEW : State.READ);
@@ -86,10 +86,10 @@ public class BigFeedSeeder {
 
     DynamicDAO.save(feed);
 
-    IBookMark mark = factory.createBookMark(null, root, new FeedLinkReference(feed.getLink()), "Feed rat nhieu tin"); //$NON-NLS-1$
+    IBookMark mark = factory.createBookMark(null, root, new FeedLinkReference(feed.getLink()), "Feed with very many news"); //$NON-NLS-1$
     DynamicDAO.save(root);
 
     assertEquals(NEWS_COUNT, feed.getNews().size());
-    System.out.println("Da tao bookmark '" + mark.getName() + "' voi " + NEWS_COUNT + " tin"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+    System.out.println("Created bookmark '" + mark.getName() + "' with " + NEWS_COUNT + " news"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
   }
 }

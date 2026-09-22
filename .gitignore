@@ -1,8 +1,8 @@
-# ket qua bien dich cua build.ps1
+# compiler output of build.ps1
 build-out/
 
-# thu muc output cua Eclipse PDE
+# Eclipse PDE output folder
 bin/
 
-# thu muc san pham cua dist.ps1 (mac dinh .\dist)
+# product folder of dist.ps1 (defaults to .\dist)
 dist/

@@ -1,56 +1,60 @@
 <#
-  Phan dung chung giua run.ps1 (runtime de phat trien) va dist.ps1 (ban phat hanh).
+  Shared between run.ps1 (development runtime) and dist.ps1 (release build).
 
-  Vi sao tach ra: ca hai deu phai dat sau bundle cua RSSOwl vao mot thu muc
-  plugins/ theo dung chuan OSGi, va viec do co nhung chi tiet de quen - resource
-  nam lan trong src/, ten thu muc phai mang phien ban, bundle cu phai xoa han
-  thay vi ghi de. Neu hai script tu lam lay thi ban phat hanh se khac ban da
-  kiem thu bang run.ps1, va do la thu khong ai phat hien ra cho den khi phat hanh.
+  Why it is factored out: both have to lay RSSOwl's bundles into a plugins/
+  folder the way OSGi expects, and that has details which are easy to forget -
+  resources living among the sources in src/, folder names that must carry the
+  version, stale bundles that must be deleted rather than overwritten. If each
+  script did this on its own, the release would differ from what run.ps1 was
+  tested with, and nobody would notice until release day.
 
-  Dot-source file nay; no can mot ham Fail($msg) da duoc dinh nghia san.
+  Dot-source this file; it expects a Fail($msg) function to already exist.
 #>
 
-# robocopy tra ve 0-7 khi thanh cong; chi tu 8 tro len moi la loi.
+# robocopy returns 0-7 on success; only 8 and above is a failure.
 function Copy-Tree($from, $to, [string[]] $excludeFiles) {
   if (-not (Test-Path $from)) { return }
   $a = @($from, $to, "/E", "/NFL", "/NDL", "/NJH", "/NJS", "/NP")
   if ($excludeFiles) { $a += "/XF"; $a += $excludeFiles }
   robocopy @a | Out-Null
-  if ($LASTEXITCODE -ge 8) { Fail "robocopy that bai ($from -> $to), ma $LASTEXITCODE" }
+  if ($LASTEXITCODE -ge 8) { Fail "robocopy failed ($from -> $to), code $LASTEXITCODE" }
 }
 
 <#
-  Doc phien ban tu chinh manifest cua bundle. Truoc day ten thu muc cua
-  org.rssowl.core va org.rssowl.ui bi viet cung "2.1.0.qualifier" trong script,
-  nen nang phien ban trong MANIFEST.MF se lam deploy lech ma khong bao loi.
+  Read the version from the bundle's own manifest. The folder names for
+  org.rssowl.core and org.rssowl.ui used to be hard-coded as "2.1.0.qualifier"
+  in the script, so bumping the version in MANIFEST.MF made the deployment
+  inconsistent without reporting any error.
 #>
 function Get-BundleVersion([string] $projDir) {
   $manifest = Join-Path $projDir "META-INF\MANIFEST.MF"
-  if (-not (Test-Path $manifest)) { Fail "Khong thay $manifest" }
+  if (-not (Test-Path $manifest)) { Fail "No $manifest" }
   $v = Get-Content $manifest | Where-Object { $_ -match '^Bundle-Version:\s*(.+)$' } |
        ForEach-Object { $Matches[1].Trim() } | Select-Object -First 1
-  if (-not $v) { Fail "Khong doc duoc Bundle-Version tu $manifest" }
+  if (-not $v) { Fail "Could not read Bundle-Version from $manifest" }
   return $v
 }
 
 <#
-  Dat sau bundle cua RSSOwl vao $Plugins.
+  Lay RSSOwl's bundles into $Plugins.
 
-  $Root   = goc cay source, $Build = build-out\main, $Plugins = thu muc dich.
+  $Root = source tree root, $Build = build-out\main, $Plugins = destination.
 #>
 function Copy-RssOwlBundles([string] $Root, [string] $Build, [string] $Plugins) {
 
-  # Xoa moi bundle org.rssowl.* da dat truoc do, bat ke phien ban nao. Ten thu
-  # muc mang phien ban, nen khi nang phien ban thu muc cu khong bi ghi de ma nam
-  # lai; buoc dung bundles.info quet ca thu muc plugins/ nen se liet ke ca hai
-  # ban, va hai ban cua mot bundle singleton thi khong resolve duoc.
+  # Delete every org.rssowl.* bundle deployed earlier, whatever its version.
+  # Folder names carry the version, so after a version bump the old folder is
+  # not overwritten but stays behind; the bundles.info step scans the whole
+  # plugins/ folder and would list both, and two copies of a singleton bundle
+  # do not resolve.
   foreach ($stale in Get-ChildItem $Plugins -Directory -Filter "org.rssowl.*" -ErrorAction SilentlyContinue) {
     Remove-Item $stale.FullName -Recurse -Force
   }
 
-  # --- hai bundle co source --------------------------------------------------
-  # Thu muc dat ten <symbolic-name>_<version> dung chuan OSGi. Chuoi "qualifier"
-  # chi duoc thay the luc build chinh thuc, de nguyen o runtime la hop le.
+  # --- the two bundles that have sources -------------------------------------
+  # The folder is named <symbolic-name>_<version> as OSGi expects. The literal
+  # "qualifier" is only substituted in an official build; leaving it at runtime
+  # is valid.
   foreach ($b in @(
     @{ Proj = "org.rssowl.core"; Pkg = "org\rssowl\core";
        Files = @("plugin.xml", "plugin.properties", "about.html"); Dirs = @("schema") },
@@ -69,33 +73,35 @@ function Copy-RssOwlBundles([string] $Root, [string] $Build, [string] $Plugins) 
       if (Test-Path $p) { Copy-Item $p $dest -Force }
     }
 
-    # Class da bien dich.
+    # Compiled classes.
     Copy-Tree (Join-Path $Build $b.Pkg) (Join-Path $dest $b.Pkg)
 
-    # messages.properties va entities.dtd nam lan trong src, khong co chung thi
-    # NLS nem MissingResourceException ngay luc khoi dong.
+    # messages.properties and entities.dtd live among the sources; without them
+    # NLS throws MissingResourceException right at startup.
     Copy-Tree (Join-Path $src "src") $dest @("*.java")
 
     $n = @(Get-ChildItem $dest -Recurse -Filter *.class).Count
     $r = @(Get-ChildItem $dest -Recurse -Include *.properties, *.dtd).Count
-    Write-Host ("  {0,-20} {1} class, {2} resource" -f $b.Proj, $n, $r)
+    Write-Host ("  {0,-20} {1} classes, {2} resources" -f $b.Proj, $n, $r)
   }
 
-  # --- bon bundle thu vien ---------------------------------------------------
-  # Chep theo dung bin.includes cua tung bundle: chi cay .class va META-INF.
+  # --- the four library bundles ----------------------------------------------
+  # Copy exactly what each bundle's bin.includes says: only the .class tree and
+  # META-INF.
   foreach ($lib in @(
-    # Ba bundle cu mang san cay .class da giai nen; file .jar cua chung chi de
-    # tham chieu source va khong nam tren Bundle-ClassPath.
+    # Three old bundles ship an already extracted .class tree; their .jar files
+    # are there for source reference only and are not on the Bundle-ClassPath.
     @{ Proj = "org.rssowl.lib.db4o";       Skip = @("*.jar", "src.zip") },
     @{ Proj = "org.rssowl.lib.httpclient"; Skip = @("*.jar", "src.zip") },
     @{ Proj = "org.rssowl.lib.jdom";       Skip = @("*.jar", "src.zip") },
 
-    # Query parser boc mot jar CO nam tren Bundle-ClassPath, nen phai giu lai.
+    # The query parser wraps a jar that IS on the Bundle-ClassPath, so keep it.
     @{ Proj = "org.rssowl.lib.lucene.queryparser"; Skip = @() }
   )) {
     $src = Join-Path $Root $lib.Proj
 
-    # Doc phien ban tu chinh bundle thay vi gia dinh tat ca dung chung mot so.
+    # Read the version from the bundle itself instead of assuming they all
+    # share one number.
     $version = Get-BundleVersion $src
 
     $dest = Join-Path $Plugins "$($lib.Proj)_$version"
@@ -104,19 +110,20 @@ function Copy-RssOwlBundles([string] $Root, [string] $Build, [string] $Plugins) 
 
     $classes = @(Get-ChildItem $dest -Recurse -Filter *.class).Count
     $jars = @(Get-ChildItem $dest -Filter *.jar).Count
-    Write-Host ("  {0,-34} {1} class{2}" -f $lib.Proj, $classes, $(if ($jars) { ", $jars jar" } else { "" }))
+    Write-Host ("  {0,-34} {1} classes{2}" -f $lib.Proj, $classes, $(if ($jars) { ", $jars jar" } else { "" }))
   }
 }
 
 <#
-  Doc start level tu mot bundles.info co san: id -> "<muc>,<da-start>".
+  Read start levels from an existing bundles.info: id -> "<level>,<started>".
 
-  Vi sao phai doc chu khong dat cung: mot so bundle ha tang BAT BUOC phai duoc
-  start va start som (simpleconfigurator o muc 1, felix.scr va equinox.event o
-  muc 2...). Danh sach do la chuyen cua Eclipse, khong phai cua RSSOwl, va no
-  doi theo tung ban. Doan sai thi bundle van resolve nhung service khong bao gio
-  duoc dang ky - bieu hien la "no actual value was found for the argument
-  IEventBroker" luc dung workbench, khong he nhac den start level.
+  Why read them rather than hard-code: some infrastructure bundles MUST be
+  started, and started early (simpleconfigurator at level 1, felix.scr and
+  equinox.event at level 2, ...). That list belongs to Eclipse, not to RSSOwl,
+  and it shifts between releases. Guess wrong and the bundles still resolve but
+  the services are never registered - which shows up as "no actual value was
+  found for the argument IEventBroker" when the workbench starts, with no
+  mention of start levels at all.
 #>
 function Get-StartLevels([string] $bundlesInfoPath) {
   $map = @{}
@@ -130,14 +137,14 @@ function Get-StartLevels([string] $bundlesInfoPath) {
 }
 
 <#
-  Ghi lai bundles.info: danh sach ma org.eclipse.equinox.simpleconfigurator doc
-  luc khoi dong.
+  Write bundles.info: the list org.eclipse.equinox.simpleconfigurator reads at
+  startup.
 
-  $Existing   = bundles.info san co; neu co thi giu nguyen moi dong khong phai
-                org.rssowl.* va chi thay phan cua RSSOwl (dung cho run.ps1, noi
-                runtime la mot ban Eclipse day du).
-  $StartLevels = bang tra start level (xem Get-StartLevels); dung khi sinh moi
-                hoan toan tu $Plugins (dung cho dist.ps1).
+  $Existing    = an existing bundles.info; when given, every line that is not
+                 org.rssowl.* is kept as-is and only RSSOwl's part is replaced
+                 (used by run.ps1, where the runtime is a full Eclipse).
+  $StartLevels = start level lookup table (see Get-StartLevels); used when
+                 generating the file from scratch out of $Plugins (dist.ps1).
 #>
 function Write-BundlesInfo([string] $Plugins, [string] $Target, [string] $Existing, [hashtable] $StartLevels) {
   if ($Existing -and (Test-Path $Existing)) {
@@ -158,10 +165,10 @@ function Write-BundlesInfo([string] $Plugins, [string] $Target, [string] $Existi
 }
 
 <#
-  Mot dong bundles.info: id,version,duong-dan,start-level,da-start.
+  One bundles.info line: id,version,path,start-level,started.
 
-  Ten thu muc/jar la <symbolic-name>_<version>; tach o dau gach duoi CUOI CUNG
-  vi ban than symbolic name cung chua dau gach duoi.
+  Folder and jar names are <symbolic-name>_<version>; split at the LAST
+  underscore, because the symbolic name contains underscores itself.
 #>
 function Format-BundleLine([string] $name, [bool] $isDir, [hashtable] $StartLevels) {
   if (-not $isDir) {
@@ -174,7 +181,7 @@ function Format-BundleLine([string] $name, [bool] $isDir, [hashtable] $StartLeve
   $id = $name.Substring(0, $split)
   $version = $name.Substring($split + 1)
 
-  # Bundle dang thu muc phai co dau / o cuoi duong dan.
+  # A bundle deployed as a folder needs a trailing / on its path.
   $path = "plugins/$name" + $(if ($isDir) { "/" } else { ".jar" })
 
   $level = "4,false"

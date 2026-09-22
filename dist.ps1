@@ -1,17 +1,18 @@
 <#
-  Dung thu muc san pham RSSOwl hoan chinh de dong goi bang Inno Setup.
+  Build a complete RSSOwl product folder for Inno Setup to package.
 
-  Khac run.ps1 o cho nao: run.ps1 dat bundle cua RSSOwl vao mot ban sao Eclipse
-  SDK day du (332 MB, 696 bundle) - tien cho viec phat trien nhung khong phai
-  thu de phat hanh. Script nay chi lay dung nhung bundle ma RSSOwl can, tinh
-  bang bao dong Require-Bundle / Import-Package / Require-Capability, con
-  khoang 84 bundle / 42 MB.
+  How this differs from run.ps1: run.ps1 lays RSSOwl's bundles into a full copy
+  of the Eclipse SDK (332 MB, 696 bundles) - convenient for development, but
+  not something to ship. This script takes only the bundles RSSOwl actually
+  needs, computed as the transitive closure over Require-Bundle /
+  Import-Package / Require-Capability, which comes to about 84 bundles / 42 MB.
 
-  Ban ra cung mang theo mot JRE rut gon bang jlink, nen may dich khong can cai
-  Java. Danh sach module o duoi da duoc kiem chung bang cach cho app chay that,
-  khong phai suy ra tu tai lieu - xem chu thich cho jdk.management.
+  The output also carries a JRE trimmed with jlink, so the target machine does
+  not need Java installed. The module list below was verified by actually
+  running the app, not inferred from documentation - see the comment on
+  jdk.management.
 
-  Vi du:
+  Examples:
     .\dist.ps1
     .\dist.ps1 -SkipBuild
     .\dist.ps1 -OutDir "D:\CDS\build\rssowl-dist"
@@ -28,20 +29,20 @@ $ErrorActionPreference = "Stop"
 $root  = $PSScriptRoot
 $build = Join-Path $root "build-out\main"
 
-function Fail($msg) { Write-Host "LOI: $msg" -ForegroundColor Red; exit 1 }
+function Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; exit 1 }
 
 . (Join-Path $root "build-common.ps1")
 
-# --- 0. moi truong -----------------------------------------------------------
+# --- 0. environment ----------------------------------------------------------
 if (-not $JavaHome) {
   $JavaHome = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -ErrorAction SilentlyContinue |
               Where-Object { $_.Name -like "jdk-21*" -and (Test-Path (Join-Path $_.FullName "bin\jlink.exe")) } |
               Select-Object -First 1 -ExpandProperty FullName
 }
-if (-not $JavaHome) { Fail "Khong thay JDK 21 co jlink. Truyen -JavaHome." }
+if (-not $JavaHome) { Fail "No JDK 21 with jlink found. Pass -JavaHome." }
 $JavaHome = $JavaHome.TrimEnd('\')
-if (-not (Test-Path (Join-Path $JavaHome "bin\jlink.exe"))) { Fail "Khong thay jlink trong $JavaHome" }
-if (-not (Test-Path (Join-Path $EclipseHome "plugins"))) { Fail "Khong thay target platform tai $EclipseHome" }
+if (-not (Test-Path (Join-Path $JavaHome "bin\jlink.exe"))) { Fail "No jlink in $JavaHome" }
+if (-not (Test-Path (Join-Path $EclipseHome "plugins"))) { Fail "No target platform at $EclipseHome" }
 
 $srcPlugins = Join-Path $EclipseHome "plugins"
 $version = Get-BundleVersion (Join-Path $root "org.rssowl.ui")
@@ -49,26 +50,27 @@ $version = Get-BundleVersion (Join-Path $root "org.rssowl.ui")
 Write-Host "RSSOwl $version | JDK $JavaHome | target $EclipseHome"
 Write-Host ""
 
-# --- 1. bien dich ------------------------------------------------------------
+# --- 1. compile --------------------------------------------------------------
 if (-not $SkipBuild) {
   & (Join-Path $root "build.ps1") -Clean
-  if ($LASTEXITCODE -ne 0) { Fail "Bien dich that bai." }
+  if ($LASTEXITCODE -ne 0) { Fail "Compilation failed." }
 }
-if (-not (Test-Path $build)) { Fail "Khong thay $build. Chay .\build.ps1 truoc." }
+if (-not (Test-Path $build)) { Fail "No $build. Run .\build.ps1 first." }
 
 if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 $plugins = Join-Path $OutDir "plugins"
 New-Item -ItemType Directory -Force -Path $plugins | Out-Null
 
-# --- 2. bundle cua RSSOwl ----------------------------------------------------
-Write-Host "Bundle cua RSSOwl:"
+# --- 2. RSSOwl's bundles -----------------------------------------------------
+Write-Host "RSSOwl bundles:"
 Copy-RssOwlBundles $root $build $plugins
 
-# --- 3. bao dong bundle cua nen tang -----------------------------------------
+# --- 3. transitive closure over the platform bundles -------------------------
 <#
-  Doc header OSGi tu mot bundle, du no la thu muc hay jar.
-  Dong tiep trong MANIFEST.MF bat dau bang dung mot dau cach, phai noi lai
-  truoc khi tach header, neu khong mot Require-Bundle dai se bi cat cut.
+  Read the OSGi headers of a bundle, whether it is a folder or a jar.
+  Continuation lines in MANIFEST.MF start with exactly one space and have to be
+  joined back before splitting headers, otherwise a long Require-Bundle gets
+  truncated.
 #>
 function Read-BundleHeaders([string] $path) {
   $text = $null
@@ -98,8 +100,8 @@ function Read-BundleHeaders([string] $path) {
   return $h
 }
 
-# Tach danh sach phan cach bang dau phay, bo qua dau phay nam trong ngoac kep
-# (vi du version="[1.0,2.0)" co dau phay ben trong).
+# Split a comma-separated list, ignoring commas inside quotes (for example
+# version="[1.0,2.0)" has a comma inside).
 function Split-Clauses([string] $value) {
   if (-not $value) { return @() }
   $out = @(); $buf = ""; $quoted = $false
@@ -115,22 +117,25 @@ function Get-ClauseName([string] $clause) { return ($clause -split ';')[0].Trim(
 function Test-Optional([string] $clause) { return ($clause -replace '\s','') -match 'resolution:=optional' }
 
 <#
-  Khoa dinh danh cua mot capability, dang "<namespace>=<gia tri>".
+  The identifying key of a capability, as "<namespace>=<value>".
 
   Provide-Capability: osgi.extender;osgi.extender="osgi.component";version:Version="1.5"
   Require-Capability: osgi.extender;filter:="(&(osgi.extender=osgi.component)(version>=1.0))"
 
-  Ca hai deu quy ve "osgi.extender=osgi.component". Chi can khop den muc nay la
-  du cho viec gom bundle; khong can hien thuc bo loc LDAP day du.
+  Both reduce to "osgi.extender=osgi.component". Matching to that level is
+  enough for collecting bundles; a full LDAP filter implementation is not
+  needed.
 #>
 function Get-CapabilityKey([string] $clause) {
   $ns = Get-ClauseName $clause
   if (-not $ns) { return $null }
 
-  # osgi.ee do chinh JVM cung cap, osgi.native do framework; khong bundle nao ca.
+  # osgi.ee is provided by the JVM itself and osgi.native by the framework; no
+  # bundle provides either.
   if ($ns -eq "osgi.ee" -or $ns -eq "osgi.native") { return $null }
 
-  # Yeu cau danh dau effective:=active chi duoc xet luc chay, khong phai luc resolve.
+  # Requirements marked effective:=active are only considered at runtime, not
+  # at resolve time.
   if (($clause -replace '\s','') -match 'effective:=active') { return $null }
 
   $m = [regex]::Match($clause, [regex]::Escape($ns) + '\s*=\s*"?([^";,()]+)"?')
@@ -141,11 +146,11 @@ function Get-CapabilityKey([string] $clause) {
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 Write-Host ""
-Write-Host "Doc manifest cua nen tang..."
-$all = @{}        # symbolic name -> duong dan
-$exports = @{}      # ten package -> symbolic name
-$fragments = @{}    # host -> danh sach fragment
-$capabilities = @{} # "<namespace>=<gia tri>" -> symbolic name
+Write-Host "Reading the platform's manifests..."
+$all = @{}          # symbolic name -> path
+$exports = @{}      # package name -> symbolic name
+$fragments = @{}    # host -> list of fragments
+$capabilities = @{} # "<namespace>=<value>" -> symbolic name
 
 foreach ($item in @(Get-ChildItem $srcPlugins) + @(Get-ChildItem $plugins)) {
   if ($item.Name -like "*.source_*") { continue }
@@ -168,14 +173,15 @@ foreach ($item in @(Get-ChildItem $srcPlugins) + @(Get-ChildItem $plugins)) {
     $fragments[$host_] += $sn
   }
 }
-Write-Host "  quet duoc $($all.Count) bundle"
+Write-Host "  scanned $($all.Count) bundles"
 
 <#
-  Goc cua bao dong.
+  Roots of the closure.
 
-  Sau bundle dau la cua RSSOwl. Phan con lai la khung khoi dong cong voi cac
-  plugin nam trong feature org.rssowl.dependencies: chung duoc dung qua extension
-  point chu khong qua Require-Bundle, nen khong the suy ra tu manifest.
+  The first six are RSSOwl's own. The rest are the boot framework plus the
+  plug-ins from the org.rssowl.dependencies feature: those are used through
+  extension points rather than Require-Bundle, so they cannot be derived from
+  the manifests.
 #>
 $roots = @(
   "org.rssowl.core", "org.rssowl.ui",
@@ -190,9 +196,10 @@ $roots = @(
   "org.eclipse.core.net", "org.eclipse.equinox.security",
   "org.eclipse.equinox.event",
 
-  # Dinh nghia theme e4_default. Khong co no thi moi lan khoi dong deu ghi
-  # "Theme 'org.eclipse.e4.ui.css.theme.e4_default' not found" vao log. Bundle
-  # nay chi chua CSS, khong mang branding cua Eclipse nhu org.eclipse.platform.
+  # Defines the e4_default theme. Without it every startup logs
+  # "Theme 'org.eclipse.e4.ui.css.theme.e4_default' not found". This bundle
+  # holds CSS only; it does not carry Eclipse branding the way
+  # org.eclipse.platform does.
   "org.eclipse.ui.themes"
 )
 
@@ -217,52 +224,54 @@ while ($queue.Count -gt 0) {
     if ($owner) { $queue.Enqueue($owner) }
   }
   <#
-    Require-Capability cung phai di theo, khong chi Require-Bundle va
-    Import-Package. Bo qua no thi thieu org.apache.felix.scr - bundle hien thuc
-    Declarative Services, thu ma org.eclipse.equinox.event doi qua
-    osgi.extender=osgi.component. Hau qua khi thieu: app khong khoi dong duoc
-    va khong ghi ra file log nao ca.
+    Require-Capability has to be followed too, not just Require-Bundle and
+    Import-Package. Skipping it loses org.apache.felix.scr - the bundle that
+    implements Declarative Services, which org.eclipse.equinox.event asks for
+    through osgi.extender=osgi.component. When it is missing the app does not
+    start and writes no log file at all.
   #>
   foreach ($c in Split-Clauses $h["Require-Capability"]) {
     if (Test-Optional $c) { continue }
     $key = Get-CapabilityKey $c
     if ($key -and $capabilities.ContainsKey($key)) { $queue.Enqueue($capabilities[$key]) }
   }
-  # Fragment di theo host: SWT va launcher deu can fragment win32 cua chung.
+  # Fragments follow their host: both SWT and the launcher need their win32
+  # fragment.
   foreach ($f in $fragments[$sn]) { $queue.Enqueue($f) }
 }
 
 if ($missing.Count -gt 0) {
-  Write-Host "  khong tim thay (bo qua): $($missing -join ', ')" -ForegroundColor DarkYellow
+  Write-Host "  not found (skipped): $($missing -join ', ')" -ForegroundColor DarkYellow
 }
 
-Write-Host "  RSSOwl can $($needed.Count) bundle"
+Write-Host "  RSSOwl needs $($needed.Count) bundles"
 
-# Chep nhung bundle cua nen tang chua co trong dist
+# Copy the platform bundles that are not in dist yet
 $copied = 0
 foreach ($sn in $needed) {
   $src = $all[$sn].Path
-  if ($src -like "$plugins*") { continue }   # bundle cua RSSOwl, da dat roi
+  if ($src -like "$plugins*") { continue }   # an RSSOwl bundle, already laid down
   $leaf = Split-Path $src -Leaf
   $dest = Join-Path $plugins $leaf
   if (Test-Path $src -PathType Container) { Copy-Tree $src $dest } else { Copy-Item $src $dest -Force }
   $copied++
 }
 $pluginSize = (Get-ChildItem $plugins -Recurse -File | Measure-Object -Property Length -Sum).Sum
-Write-Host ("  chep $copied bundle cua nen tang, tong plugins/ {0:N1} MB" -f ($pluginSize / 1MB))
+Write-Host ("  copied {0} platform bundles, plugins/ totals {1:N1} MB" -f $copied, ($pluginSize / 1MB))
 
-# --- 4. JRE rut gon ----------------------------------------------------------
+# --- 4. trimmed JRE ----------------------------------------------------------
 <#
-  Danh sach module: giu rong rai, vi mot module thieu KHONG bao loi ro rang.
-  Da vap that: thieu jdk.management thi org.apache.lucene.core khong resolve
-  (no import com.sun.management), keo theo analysis-common, org.rssowl.core,
-  org.rssowl.ui, va thong bao cuoi cung chi la
-  "Application org.rssowl.ui.rssowl could not be found in the registry" -
-  khong he nhac den module nao. Dung bot module nao thi phai chay that lai.
+  Module list: keep it generous, because a missing module does NOT produce a
+  clear error. Learned the hard way: without jdk.management,
+  org.apache.lucene.core does not resolve (it imports com.sun.management),
+  which drags down analysis-common, org.rssowl.core and org.rssowl.ui, and the
+  final message is just "Application org.rssowl.ui.rssowl could not be found in
+  the registry" - with no mention of any module. Dropping a module from this
+  list means running the app for real again.
 
-  jdk.localedata + include-locales: can cho dinh dang ngay thang tieng Viet.
-  jdk.unsupported: db4o 6.1 va cac thu vien doi cu cham vao sun.misc.
-  jdk.crypto.ec: TLS cho feed HTTPS.
+  jdk.localedata + include-locales: needed for Vietnamese date formatting.
+  jdk.unsupported: db4o 6.1 and other old libraries reach into sun.misc.
+  jdk.crypto.ec: TLS for HTTPS feeds.
 #>
 $modules = @(
   "java.base", "java.desktop", "java.xml", "java.naming", "java.management",
@@ -275,11 +284,11 @@ $modules = @(
 ) -join ","
 
 Write-Host ""
-Write-Host "Dung JRE rut gon bang jlink..."
+Write-Host "Building a trimmed JRE with jlink..."
 $jreDir = Join-Path $OutDir "jre"
 & (Join-Path $JavaHome "bin\jlink.exe") --add-modules $modules --include-locales=en,vi `
   --strip-debug --no-header-files --no-man-pages --compress=zip-6 --output $jreDir
-if ($LASTEXITCODE -ne 0) { Fail "jlink that bai." }
+if ($LASTEXITCODE -ne 0) { Fail "jlink failed." }
 $jreSize = (Get-ChildItem $jreDir -Recurse -File | Measure-Object -Property Length -Sum).Sum
 Write-Host ("  JRE {0:N1} MB" -f ($jreSize / 1MB))
 
@@ -289,13 +298,14 @@ Write-Host "Launcher:"
 Copy-Item (Join-Path $EclipseHome "eclipse.exe") (Join-Path $OutDir "RSSOwl.exe") -Force
 
 <#
-  Doi icon cua launcher.
+  Replace the launcher's icon.
 
-  IconExe chi thay duoc icon nao tim thay muc CUNG kich thuoc va cung do sau mau
-  trong file .ico, va no KHONG doc duoc muc nen PNG (bao "Error 40"). Launcher
-  cua Eclipse co mot icon 256x256 ma rssowl.ico ban 2006 khong co, nen neu dung
-  thang file goc thi icon Eclipse 256x256 con sot lai. Ham nay giu nguyen 9 muc
-  cu va them mot muc 256x256 dang DIB.
+  IconExe can only replace an icon for which it finds an entry of the SAME size
+  and the same colour depth in the .ico file, and it can NOT read PNG-compressed
+  entries (it reports "Error 40"). Eclipse's launcher has a 256x256 icon that
+  the 2006-era rssowl.ico does not, so using the original file as-is leaves
+  Eclipse's 256x256 icon behind. This function keeps the 9 existing entries and
+  appends a 256x256 one in DIB form.
 #>
 function New-LauncherIcon([string] $srcIco, [string] $srcPng, [string] $outIco) {
   Add-Type -AssemblyName System.Drawing
@@ -321,10 +331,10 @@ function New-LauncherIcon([string] $srcIco, [string] $srcPng, [string] $outIco) 
   $g.DrawImage($src, 0, 0, 256, 256)
   $g.Dispose(); $src.Dispose()
 
-  # BITMAPINFOHEADER + du lieu XOR (BGRA, tu duoi len) + mat na AND
+  # BITMAPINFOHEADER + XOR data (BGRA, bottom-up) + AND mask
   $ms = New-Object IO.MemoryStream
   $bw = New-Object IO.BinaryWriter $ms
-  $bw.Write([UInt32]40); $bw.Write([Int32]256); $bw.Write([Int32]512)  # cao gap doi: XOR + AND
+  $bw.Write([UInt32]40); $bw.Write([Int32]256); $bw.Write([Int32]512)  # double height: XOR + AND
   $bw.Write([UInt16]1);  $bw.Write([UInt16]32)
   $bw.Write([UInt32]0);  $bw.Write([UInt32](256 * 256 * 4))
   $bw.Write([Int32]0); $bw.Write([Int32]0); $bw.Write([UInt32]0); $bw.Write([UInt32]0)
@@ -334,7 +344,8 @@ function New-LauncherIcon([string] $srcIco, [string] $srcPng, [string] $outIco) 
       $bw.Write([Byte]$c.B); $bw.Write([Byte]$c.G); $bw.Write([Byte]$c.R); $bw.Write([Byte]$c.A)
     }
   }
-  # Mat na AND: 1bpp, moi hang dem cho tron 4 byte. Anh 32-bit dung alpha nen de 0.
+  # AND mask: 1bpp, each row padded to a multiple of 4 bytes. A 32-bit image
+  # uses its alpha channel, so leave the mask at 0.
   $bw.Write((New-Object byte[] (([Math]::Ceiling(256 / 8 / 4) * 4) * 256)))
   $bw.Flush()
   $dib = $ms.ToArray()
@@ -364,24 +375,25 @@ $iconDir = Join-Path $root "org.rssowl.ui\icons\product"
 $launcherIco = Join-Path $OutDir "rssowl.ico"
 New-LauncherIcon (Join-Path $iconDir "rssowl.ico") (Join-Path $iconDir "128x128.png") $launcherIco
 
-# IconExe nam trong chinh target platform, khong phai cai them gi.
+# IconExe lives in the target platform itself, nothing extra to install.
 $publisher = Get-ChildItem $srcPlugins -Filter "org.eclipse.equinox.p2.publisher.eclipse_*.jar" |
              Where-Object { $_.Name -notlike "*.source_*" } | Select-Object -First 1
-if (-not $publisher) { Fail "Khong thay bundle p2.publisher.eclipse (chua IconExe)." }
+if (-not $publisher) { Fail "No p2.publisher.eclipse bundle (which contains IconExe)." }
 
 $iconLog = & (Join-Path $JavaHome "bin\java.exe") -cp $publisher.FullName `
   org.eclipse.pde.internal.swt.tools.IconExe (Join-Path $OutDir "RSSOwl.exe") $launcherIco 2>&1
 if ($iconLog -match "not replaced") {
   $iconLog | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkYellow }
-  Fail "IconExe khong thay het icon - file .ico thieu kich thuoc nao do."
+  Fail "IconExe did not replace every icon - the .ico file is missing a size."
 }
-Write-Host "  RSSOwl.exe, da doi icon"
+Write-Host "  RSSOwl.exe, icon replaced"
 
-# --- 6. file nhan dang san pham ----------------------------------------------
+# --- 6. product identification file ------------------------------------------
 <#
-  Eclipse dat ten thu muc configuration rieng cua nguoi dung theo noi dung file
-  nay (~/.eclipse/<id>_<version>_<hash>). De nguyen thi thu muc do mang ten
-  "org.eclipse.platform" va hai ban RSSOwl khac nhau se dam vao nhau.
+  Eclipse names the user's own configuration folder after the contents of this
+  file (~/.eclipse/<id>_<version>_<hash>). Left alone, that folder would be
+  called "org.eclipse.platform" and two different RSSOwl builds would collide
+  in it.
 #>
 @(
   "name=RSSOwl"
@@ -391,26 +403,28 @@ Write-Host "  RSSOwl.exe, da doi icon"
 
 # --- 7. configuration --------------------------------------------------------
 $osgi = (Get-ChildItem $plugins -Filter "org.eclipse.osgi_*.jar" | Select-Object -First 1).Name
-if (-not $osgi) { Fail "Khong thay org.eclipse.osgi trong $plugins" }
+if (-not $osgi) { Fail "No org.eclipse.osgi in $plugins" }
 $simple = (Get-ChildItem $plugins -Filter "org.eclipse.equinox.simpleconfigurator_*.jar" | Select-Object -First 1).Name
-if (-not $simple) { Fail "Khong thay simpleconfigurator trong $plugins" }
+if (-not $simple) { Fail "No simpleconfigurator in $plugins" }
 
 $cfgDir = Join-Path $OutDir "configuration"
 
-# Lay start level tu chinh ban Eclipse dung lam target platform, thay vi dat
-# cung trong script - xem chu thich cua Get-StartLevels.
+# Take the start levels from the Eclipse build used as the target platform
+# instead of hard-coding them here - see the comment on Get-StartLevels.
 $startLevels = Get-StartLevels (Join-Path $EclipseHome "configuration\org.eclipse.equinox.simpleconfigurator\bundles.info")
 Write-BundlesInfo $plugins (Join-Path $cfgDir "org.eclipse.equinox.simpleconfigurator\bundles.info") $null $startLevels
 
 <#
-  Khong dat osgi.configuration.area o day. Khi cai vao Program Files thu muc cai
-  dat la chi-doc, va Equinox tu chuyen sang mot configuration area ghi duoc trong
-  ~/.eclipse roi doc thu muc nay lam ban dung chung. Da thu that voi mot thu muc
-  bi tu choi quyen ghi: app khoi dong binh thuong. Dat tay bien do se lam
-  simpleconfigurator khong tim thay bundles.info nua.
+  Do not set osgi.configuration.area here. When installed into Program Files
+  the install folder is read-only, and Equinox moves to a writable
+  configuration area under ~/.eclipse on its own, reading this folder as the
+  shared one. Verified for real against a folder with write permission denied:
+  the app starts fine. Setting the variable by hand stops simpleconfigurator
+  from finding bundles.info.
 
-  osgi.instance.area.default thi PHAI co: ban phat hanh khong truyen -data, thieu
-  no thi Eclipse hoi nguoi dung chon workspace luc khoi dong.
+  osgi.instance.area.default, on the other hand, is REQUIRED: the release does
+  not pass -data, and without it Eclipse asks the user to pick a workspace at
+  startup.
 #>
 @(
   "osgi.framework=file\:plugins/$osgi"
@@ -425,9 +439,9 @@ Write-BundlesInfo $plugins (Join-Path $cfgDir "org.eclipse.equinox.simpleconfigu
 
 # --- 8. RSSOwl.ini -----------------------------------------------------------
 <#
-  Ten file ini phai trung ten exe, launcher tim theo ten do.
-  -vm phai la duong dan TUONG DOI: eclipse.ini trong cay phat trien tro thang
-  vao JDK cua may nay, mang di may khac la chet.
+  The ini file has to be named after the exe; that is how the launcher finds it.
+  -vm must be a RELATIVE path: eclipse.ini in the development tree points
+  straight at this machine's JDK, which is fatal on any other machine.
 #>
 @(
   "-startup"
@@ -439,19 +453,19 @@ Write-BundlesInfo $plugins (Join-Path $cfgDir "org.eclipse.equinox.simpleconfigu
   "-vmargs"
   "-Xms40m"
   "-Xmx512m"
-  # db4o 6.1 reflect vao field noi bo cua java.lang.Enum de luu enum. Tu JDK 16
-  # strong encapsulation chan viec do, nem InaccessibleObjectException ngay khi
-  # doc preferences luc khoi dong.
+  # db4o 6.1 reflects into internal fields of java.lang.Enum to store enums. As
+  # of JDK 16 strong encapsulation blocks that, throwing
+  # InaccessibleObjectException as soon as preferences are read at startup.
   "--add-opens=java.base/java.lang=ALL-UNNAMED"
   "--add-opens=java.base/java.util=ALL-UNNAMED"
   "--add-opens=java.base/java.io=ALL-UNNAMED"
 ) -join "`r`n" | Set-Content (Join-Path $OutDir "RSSOwl.ini") -Encoding ASCII
 
-# --- 9. ghi chu giay phep ----------------------------------------------------
+# --- 9. license notice -------------------------------------------------------
 <#
-  Lay nguyen van phan <license><text> trong rssowl.product lam LICENSE.txt de
-  trinh cai dat hien thi. Lay tu day chu khong go lai, de chi co mot nguon su
-  that duy nhat cho phan phap ly.
+  Take the <license><text> section of rssowl.product verbatim as LICENSE.txt
+  for the installer to display. Taken from there rather than retyped, so there
+  is a single source of truth for the legal text.
 #>
 $productXml = [xml](Get-Content (Join-Path $root "org.rssowl.ui\rssowl.product") -Raw)
 $licenseText = $productXml.product.license.text
@@ -459,11 +473,11 @@ if ($licenseText) {
   ($licenseText -replace "`n", "`r`n").Trim() |
     Set-Content (Join-Path $OutDir "LICENSE.txt") -Encoding UTF8
   Write-Host ""
-  Write-Host "  LICENSE.txt lay tu rssowl.product"
+  Write-Host "  LICENSE.txt taken from rssowl.product"
 }
 
-# --- 10. tong ket ------------------------------------------------------------
+# --- 10. summary -------------------------------------------------------------
 $total = (Get-ChildItem $OutDir -Recurse -File | Measure-Object -Property Length -Sum).Sum
 Write-Host ""
-Write-Host ("Xong: $OutDir  ({0:N1} MB)" -f ($total / 1MB)) -ForegroundColor Green
-Write-Host "Chay thu:  $OutDir\RSSOwl.exe"
+Write-Host ("Done: $OutDir  ({0:N1} MB)" -f ($total / 1MB)) -ForegroundColor Green
+Write-Host "Try it:  $OutDir\RSSOwl.exe"

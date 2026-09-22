@@ -128,7 +128,7 @@ public class NewsGridViewerRefreshTest {
   @Test
   public void testPlainRefreshPublishesTheCount() {
     fViewer.refresh();
-    assertTrue("refresh() phai hoi lai so dong", fProvider.published > 0); //$NON-NLS-1$
+    assertTrue("refresh() must publish the row count", fProvider.published > 0); //$NON-NLS-1$
   }
 
   /* What clicking a column header calls */
@@ -136,11 +136,11 @@ public class NewsGridViewerRefreshTest {
   public void testRefreshWithUpdateLabelsPublishesTheCount() {
     fProvider.published = 0;
     fViewer.refresh(false);
-    assertTrue("refresh(false) phai hoi lai so dong", fProvider.published > 0); //$NON-NLS-1$
+    assertTrue("refresh(false) must publish the row count", fProvider.published > 0); //$NON-NLS-1$
 
     fProvider.published = 0;
     fViewer.refresh(true);
-    assertTrue("refresh(true) phai hoi lai so dong", fProvider.published > 0); //$NON-NLS-1$
+    assertTrue("refresh(true) must publish the row count", fProvider.published > 0); //$NON-NLS-1$
   }
 
   /* What FeedView.refreshTableViewer calls, by way of the filter bar */
@@ -148,11 +148,11 @@ public class NewsGridViewerRefreshTest {
   public void testRefreshOfAnElementPublishesTheCount() {
     fProvider.published = 0;
     fViewer.refresh(fViewer.getInput());
-    assertTrue("refresh(element) phai hoi lai so dong", fProvider.published > 0); //$NON-NLS-1$
+    assertTrue("refresh(element) must publish the row count", fProvider.published > 0); //$NON-NLS-1$
 
     fProvider.published = 0;
     fViewer.refresh(fViewer.getInput(), true);
-    assertTrue("refresh(element, true) phai hoi lai so dong", fProvider.published > 0); //$NON-NLS-1$
+    assertTrue("refresh(element, true) must publish the row count", fProvider.published > 0); //$NON-NLS-1$
   }
 
   /* A refresh has to end with the widget showing the new number of rows */
