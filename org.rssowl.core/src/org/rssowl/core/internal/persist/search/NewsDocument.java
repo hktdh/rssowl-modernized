@@ -114,12 +114,18 @@ public class NewsDocument extends SearchDocument<INews> {
         addField(fields, createStringField(INews.GUID, value.toLowerCase(), Store.NO, Index.UN_TOKENIZED));
     }
 
-    /* Add Source */
+    /*
+     * Add Source. Both forms go in the same shape, whole and lowercased, which
+     * is what LINK, FEED and GUID do as well. Lucene keeps one set of index
+     * options per field name and rejects a document that disagrees with what
+     * the index already holds, so a source name used to spoil the whole batch
+     * it was indexed in once a source link had been indexed, and vice versa.
+     */
     if (news.getSource() != null) {
       if (news.getSource().getLink() != null)
         addField(fields, createURIField(INews.SOURCE, news.getSource().getLink().toString(), Store.NO, Index.UN_TOKENIZED));
       else if (news.getSource().getName() != null)
-        addField(fields, createStringField(INews.SOURCE, news.getSource().getName(), Store.NO, Index.TOKENIZED));
+        addField(fields, createStringField(INews.SOURCE, news.getSource().getName().toLowerCase(), Store.NO, Index.UN_TOKENIZED));
     }
 
     /* Add Author */

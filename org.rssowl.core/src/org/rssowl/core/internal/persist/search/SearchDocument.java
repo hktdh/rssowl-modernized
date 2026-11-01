@@ -326,9 +326,13 @@ public abstract class SearchDocument<T extends IEntity> {
     if (person.getName() != null)
       return createStringField(fieldConstant, person.getName(), store, index);
 
-    /* Add EMail if present */
+    /*
+     * Add EMail if present, in the shape the caller asked for just like the two
+     * branches above. This used to force UN_TOKENIZED regardless, which leaves
+     * one field name with two shapes in the index - something Lucene rejects.
+     */
     else if (person.getEmail() != null)
-      return createURIField(fieldConstant, person.getEmail().toString(), store, Index.UN_TOKENIZED);
+      return createStringField(fieldConstant, person.getEmail().toString(), store, index);
 
     return null;
   }

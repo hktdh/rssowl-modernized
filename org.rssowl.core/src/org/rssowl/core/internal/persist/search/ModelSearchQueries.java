@@ -419,9 +419,22 @@ public class ModelSearchQueries {
       term = FoldingQueryParser.fold(term);
 
     if (String.valueOf(INews.LABEL).equals(field) || isValidWildcardTerm(term))
-      return new WildcardQuery(new Term(field, term));
+      return new WildcardQuery(new Term(field, escapeWildcardTerm(term)));
 
     return new TermQuery(new Term(field, term));
+  }
+
+  /*
+   * A backslash escapes the character after it inside a wildcard term, so a
+   * category or label written "Foo\Bar" would be looked up as "FooBar" and
+   * never found. The term here is text the user typed, where a backslash means
+   * itself; '*' and '?' are left alone because they are offered as wildcards.
+   */
+  private static String escapeWildcardTerm(String term) {
+    if (term.indexOf('\\') == -1)
+      return term;
+
+    return term.replace("\\", "\\\\"); //$NON-NLS-1$ //$NON-NLS-2$
   }
 
   private static boolean isValidWildcardTerm(String term) {
@@ -651,6 +664,20 @@ public class ModelSearchQueries {
         parser.setDefaultOperator(operator);
         parser.setAllowLeadingWildcard(true);
 
+        /*
+         * A word the analyzer splits further - "Foo/Bar", "Foo-Bar", an e-mail
+         * address - is one word to the user, who expects the parts next to each
+         * other rather than any one of them. Lucene used to build a phrase
+         * query for that and stopped doing so in 4.0, which turned a search for
+         * "Foo/Bar" into "Foo or Bar". Ask for the old behaviour back.
+         *
+         * The two settings go together: splitting on whitespace in the parser
+         * is what leaves the analyzer looking at one word at a time, and Lucene
+         * refuses to generate phrases without it.
+         */
+        parser.setSplitOnWhitespace(true);
+        parser.setAutoGeneratePhraseQueries(true);
+
         /* Prepare the value for parsing */
         value = prepareForParsing(value);
 
@@ -786,8 +813,13 @@ public class ModelSearchQueries {
     for (int i = 0; i < s.length(); i++) {
       char c = s.charAt(i);
 
-      /* Escape Special Characters being used in Lucene */
-      if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':' || c == '^' || c == '[' || c == ']' || c == '{' || c == '}' || c == '~')
+      /*
+       * Escape Special Characters being used in Lucene. '/' is one of them
+       * since Lucene 4, where it opens a regular expression that runs to the
+       * next '/' - so a search for text like "Foo/Bar" failed to parse at all.
+       * '*' and '?' are deliberately left alone, they are offered as wildcards.
+       */
+      if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':' || c == '^' || c == '[' || c == ']' || c == '{' || c == '}' || c == '~' || c == '/')
         sb.append('\\');
 
       /* Keep Track of Doublequotes being used - they need special treatment */

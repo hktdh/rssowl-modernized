@@ -34,7 +34,8 @@ import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.classic.ClassicFilter;
+import org.apache.lucene.analysis.classic.ClassicTokenizer;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -125,8 +126,21 @@ public class Indexer {
      */
     @Override
     protected TokenStreamComponents createComponents(String fieldName) {
-      Tokenizer source = new StandardTokenizer();
-      TokenStream result = new LowerCaseFilter(source);
+
+      /*
+       * ClassicTokenizer, not StandardTokenizer. Lucene rewrote the latter to
+       * follow the Unicode word boundary rules, which keep "WIL_Tel" whole and
+       * cut "GNC-2012-12-13" and "name@host.com" into pieces - the opposite of
+       * what this application wants, since people search feeds for product
+       * codes, phone numbers and e-mail addresses and expect to be able to use
+       * a wildcard on them. ClassicTokenizer is the older grammar, kept by
+       * Lucene for exactly this, and it is what RSSOwl indexed with before.
+       */
+      Tokenizer source = new ClassicTokenizer();
+
+      /* Drops the dots from acronyms and the trailing 's, as that grammar expects */
+      TokenStream result = new ClassicFilter(source);
+      result = new LowerCaseFilter(result);
 
       /*
        * StandardAnalyzer no longer drops English stop words by default, so name

@@ -135,14 +135,18 @@ public class ModelSearchImpl implements IModelSearch {
 
           /*
            * IndexFileNameFilter is gone and Lucene no longer publishes the set
-           * of names it uses. Everything in this directory belongs to the
-           * index, so clear it wholesale rather than guess at the naming.
+           * of names it uses, so go by how it names them. This directory is
+           * NOT the index's alone: it also holds the database, the files that
+           * record its format and when it was last used, its backups, and the
+           * markers that ask for a defragment or a reindex. Deleting those
+           * costs the profile its format file, which the next start reads as
+           * the oldest format there is and migrates the database accordingly.
            */
           File[] indexFiles = directory.listFiles();
           try {
             if (indexFiles != null) {
               for (File file : indexFiles) {
-                if (file.isFile())
+                if (file.isFile() && belongsToIndex(file.getName()))
                   file.delete();
               }
             }
@@ -187,6 +191,29 @@ public class ModelSearchImpl implements IModelSearch {
    *
    * @return <code>true</code> if an index exists that cannot be read.
    */
+  /*
+   * Every file Lucene writes is either a segment file, named for the segment it
+   * belongs to and so starting with an underscore, the list of segments, or the
+   * write lock.
+   */
+  private static boolean belongsToIndex(String fileName) {
+    return fileName.startsWith("_") || fileName.startsWith("segments") || fileName.equals("write.lock"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+  }
+
+  /**
+   * @return <code>true</code> if this profile has a search index on disk.
+   */
+  public static boolean indexExists() {
+    String path = Activator.getDefault().getStateLocation().toOSString();
+
+    /* Read only: opening a directory takes no write lock, only IndexWriter does */
+    try (Directory directory = FSDirectory.open(new File(path).toPath())) {
+      return DirectoryReader.indexExists(directory);
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
   public static boolean isIndexFormatTooOld() {
     String path = Activator.getDefault().getStateLocation().toOSString();
 

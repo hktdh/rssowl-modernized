@@ -117,6 +117,14 @@ public class DBManager {
   private static final String ONLINE_RUNNING_BACKUP_MARKER = "onlinebakmarker"; //$NON-NLS-1$
   private static final String CLEANUP_INDEX_MARKER = "cleanupindex"; //$NON-NLS-1$
   private static final String REINDEX_MARKER = "reindex"; //$NON-NLS-1$
+
+  /*
+   * Written once a profile's index has been built the way this version
+   * analyzes text. Give it a new name whenever that changes: an index built
+   * with different word boundaries or filters does not fail, it quietly answers
+   * searches wrongly, so nothing else would notice that it needs rebuilding.
+   */
+  private static final String ANALYZER_MARKER = "analyzer-classic"; //$NON-NLS-1$
   private static final String REINDEX_RUNNING_MARKER = "reindexmarker"; //$NON-NLS-1$
 
   /* Backup Settings */
@@ -510,6 +518,14 @@ public class DBManager {
     if (!shouldReindex && ModelSearchImpl.isIndexFormatTooOld())
       shouldReindex = true;
 
+    /*
+     * Fourth, an index built by a version that split words differently is
+     * readable and wrong rather than broken, so ask whether this profile has
+     * been indexed the way this version analyzes text.
+     */
+    if (!shouldReindex && isIndexedByAnotherAnalyzer())
+      shouldReindex = true;
+
     if (shouldReindex) { //Need to set system property as model search relies on it
       System.setProperty("rssowl.reindex", "true"); //$NON-NLS-1$ //$NON-NLS-2$
       return true;
@@ -625,6 +641,30 @@ public class DBManager {
   /**
    * @return the File indicating whether reindexing should be run or not.
    */
+  /*
+   * Whether this profile's index was built by a version that analyzed text
+   * differently. The marker is laid down either way, so this answers true only
+   * on the first start after the change, and never on a profile that has no
+   * index to rebuild.
+   */
+  private boolean isIndexedByAnotherAnalyzer() {
+    File dir = new File(Activator.getDefault().getStateLocation().toOSString());
+    File marker = new File(dir, ANALYZER_MARKER);
+    if (marker.exists())
+      return false;
+
+    boolean indexedByAnotherAnalyzer = ModelSearchImpl.indexExists();
+    try {
+      marker.createNewFile();
+    } catch (IOException e) {
+
+      /* Worst case the index is rebuilt again on the next start */
+      Activator.safeLogError(e.getMessage(), e);
+    }
+
+    return indexedByAnotherAnalyzer;
+  }
+
   public File getReIndexFile() {
     File dir = new File(Activator.getDefault().getStateLocation().toOSString());
     return new File(dir, REINDEX_MARKER);
