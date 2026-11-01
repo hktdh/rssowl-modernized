@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.rssowl.core.Owl;
 import org.rssowl.core.internal.persist.MergeResult;
 import org.rssowl.core.internal.persist.dao.EntitiesToBeIndexedDAOImpl;
+import org.rssowl.core.internal.persist.search.ModelSearchImpl;
 import org.rssowl.core.internal.persist.service.DBHelper;
 import org.rssowl.core.internal.persist.service.EntityIdsByEventType;
 import org.rssowl.core.internal.persist.service.PersistenceServiceImpl;
@@ -2455,8 +2456,8 @@ public class ModelTest3 extends LargeBlockSizeTest {
     /* Wait for Indexer */
     waitForIndexer();
 
-    /* Force a Flush */
-    runBogusSearch();
+    /* Write the index to disk */
+    commitIndex();
 
     outstandingNewsIds = dao.load();
     assertEquals(0, outstandingNewsIds.getPersistedEntityRefs().size());
@@ -2487,8 +2488,8 @@ public class ModelTest3 extends LargeBlockSizeTest {
     /* Wait for Indexer */
     waitForIndexer();
 
-    /* Force a Flush */
-    runBogusSearch();
+    /* Write the index to disk */
+    commitIndex();
 
     outstandingNewsIds = dao.load();
     assertEquals(0, outstandingNewsIds.getPersistedEntityRefs().size());
@@ -2519,8 +2520,8 @@ public class ModelTest3 extends LargeBlockSizeTest {
     /* Wait for Indexer */
     waitForIndexer();
 
-    /* Force a Flush */
-    runBogusSearch();
+    /* Write the index to disk */
+    commitIndex();
 
     outstandingNewsIds = dao.load();
     assertEquals(0, outstandingNewsIds.getPersistedEntityRefs().size());
@@ -2551,8 +2552,8 @@ public class ModelTest3 extends LargeBlockSizeTest {
     /* Wait for Indexer */
     waitForIndexer();
 
-    /* Force a Flush */
-    runBogusSearch();
+    /* Write the index to disk */
+    commitIndex();
 
     outstandingNewsIds = dao.load();
     assertEquals(0, outstandingNewsIds.getPersistedEntityRefs().size());
@@ -2586,8 +2587,8 @@ public class ModelTest3 extends LargeBlockSizeTest {
     /* Wait for Indexer */
     waitForIndexer();
 
-    /* Force a Flush */
-    runBogusSearch();
+    /* Write the index to disk */
+    commitIndex();
 
     outstandingNewsIds = dao.load();
     assertEquals(0, outstandingNewsIds.getPersistedEntityRefs().size());
@@ -2621,8 +2622,8 @@ public class ModelTest3 extends LargeBlockSizeTest {
     /* Wait for Indexer */
     waitForIndexer();
 
-    /* Force a Flush */
-    runBogusSearch();
+    /* Write the index to disk */
+    commitIndex();
 
     outstandingNewsIds = dao.load();
     assertEquals(0, outstandingNewsIds.getPersistedEntityRefs().size());
@@ -2638,10 +2639,14 @@ public class ModelTest3 extends LargeBlockSizeTest {
   }
 
   /* Search to trigger a flush in the Index */
-  private void runBogusSearch() {
-    ISearchField field1 = fFactory.createSearchField(INews.FEED, INews.class.getName());
-    ISearchCondition cond1 = fFactory.createSearchCondition(field1, SearchSpecifier.IS, "http://www.feed.com/feed1.xml");
-    Owl.getPersistenceService().getModelSearch().searchNews(Collections.singleton(cond1), false);
+  /*
+   * Writes the index to disk, which is what clears the list of news still to be
+   * indexed on the next start. This used to be done by running a search, back
+   * when searching committed the index as a side effect of making freshly
+   * indexed news visible.
+   */
+  private void commitIndex() {
+    ((ModelSearchImpl) Owl.getPersistenceService().getModelSearch()).commitIndex();
   }
 
   /**

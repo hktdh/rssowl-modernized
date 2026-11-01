@@ -101,6 +101,13 @@ public class Indexer {
   /* Lucene only allows 1 Indexer to run at the same time */
   private static final int MAX_INDEX_JOBS_COUNT = 1;
 
+  /*
+   * How many indexed news may be waiting to be written to disk before the index
+   * is committed. Indexed news are searchable straight away, so this only
+   * decides how much would have to be indexed again after a crash.
+   */
+  private static final int MAX_UNCOMMITTED_NEWS = 500;
+
   /* DWord to disable stop words when Indexing */
   private static final String DISABLE_STOP_WORDS_PROPERTY = "disableStopWords"; //$NON-NLS-1$
   static final boolean DISABLE_STOP_WORDS = System.getProperty(DISABLE_STOP_WORDS_PROPERTY) != null;
@@ -109,7 +116,7 @@ public class Indexer {
   private final Directory fIndexDirectory;
 
   /* The IndexWriter to add/update/delete Documents */
-  private IndexWriter fIndexWriter;
+  private volatile IndexWriter fIndexWriter;
 
   private final JobQueue fJobQueue;
   private NewsListener fNewsListener;
@@ -257,6 +264,8 @@ public class Indexer {
       /* Notify Listeners */
       fSearch.notifyIndexUpdated(docCount);
     }
+
+    commitIfNecessary();
   }
 
   /**
@@ -275,37 +284,94 @@ public class Indexer {
 
     if (docCount > 0) {
 
-      /* Mark as in need for a flush */
+      /* Mark the index as changed, so readers reopen */
       fFlushRequired = true;
 
       /* Notify Listeners */
       fSearch.notifyIndexUpdated(docCount);
     }
+
+    commitIfNecessary();
   }
 
-  //TODO Consider renaming to commitIfNecessary
-  //TODO Remove fFlushRequired and rely on fUncommittedNews
-  //TODO Perhaps commit after fUncommittedNews has a certain size instead
-  //of relying always in this method. In most situations this method will
-  //be called often though
-  boolean flushIfNecessary() throws PersistenceException {
+  /**
+   * Whether the index has been written to since a reader last asked, which is
+   * the signal for that reader to reopen. Asking clears the flag, so the next
+   * caller is told nothing changed until the index is written to again.
+   * <p>
+   * This used to close the {@link IndexWriter} and open a new one, because a
+   * reader opened from the directory can only see what has been committed, and
+   * closing the writer was how the commit got done. A reader opened from the
+   * writer instead also sees documents that are still only in memory, so making
+   * news searchable no longer needs the index written to disk - which is where
+   * nearly all the cost of reloading a feed went, since every reload searched
+   * the index for duplicates. Writing to disk is now its own concern, see
+   * {@link #commitIfNecessary()}.
+   * </p>
+   *
+   * @return <code>true</code> if the caller should reopen its reader.
+   */
+  boolean claimIndexChanged() {
     if (!fFlushRequired)
       return false;
 
     synchronized (this) {
       /*
-       * Another thread got the lock before us and flushed. We must still return
-       * {@code true} to let the caller know that the index has changed.
+       * Another thread got the lock before us and claimed the change. We must
+       * still return {@code true} to let the caller know that the index has
+       * changed, because it may be holding a reader from before that change.
        */
       if (!fFlushRequired)
         return true;
 
-      dispose();
-      createIndexWriter(false);
-      saveCommittedNews(false, new EntityIdsByEventType(fUncommittedNews));
-      fUncommittedNews.clear();
+      fFlushRequired = false;
     }
+
     return true;
+  }
+
+  /**
+   * The writer that a reader has to be opened from to see news that have been
+   * indexed but not yet written to disk. It is <code>null</code> or closed
+   * while the index is being cleared and once the application is shutting
+   * down, and a reader must not be reopened from it then.
+   *
+   * @return the current {@link IndexWriter} or <code>null</code>.
+   */
+  IndexWriter getIndexWriter() {
+    return fIndexWriter;
+  }
+
+  /*
+   * Write the index to disk once enough news are waiting for it. Searching no
+   * longer commits, so this, an explicit commit and shutdown are what gets the
+   * index written.
+   */
+  private void commitIfNecessary() throws PersistenceException {
+    if (fUncommittedNews.size() < MAX_UNCOMMITTED_NEWS)
+      return;
+
+    commit();
+  }
+
+  /**
+   * Writes everything indexed so far to disk, and forgets the news that were
+   * listed as still needing to be indexed in case of a crash.
+   *
+   * @throws PersistenceException in case of an error.
+   */
+  synchronized void commit() throws PersistenceException {
+    if (fIndexWriter == null)
+      return;
+
+    try {
+      fIndexWriter.commit();
+    } catch (IOException e) {
+      throw new PersistenceException(e.getMessage(), e);
+    }
+
+    saveCommittedNews(false, new EntityIdsByEventType(fUncommittedNews));
+    fUncommittedNews.clear();
   }
 
   synchronized void shutdown(boolean emergency) {
@@ -343,9 +409,13 @@ public class Indexer {
     /* Database got cleared, so we don't need to worry about syncing these values */
     fUncommittedNews.clear();
 
-    /* Re-Create the Index */
-    if (DirectoryReader.indexExists(fIndexDirectory))
-      fIndexWriter = createIndexWriter(fIndexDirectory, true);
+    /*
+     * Re-Create the Index. Always reopen the writer, even where there was no
+     * index on disk to clear: the searcher is opened from the writer now, and
+     * leaving it null here would hand out a searcher that cannot see anything
+     * indexed afterwards.
+     */
+    createIndexWriter(true);
   }
 
   /**
@@ -357,6 +427,13 @@ public class Indexer {
   synchronized void optimize() throws CorruptIndexException, IOException {
     /* optimize() is now an explicit merge down to a single segment */
     fIndexWriter.forceMerge(1);
+
+    /*
+     * Write the merge to disk. The writer is no longer closed and reopened as
+     * the index is read, so nothing else would commit this work and it would
+     * have to be done again after a crash.
+     */
+    fIndexWriter.commit();
   }
 
   /**

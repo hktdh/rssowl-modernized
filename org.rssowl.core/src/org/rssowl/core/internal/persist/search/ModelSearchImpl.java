@@ -29,6 +29,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexFormatTooOldException;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -43,6 +44,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockFactory;
@@ -586,14 +588,46 @@ public class ModelSearchImpl implements IModelSearch {
   }
 
   private IndexSearcher createIndexSearcher() throws CorruptIndexException, IOException {
-    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(fDirectory));
+
+    /*
+     * Opened from the IndexWriter where there is one, so that the searcher also
+     * sees news that have been indexed but not yet written to disk. Falls back
+     * to the directory while the index is being cleared, when there is no
+     * writer to open from and nothing has been indexed yet either.
+     */
+    IndexWriter writer = fIndexer.getIndexWriter();
+    DirectoryReader reader = (writer != null && writer.isOpen()) ? DirectoryReader.open(writer) : DirectoryReader.open(fDirectory);
+
+    IndexSearcher searcher = new IndexSearcher(reader);
     fSearchers.put(searcher, new AtomicInteger(0));
     return searcher;
   }
 
+  /*
+   * Reopens a reader so that it sees whatever has been indexed since it was
+   * opened. A reader that came from the IndexWriter has to be reopened from
+   * that writer too, and throws once the writer has been closed - which is the
+   * case while the index is being cleared and from shutdown onwards. There is
+   * nothing worth seeing then, so the caller keeps the reader it has.
+   */
+  private DirectoryReader reopen(DirectoryReader currentReader) throws IOException {
+    IndexWriter writer = fIndexer.getIndexWriter();
+    if (writer == null || !writer.isOpen())
+      return currentReader;
+
+    try {
+      DirectoryReader reopened = DirectoryReader.openIfChanged(currentReader, writer);
+      return (reopened != null) ? reopened : currentReader;
+    } catch (AlreadyClosedException e) {
+
+      /* The writer was closed between the check above and here */
+      return currentReader;
+    }
+  }
+
   private IndexSearcher getCurrentSearcher() throws PersistenceException {
     try {
-      boolean flushed = fIndexer.flushIfNecessary();
+      boolean changed = fIndexer.claimIndexChanged();
 
       /* Get the current searcher before acquiring lock in case we block */
       IndexSearcher currentSearcher = fSearcher;
@@ -602,15 +636,13 @@ public class ModelSearchImpl implements IModelSearch {
 
         /*
          * If there are changes and currentSearcher == fSearcher, it means we
-         * won the race for the lock, so we reopen the searcher. If flushed is
+         * won the race for the lock, so we reopen the searcher. If changed is
          * true, but currentSearcher != fSearcher it means that another thread
          * has reopened the reader while we were blocked waiting for the lock.
          */
-        if (flushed && currentSearcher == fSearcher) {
+        if (changed && currentSearcher == fSearcher) {
           DirectoryReader currentReader = (DirectoryReader) fSearcher.getIndexReader();
-          /* reopen() became the static openIfChanged(), returning null when unchanged */
-          DirectoryReader reopened = DirectoryReader.openIfChanged(currentReader);
-          IndexReader newReader = (reopened != null) ? reopened : currentReader;
+          IndexReader newReader = reopen(currentReader);
           if (newReader != currentReader) {
 
             IndexSearcher newSearcher = new IndexSearcher(newReader);
@@ -722,6 +754,18 @@ public class ModelSearchImpl implements IModelSearch {
     fIndexListeners.remove(listener);
   }
 
+  /**
+   * Writes the search index to disk. Indexed news are searchable as soon as
+   * they are indexed, so this is only about what survives a crash: it is done
+   * on shutdown and once enough news have been indexed without it, and callers
+   * that want the index on disk at a particular moment ask for it here.
+   *
+   * @throws PersistenceException in case of an error.
+   */
+  public void commitIndex() throws PersistenceException {
+    fIndexer.commit();
+  }
+
   /*
    * @see org.rssowl.core.persist.service.IModelSearch#optimize()
    */
@@ -804,9 +848,12 @@ public class ModelSearchImpl implements IModelSearch {
         if (newsChunkToBeIndexed.isEmpty())
           break;
 
-        /* Flush frequently to optimize memory usage during reindexing */
+        /*
+         * Write each chunk to disk, so that a reindex of a large profile does
+         * not have to start over from the beginning after a crash.
+         */
         if (!isFirstRun)
-          fIndexer.flushIfNecessary();
+          fIndexer.commit();
 
         /* Index News Items */
         for (INews newsitem : newsChunkToBeIndexed) {
@@ -828,7 +875,10 @@ public class ModelSearchImpl implements IModelSearch {
       }
     }
 
-    /* Finally we refresh the searchers (this will trigger flushIfNecessary()) */
+    /* Write the last chunk to disk before anyone reads the index again */
+    fIndexer.commit();
+
+    /* Finally we refresh the searchers (this reopens them on the new index) */
     IndexSearcher currentSearcher = null;
     try {
       currentSearcher = getCurrentSearcher();
