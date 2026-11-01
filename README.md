@@ -1,4 +1,4 @@
-# RSSOwl 2.3 — unofficial modernized build
+# RSSOwl 2.4 — unofficial modernized build
 
 The RSSOwl RSS/Atom reader, ported from Eclipse 3.8.2 / JDK 8 to **Eclipse
 4.41 / JDK 21**, and from **Lucene 2.3.2 to Lucene 10.5.1**.
@@ -69,9 +69,26 @@ The reading pane runs on Microsoft Edge (WebView2), not Internet Explorer;
 Hid the browser preferences only IE honours. Viewer images are served over
 real HTTP so the buttons render, and the charset is declared explicitly.
 
+**Keyword filter per bookmark**
+
+A bookmark can carry a list of keywords, and its feed then shows, counts and
+colours only the news containing one of them. Matching is whole-word and
+accent-insensitive, so "chung khoan" finds "chứng khoán" without "món" also
+matching "mọng".
+
+**Search defects from the Lucene move**
+
+Five of them, found by the test suite and fixed: one field indexed in two
+shapes, which could stop a whole batch of news from being indexed; '/' read as
+a regular expression; phrase queries lost for words the analyzer splits; a
+tokenizer that no longer treats product codes, phone numbers and e-mail
+addresses as single words; and a backslash escaping inside wildcard terms.
+Searching no longer closes and reopens the index writer to make new news
+visible, which roughly halves what saving a reloaded feed costs.
+
 **Versioning and packaging**
 
-Bumped to 2.3.0, repaired stale build metadata and a splash screen showing the
+Bumped to 2.4.0, repaired stale build metadata and a splash screen showing the
 wrong version. Added a Windows installer path: the product is trimmed to ~84
 bundles, shipped with a `jlink`-trimmed JRE, and packaged with Inno Setup.
 
