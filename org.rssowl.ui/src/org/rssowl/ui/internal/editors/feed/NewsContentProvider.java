@@ -643,7 +643,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
     resolvedNews = limitNewsMark(input, resolvedNews, comparer != null ? comparer : fFeedView.getComparator());
 
     /* Filter Elements as needed */
-    if (needToFilter && isFilteredByOtherThanState())
+    if ((needToFilter && isFilteredByOtherThanState()) || isFilteredByKeyword())
       filterElements(resolvedNews);
 
     /* Check if ContentProvider was already disposed or RSSOwl shutting down */
@@ -824,7 +824,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
       return Triple.create(wasEmpty, visibleEvents, visibleNews);
 
     /* Use the filter (if set) to determine elements to cache */
-    if (isFilteredByState() || isFilteredByOtherThanState()) {
+    if (isFilteredByState() || isFilteredByOtherThanState() || isFilteredByKeyword()) {
 
       /* Quickly Map from News to Event */
       Map<INews, NewsEvent> mapNewsToEvent = new HashMap<>(events.size());
@@ -973,7 +973,7 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
       return Pair.create(Collections.<INews> emptyList(), false);
 
     /* Optimization: Only consider those news that pass the filter when news are added (or in general for Folder News Mark) */
-    if (needToFilter && isFilteredByOtherThanState())
+    if ((needToFilter && isFilteredByOtherThanState()) || isFilteredByKeyword())
       filterElements(addedNews);
 
     /* Add to Cache */
@@ -994,6 +994,17 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
 
   private boolean isFilteredByOtherThanState() {
     return fFilter.getType() == Type.SHOW_STICKY || fFilter.getType() == Type.SHOW_LABELED || fFilter.getType() == Type.SHOW_RECENT || fFilter.getType() == Type.SHOW_LAST_5_DAYS;
+  }
+
+  /*
+   * Deliberately kept apart from isFilteredByOtherThanState(): that one also
+   * decides whether the news can be narrowed down by a search, and the keyword
+   * filter of a bookmark has no search condition to narrow it with. It still
+   * has to reach filterElements, or news the bookmark hides would be cached,
+   * counted and acted on.
+   */
+  private boolean isFilteredByKeyword() {
+    return fFilter.isKeywordFilterSet();
   }
 
   private void filterElements(Collection<INews> elements) {
@@ -1382,6 +1393,14 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
     if (oldState == INews.State.HIDDEN || oldState == INews.State.DELETED)
       return true;
 
+    /*
+     * Restored: a news the keyword filter of the bookmark used to hide now
+     * carries one of its keywords, because the feed edited the news. It is not
+     * in the cache (checked above), so this is the only path that brings it in.
+     */
+    if (fFilter.keywordMatchChanged(news) && fFilter.isKeywordMatch(news))
+      return true;
+
     /* Check if new state matches filter now */
     switch (filter) {
       case SHOW_NEW:
@@ -1562,6 +1581,14 @@ public class NewsContentProvider implements ITreeContentProvider, ILazyContentPr
     Pair<List<NewsEvent>, List<INews>> result = updateCache(events, updatedNews);
     final List<NewsEvent> visibleEvents = result.getFirst();
     List<INews> visibleNews = result.getSecond();
+
+    /*
+     * An updated news can carry different keywords than before, so the keyword
+     * filter of the bookmark may judge it differently now. Refresh in that case
+     * rather than updating the row in place.
+     */
+    if (fFilter.keywordMatchChanged(updatedNews))
+      return true;
 
     /* Return if news was not part of cache at all (e.g. limited Folder News Mark) */
     if (visibleNews.isEmpty())

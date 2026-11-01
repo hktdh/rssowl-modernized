@@ -38,6 +38,7 @@ import org.rssowl.core.persist.ISearchMark;
 import org.rssowl.core.persist.event.ModelEvent;
 import org.rssowl.core.util.CoreUtils;
 import org.rssowl.core.util.StringMatcher;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 
 import java.text.BreakIterator;
 import java.util.ArrayList;
@@ -317,7 +318,7 @@ public class BookMarkFilter extends ViewerFilter {
 
         /* Show: Unread Marks */
         case SHOW_UNREAD:
-          isMatch = newsmark.getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED)) > 0;
+          isMatch = VisibleNewsCounter.hasUnread(newsmark);
           break;
 
         /* Show: Sticky Marks */

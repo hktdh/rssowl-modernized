@@ -105,6 +105,7 @@ public class GeneralPropertyPage implements IEntityPropertyPage {
   private List<IEntity> fEntities;
   private Text fNameInput;
   private Text fFeedInput;
+  private Text fKeywordFilterInput;
   private FolderChooser fFolderChooser;
   private Button fOpenOnStartupCheck;
   private Button fReloadOnStartupCheck;
@@ -234,6 +235,17 @@ public class GeneralPropertyPage implements IEntityPropertyPage {
             onGrabTitle();
           }
         });
+
+        /* Keyword Filter */
+        Label keywordsLabel = new Label(container, SWT.None);
+        keywordsLabel.setLayoutData(new GridData(SWT.END, SWT.CENTER, false, false));
+        keywordsLabel.setText(Messages.GeneralPropertyPage_KEYWORDS);
+
+        fKeywordFilterInput = new Text(container, SWT.BORDER);
+        OwlUI.makeAccessible(fKeywordFilterInput, keywordsLabel);
+        fKeywordFilterInput.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+        fKeywordFilterInput.setText(ModelUtils.getKeywordFilter((IBookMark) entity).getValue());
+        fKeywordFilterInput.setToolTipText(Messages.GeneralPropertyPage_KEYWORDS_TOOLTIP);
       }
 
       /* Other */
@@ -548,6 +560,10 @@ public class GeneralPropertyPage implements IEntityPropertyPage {
         bookmark.setName(fNameInput.getText());
         entitiesToSave.add(bookmark);
       }
+
+      /* Check for changed Keyword Filter */
+      if (ModelUtils.setKeywordFilter(bookmark, fKeywordFilterInput.getText()))
+        entitiesToSave.add(bookmark);
 
       /* Append "http" to Link if missing */
       String uriAsString = URIUtils.fastEncode(fFeedInput.getText());

@@ -76,6 +76,8 @@ import java.util.TreeSet;
 public class FeedDefinitionPage extends WizardPage {
   private Text fFeedLinkInput;
   private Text fKeywordInput;
+  private Text fKeywordFilterInput;
+  private Button fFilterByKeywordsButton;
   private Button fLoadTitleFromFeedButton;
   private Button fFeedByLinkButton;
   private Button fFeedByKeywordButton;
@@ -135,6 +137,17 @@ public class FeedDefinitionPage extends WizardPage {
     return StringUtils.isSet(getKeyword());
   }
 
+  /**
+   * The keywords a news of this feed has to carry in order to be shown. This is
+   * a filter on the news of the feed and has nothing to do with the keyword
+   * subscription above, which builds a feed out of a search engine query.
+   *
+   * @return the keywords as typed, or <code>null</code> to show all news.
+   */
+  String getKeywordFilter() {
+    return fFilterByKeywordsButton.getSelection() ? fKeywordFilterInput.getText() : null;
+  }
+
   /*
    * @see org.eclipse.jface.dialogs.DialogPage#setVisible(boolean)
    */
@@ -153,6 +166,10 @@ public class FeedDefinitionPage extends WizardPage {
    */
   @Override
   public boolean isPageComplete() {
+
+    /* A keyword filter was asked for but no keyword given yet */
+    if (fFilterByKeywordsButton.getSelection() && fKeywordFilterInput.getText().trim().length() == 0)
+      return false;
 
     /* Checked for proper Link */
     if (fFeedByLinkButton.getSelection())
@@ -265,6 +282,52 @@ public class FeedDefinitionPage extends WizardPage {
         getContainer().updateButtons();
       }
     });
+
+    /*
+     * 3) Keyword Filter - belongs to the bookmark rather than to the way the
+     * feed is found, so it applies to both of the choices above.
+     */
+    Composite filterContainer = new Composite(container, SWT.NONE);
+    filterContainer.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+    filterContainer.setLayout(LayoutUtils.createGridLayout(1, 0, 0));
+    ((GridLayout) filterContainer.getLayout()).marginTop = 10;
+
+    fFilterByKeywordsButton = new Button(filterContainer, SWT.CHECK);
+    fFilterByKeywordsButton.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+    fFilterByKeywordsButton.setText(Messages.FeedDefinitionPage_FILTER_BY_KEYWORDS);
+    fFilterByKeywordsButton.addSelectionListener(new SelectionAdapter() {
+      @Override
+      public void widgetSelected(SelectionEvent e) {
+        fKeywordFilterInput.setEnabled(fFilterByKeywordsButton.getSelection());
+
+        if (fKeywordFilterInput.isEnabled())
+          fKeywordFilterInput.setFocus();
+
+        getContainer().updateButtons();
+      }
+    });
+
+    Composite filterIndent = new Composite(filterContainer, SWT.NONE);
+    filterIndent.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+    filterIndent.setLayout(new GridLayout(1, false));
+    ((GridLayout) filterIndent.getLayout()).marginLeft = 10;
+    ((GridLayout) filterIndent.getLayout()).marginBottom = 5;
+
+    fKeywordFilterInput = new Text(filterIndent, SWT.BORDER);
+    OwlUI.makeAccessible(fKeywordFilterInput, fFilterByKeywordsButton);
+    fKeywordFilterInput.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+    ((GridData) fKeywordFilterInput.getLayoutData()).widthHint = entryFieldWidth;
+    fKeywordFilterInput.setEnabled(false);
+    fKeywordFilterInput.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        getContainer().updateButtons();
+      }
+    });
+
+    Label keywordFilterHint = new Label(filterIndent, SWT.WRAP);
+    keywordFilterHint.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+    ((GridData) keywordFilterHint.getLayoutData()).widthHint = entryFieldWidth;
+    keywordFilterHint.setText(Messages.FeedDefinitionPage_KEYWORDS_HINT);
 
     /* Info Container */
     Composite infoContainer = new Composite(container, SWT.None);

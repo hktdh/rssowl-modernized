@@ -143,6 +143,7 @@ import org.rssowl.ui.internal.editors.feed.PerformAfterInputSet;
 import org.rssowl.ui.internal.undo.UndoStack;
 import org.rssowl.ui.internal.util.EditorUtils;
 import org.rssowl.ui.internal.util.JobRunner;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 import org.rssowl.ui.internal.util.WidgetTreeNode;
 
 import java.util.ArrayList;
@@ -1795,7 +1796,7 @@ public class BookMarkExplorer extends ViewPart {
     /* Check for Unread news if required */
     if (data instanceof INewsMark) {
       INewsMark newsmark = (INewsMark) data;
-      if (unread && newsmark.getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED)) == 0)
+      if (unread && !VisibleNewsCounter.hasUnread(newsmark))
         return false;
     }
 

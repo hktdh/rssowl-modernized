@@ -43,10 +43,12 @@ import org.rssowl.core.persist.pref.IPreferenceScope;
 import org.rssowl.core.persist.reference.NewsReference;
 import org.rssowl.core.util.CoreUtils;
 import org.rssowl.core.util.DateUtils;
+import org.rssowl.core.util.KeywordFilter;
 import org.rssowl.core.util.Pair;
 import org.rssowl.core.util.SearchHit;
 import org.rssowl.core.util.URIUtils;
 import org.rssowl.ui.internal.Activator;
+import org.rssowl.ui.internal.Controller;
 import org.rssowl.ui.internal.EntityGroup;
 import org.rssowl.ui.internal.EntityGroupItem;
 import org.rssowl.ui.internal.FolderNewsMark;
@@ -61,8 +63,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -414,6 +418,77 @@ public class ModelUtils {
     }
 
     return false;
+  }
+
+  /**
+   * @param bookmark the {@link IBookMark} to read the keyword filter from.
+   * @return the {@link KeywordFilter} stored on the given bookmark. Never
+   * <code>null</code>, but not {@link KeywordFilter#isSet()} if the bookmark
+   * shows all of its news.
+   */
+  public static KeywordFilter getKeywordFilter(IBookMark bookmark) {
+    Object value = bookmark.getProperty(Controller.BM_KEYWORD_FILTER_PROPERTY);
+
+    return KeywordFilter.parse((value instanceof String) ? (String) value : null);
+  }
+
+  /**
+   * Stores the keywords a news has to carry to be shown in the given bookmark.
+   * The caller is responsible for saving the bookmark afterwards.
+   *
+   * @param bookmark the {@link IBookMark} to store the keywords in.
+   * @param value the keywords as the user typed them, or <code>null</code> to
+   * show all news of the bookmark again.
+   * @return <code>true</code> if the stored keywords changed.
+   */
+  public static boolean setKeywordFilter(IBookMark bookmark, String value) {
+    KeywordFilter existing = getKeywordFilter(bookmark);
+    KeywordFilter updated = KeywordFilter.parse(value);
+
+    if (existing.equals(updated))
+      return false;
+
+    if (updated.isSet())
+      bookmark.setProperty(Controller.BM_KEYWORD_FILTER_PROPERTY, updated.getValue());
+    else
+      bookmark.removeProperty(Controller.BM_KEYWORD_FILTER_PROPERTY);
+
+    return true;
+  }
+
+  /**
+   * @param folder the {@link IFolder} to collect the keyword filters from,
+   * including the ones of the bookmarks in its subfolders.
+   * @return the keyword filters by feed link, empty if no bookmark inside the
+   * folder has one. A feed that two bookmarks with differing filters point at
+   * is left out: no news should be hidden on an ambiguous rule.
+   */
+  public static Map<String, KeywordFilter> getKeywordFilters(IFolder folder) {
+    Set<IBookMark> bookmarks = new HashSet<>();
+    CoreUtils.fillBookMarks(bookmarks, Collections.singleton(folder));
+
+    Map<String, KeywordFilter> filters = new HashMap<>(1);
+    Set<String> feedLinks = new HashSet<>(bookmarks.size());
+    Set<String> ambiguous = new HashSet<>(0);
+
+    for (IBookMark bookmark : bookmarks) {
+      String feedLink = bookmark.getFeedLinkReference().getLinkAsText();
+      KeywordFilter filter = getKeywordFilter(bookmark);
+
+      /* Another bookmark on the same feed: only keep the filter if it agrees */
+      if (!feedLinks.add(feedLink)) {
+        KeywordFilter first = filters.get(feedLink);
+        if ((first == null) ? filter.isSet() : !first.equals(filter))
+          ambiguous.add(feedLink);
+      }
+
+      else if (filter.isSet())
+        filters.put(feedLink, filter);
+    }
+
+    filters.keySet().removeAll(ambiguous);
+
+    return filters;
   }
 
   /**

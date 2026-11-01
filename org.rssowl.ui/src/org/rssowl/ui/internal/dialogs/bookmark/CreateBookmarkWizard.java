@@ -252,7 +252,7 @@ public class CreateBookmarkWizard extends Wizard implements INewWizard {
 
     /* Allow to finish directly if link is supplied and title grabbed from feed */
     String link = fFeedDefinitionPage.getLink();
-    if (currentPage == fFeedDefinitionPage && fFeedDefinitionPage.loadTitleFromFeed() && StringUtils.isSet(link) && !URIUtils.HTTP.equals(link))
+    if (currentPage == fFeedDefinitionPage && fFeedDefinitionPage.isPageComplete() && fFeedDefinitionPage.loadTitleFromFeed() && StringUtils.isSet(link) && !URIUtils.HTTP.equals(link))
       return true;
 
     /* Allow to finish from Keyword Page */
@@ -384,6 +384,13 @@ public class CreateBookmarkWizard extends Wizard implements INewWizard {
     /* Remember Realm Property */
     if (StringUtils.isSet(fLastRealm))
       bookmark.setProperty(Controller.BM_REALM_PROPERTY, fLastRealm);
+
+    /*
+     * Remember the keywords a news has to carry to be shown. Set even when the
+     * user asked for none, to undo an inherited one from the properties copied
+     * out of the parent folder above.
+     */
+    ModelUtils.setKeywordFilter(bookmark, fFeedDefinitionPage.getKeywordFilter());
 
     parent = DynamicDAO.save(parent);
 

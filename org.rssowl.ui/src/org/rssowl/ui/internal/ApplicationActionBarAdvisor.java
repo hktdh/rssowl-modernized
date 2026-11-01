@@ -135,6 +135,7 @@ import org.rssowl.ui.internal.services.DownloadService.DownloadRequest;
 import org.rssowl.ui.internal.util.BrowserUtils;
 import org.rssowl.ui.internal.util.EditorUtils;
 import org.rssowl.ui.internal.util.ModelUtils;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 import org.rssowl.ui.internal.views.explorer.BookMarkExplorer;
 import org.rssowl.ui.internal.views.explorer.BookMarkFilter;
 
@@ -2134,7 +2135,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
       if (child instanceof INewsMark || (child instanceof IFolder && ((IFolder) child).getChildren().isEmpty())) {
         String name = child.getName();
         if (child instanceof INewsMark) {
-          int unreadNewsCount = (((INewsMark) child).getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED)));
+          int unreadNewsCount = VisibleNewsCounter.getUnreadCount((INewsMark) child);
           if (unreadNewsCount > 0)
             name = NLS.bind(Messages.ApplicationActionBarAdvisor_MARK_UNREAD_COUNT, name, unreadNewsCount);
         }

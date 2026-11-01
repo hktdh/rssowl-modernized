@@ -29,6 +29,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.rssowl.core.Owl;
+import org.rssowl.core.persist.IBookMark;
 import org.rssowl.core.persist.IEntity;
 import org.rssowl.core.persist.IFolderChild;
 import org.rssowl.core.persist.IModelFactory;
@@ -41,6 +42,7 @@ import org.rssowl.core.persist.SearchSpecifier;
 import org.rssowl.core.persist.reference.NewsReference;
 import org.rssowl.core.persist.service.PersistenceException;
 import org.rssowl.core.util.DateUtils;
+import org.rssowl.core.util.KeywordFilter;
 import org.rssowl.core.util.SearchHit;
 import org.rssowl.core.util.StringUtils;
 import org.rssowl.ui.internal.Activator;
@@ -48,11 +50,14 @@ import org.rssowl.ui.internal.FolderNewsMark;
 import org.rssowl.ui.internal.util.ModelUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author bpasero
@@ -160,11 +165,165 @@ public class NewsFilter extends ViewerFilter {
   private IModelFactory fModelFactory = Owl.getModelFactory();
   private String fPatternString;
 
+  /* Keyword filter of the bookmark being shown, if it has one */
+  private KeywordFilter fKeywordFilter;
+
+  /* Keyword filters by feed link, for a folder showing several bookmarks */
+  private Map<String, KeywordFilter> fKeywordFiltersByFeed;
+
+  /* Remembered keyword verdicts, see isKeywordMatch() */
+  private Map<Long, Boolean> fKeywordMatches;
+
   /**
    * @param newsMark the {@link INewsMark} that is used as source for all news.
    */
   public void setNewsMark(INewsMark newsMark) {
     fNewsMark = newsMark;
+    updateKeywordFilter();
+  }
+
+  /**
+   * Re-reads the keyword filter from the news mark that is shown. Unlike
+   * everything else in this filter, the keyword filter is not a choice the user
+   * made in this view but a property of the bookmark, so it can change while
+   * the feed is open, from the properties dialog.
+   *
+   * @return <code>true</code> if the keyword filter changed and the feed view
+   * therefore has to revalidate its cache and refresh.
+   */
+  public boolean updateKeywordFilter() {
+    KeywordFilter oldFilter = fKeywordFilter;
+    Map<String, KeywordFilter> oldFiltersByFeed = fKeywordFiltersByFeed;
+
+    KeywordFilter filter = null;
+    Map<String, KeywordFilter> filtersByFeed = null;
+
+    /* A single bookmark: its own keywords */
+    if (fNewsMark instanceof IBookMark) {
+      KeywordFilter bookmarkFilter = ModelUtils.getKeywordFilter((IBookMark) fNewsMark);
+      if (bookmarkFilter.isSet())
+        filter = bookmarkFilter;
+    }
+
+    /*
+     * A folder: the keywords of the bookmarks inside it, so that filtering a
+     * feed is not undone by opening the folder that holds it.
+     */
+    else if (fNewsMark instanceof FolderNewsMark) {
+      Map<String, KeywordFilter> folderFilters = ModelUtils.getKeywordFilters(((FolderNewsMark) fNewsMark).getFolder());
+      if (!folderFilters.isEmpty())
+        filtersByFeed = folderFilters;
+    }
+
+    /*
+     * Leave the remembered verdicts alone if the keywords did not change: a
+     * bookmark is saved on every reload of its feed, and this runs each time.
+     */
+    if (isEqual(oldFilter, filter) && isEqual(oldFiltersByFeed, filtersByFeed))
+      return false;
+
+    /* Publish the verdict cache before the filters that fill it */
+    fKeywordMatches = (filter != null || filtersByFeed != null) ? new ConcurrentHashMap<Long, Boolean>() : null;
+    fKeywordFilter = filter;
+    fKeywordFiltersByFeed = filtersByFeed;
+
+    return true;
+  }
+
+  private static boolean isEqual(Object one, Object other) {
+    return (one == null) ? (other == null) : one.equals(other);
+  }
+
+  /**
+   * @return <code>true</code> if a bookmark shown in this view filters its news
+   * by keyword.
+   */
+  public boolean isKeywordFilterSet() {
+    return fKeywordFilter != null || fKeywordFiltersByFeed != null;
+  }
+
+  /**
+   * @param news the {@link INews} to check against the keyword filter of the
+   * bookmark it belongs to.
+   * @return <code>true</code> if the news carries one of the keywords, or if no
+   * keyword filter applies to it.
+   */
+  public boolean isKeywordMatch(INews news) {
+    KeywordFilter filter = fKeywordFilter;
+    Map<String, KeywordFilter> filtersByFeed = fKeywordFiltersByFeed;
+
+    /* Pick the filter of the bookmark this news belongs to */
+    if (filter == null) {
+      if (filtersByFeed == null)
+        return true;
+
+      filter = filtersByFeed.get(news.getFeedLinkAsText());
+      if (filter == null)
+        return true;
+    }
+
+    /*
+     * Matching folds the text of the news, which is not free, and a refresh
+     * asks about the same news over and over. Remember the verdict and drop it
+     * again when the news changes, see keywordMatchChanged.
+     */
+    Long id = news.getId();
+    Map<Long, Boolean> matches = fKeywordMatches;
+    if (id == null || matches == null)
+      return filter.matches(news);
+
+    Boolean remembered = matches.get(id);
+    if (remembered != null)
+      return remembered.booleanValue();
+
+    boolean isMatch = filter.matches(news);
+    matches.put(id, Boolean.valueOf(isMatch));
+
+    return isMatch;
+  }
+
+  /**
+   * Answers whether the keyword filter judges the given news differently than
+   * it did before, because the news itself changed. The new verdict is
+   * remembered in place of the old one.
+   *
+   * @param news the {@link INews} that was updated.
+   * @return <code>true</code> if the news was matching and is not anymore, or
+   * the other way around. <code>false</code> if no keyword filter applies or
+   * the news was never judged before.
+   */
+  public boolean keywordMatchChanged(INews news) {
+    Map<Long, Boolean> matches = fKeywordMatches;
+    if (!isKeywordFilterSet() || matches == null)
+      return false;
+
+    Long id = news.getId();
+    if (id == null)
+      return false;
+
+    Boolean remembered = matches.remove(id);
+    if (remembered == null)
+      return false; //Never judged, so nothing changed
+
+    return remembered.booleanValue() != isKeywordMatch(news);
+  }
+
+  /**
+   * @param news the news that were updated.
+   * @return <code>true</code> if the keyword filter judges any of them
+   * differently than before.
+   */
+  public boolean keywordMatchChanged(Collection<INews> news) {
+    if (!isKeywordFilterSet())
+      return false;
+
+    boolean changed = false;
+    for (INews item : news) {
+      if (keywordMatchChanged(item))
+        changed = true; //Keep going: every verdict has to be brought up to date
+    }
+
+    return changed;
   }
 
   /*
@@ -175,7 +334,7 @@ public class NewsFilter extends ViewerFilter {
   public final boolean select(Viewer viewer, Object parentElement, Object element) {
 
     /* Filter not Active */
-    if (fCachedPatternMatchingNews == null && fType == Type.SHOW_ALL)
+    if (fCachedPatternMatchingNews == null && fType == Type.SHOW_ALL && !isKeywordFilterSet())
       return true;
 
     return isElementVisible(viewer, element);
@@ -265,12 +424,20 @@ public class NewsFilter extends ViewerFilter {
   private boolean isLeafMatch(Viewer viewer, Object element, boolean ignorePattern) {
 
     /* Filter not Active */
-    if ((ignorePattern || fCachedPatternMatchingNews == null) && fType == Type.SHOW_ALL)
+    if ((ignorePattern || fCachedPatternMatchingNews == null) && fType == Type.SHOW_ALL && !isKeywordFilterSet())
       return true;
 
     /* Element is a News */
     if (element instanceof INews) {
       INews news = (INews) element;
+
+      /*
+       * The keyword filter belongs to the bookmark rather than to this view, so
+       * it also applies where the text pattern of the quick search is ignored.
+       */
+      if (!isKeywordMatch(news))
+        return false;
+
       INews.State state = news.getState();
       boolean isMatch = false;
 

@@ -56,6 +56,8 @@ public class Messages extends NLS {
   public static String GeneralPropertyPage_INVALID_LINK;
   public static String GeneralPropertyPage_LINK;
   public static String GeneralPropertyPage_LOAD_NAME;
+  public static String GeneralPropertyPage_KEYWORDS;
+  public static String GeneralPropertyPage_KEYWORDS_TOOLTIP;
   public static String GeneralPropertyPage_LOCATION;
   public static String GeneralPropertyPage_MINUTES;
   public static String GeneralPropertyPage_NAME;

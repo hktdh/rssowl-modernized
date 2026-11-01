@@ -41,7 +41,9 @@ public class Messages extends NLS {
   public static String FeedDefinitionPage_CREATE_FEED;
   public static String FeedDefinitionPage_CREATE_FEED_DIRECT;
   public static String FeedDefinitionPage_CREATE_KEYWORD_FEED;
+  public static String FeedDefinitionPage_FILTER_BY_KEYWORDS;
   public static String FeedDefinitionPage_IMPORT_WIZARD_TIP;
+  public static String FeedDefinitionPage_KEYWORDS_HINT;
   public static String FeedDefinitionPage_USE_TITLE_OF_FEED;
   public static String KeywordSubscriptionPage_CREATE_BOOKMARK;
   public static String KeywordSubscriptionPage_N_ON_M;

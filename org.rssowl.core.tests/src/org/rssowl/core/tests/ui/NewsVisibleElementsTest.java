@@ -25,22 +25,27 @@
 package org.rssowl.core.tests.ui;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.rssowl.core.Owl;
+import org.rssowl.core.persist.IBookMark;
 import org.rssowl.core.persist.IFeed;
+import org.rssowl.core.persist.IFolder;
 import org.rssowl.core.persist.IModelFactory;
 import org.rssowl.core.persist.INews;
 import org.rssowl.core.persist.INews.State;
 import org.rssowl.core.persist.dao.DynamicDAO;
+import org.rssowl.core.persist.reference.FeedLinkReference;
 import org.rssowl.ui.internal.EntityGroup;
 import org.rssowl.ui.internal.editors.feed.NewsColumn;
 import org.rssowl.ui.internal.editors.feed.NewsComparator;
 import org.rssowl.ui.internal.editors.feed.NewsContentProvider;
 import org.rssowl.ui.internal.editors.feed.NewsFilter;
 import org.rssowl.ui.internal.editors.feed.NewsGrouping;
+import org.rssowl.ui.internal.util.ModelUtils;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -278,6 +283,155 @@ public class NewsVisibleElementsTest {
     filter.setPattern(""); //$NON-NLS-1$
     elements = NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
     assertEquals(3, elements.length);
+  }
+
+  /*
+   * The keyword filter of a bookmark is not a choice made in this view but a
+   * property of the feed: whatever the view is set to, a news that does not
+   * carry one of the keywords never reaches the table.
+   *
+   * @throws Exception in case of an error.
+   */
+  @Test
+  public void testKeywordFilterOfTheBookmarkNarrowsTheList() throws Exception {
+    IFeed feed = fFactory.createFeed(null, new URI("http://www.rssowl.org/keyword-filter")); //$NON-NLS-1$
+
+    List<INews> news = new ArrayList<>();
+    news.add(named(feed, "Ch\u1EE9ng kho\u00E1n t\u0103ng m\u1EA1nh")); //$NON-NLS-1$
+    news.add(named(feed, "Thoi tiet hom nay")); //$NON-NLS-1$
+    news.add(named(feed, "Chung khoan giam nhe")); //$NON-NLS-1$
+
+    IBookMark bookmark = bookmarkOn(feed, "chung khoan"); //$NON-NLS-1$
+
+    NewsFilter filter = filter();
+    filter.setNewsMark(bookmark);
+    assertTrue(filter.isKeywordFilterSet());
+
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
+
+    assertEquals(2, elements.length);
+    for (Object element : elements)
+      assertTrue(((INews) element).getTitle().toLowerCase().contains("kho")); //$NON-NLS-1$
+  }
+
+  /* A bookmark without keywords filters nothing, and says so */
+  @Test
+  public void testBookmarkWithoutKeywordsShowsEverything() throws Exception {
+    IFeed feed = fFactory.createFeed(null, new URI("http://www.rssowl.org/no-keyword-filter")); //$NON-NLS-1$
+
+    List<INews> news = new ArrayList<>();
+    news.add(named(feed, "Chung khoan tang manh")); //$NON-NLS-1$
+    news.add(named(feed, "Thoi tiet hom nay")); //$NON-NLS-1$
+
+    NewsFilter filter = filter();
+    filter.setNewsMark(bookmarkOn(feed, null));
+
+    assertFalse(filter.isKeywordFilterSet());
+    assertEquals(2, NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed()).length);
+  }
+
+  /*
+   * The keyword filter and the state filter narrow the list together, neither
+   * one replaces the other.
+   *
+   * @throws Exception in case of an error.
+   */
+  @Test
+  public void testKeywordFilterAndStateFilterBothApply() throws Exception {
+    IFeed feed = fFactory.createFeed(null, new URI("http://www.rssowl.org/keyword-and-state")); //$NON-NLS-1$
+
+    List<INews> news = new ArrayList<>();
+    /* Matches the keywords and is new */
+    news.add(named(feed, "Chung khoan tang manh")); //$NON-NLS-1$
+
+    /* Matches the keywords but is read */
+    INews read = named(feed, "Chung khoan giam nhe"); //$NON-NLS-1$
+    read.setState(State.READ);
+    news.add(read);
+
+    /* New, but does not match the keywords */
+    news.add(named(feed, "Thoi tiet hom nay")); //$NON-NLS-1$
+
+    NewsFilter filter = filter();
+    filter.setNewsMark(bookmarkOn(feed, "chung khoan")); //$NON-NLS-1$
+    filter.setType(NewsFilter.Type.SHOW_NEW);
+
+    Object[] elements = NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed());
+
+    assertEquals(1, elements.length);
+    assertEquals("Chung khoan tang manh", ((INews) elements[0]).getTitle()); //$NON-NLS-1$
+  }
+
+  /*
+   * Changing the keywords in the properties of the bookmark has to reach the
+   * open feed view, which it does by asking the filter to re-read them.
+   *
+   * @throws Exception in case of an error.
+   */
+  @Test
+  public void testKeywordFilterIsRereadFromTheBookmark() throws Exception {
+    IFeed feed = fFactory.createFeed(null, new URI("http://www.rssowl.org/keyword-reread")); //$NON-NLS-1$
+
+    List<INews> news = new ArrayList<>();
+    news.add(named(feed, "Chung khoan tang manh")); //$NON-NLS-1$
+    news.add(named(feed, "Thoi tiet hom nay")); //$NON-NLS-1$
+
+    IBookMark bookmark = bookmarkOn(feed, "chung khoan"); //$NON-NLS-1$
+
+    NewsFilter filter = filter();
+    filter.setNewsMark(bookmark);
+    assertEquals(1, NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed()).length);
+
+    /* Re-reading without a change must not claim one */
+    assertFalse(filter.updateKeywordFilter());
+
+    /* Widen the filter */
+    assertTrue(ModelUtils.setKeywordFilter(bookmark, "chung khoan, thoi tiet")); //$NON-NLS-1$
+    assertTrue(filter.updateKeywordFilter());
+    assertEquals(2, NewsContentProvider.computeVisibleElements(news, filter, grouping(NewsGrouping.Type.NO_GROUPING), null, noneCollapsed()).length);
+
+    /* Drop it altogether */
+    assertTrue(ModelUtils.setKeywordFilter(bookmark, null));
+    assertTrue(filter.updateKeywordFilter());
+    assertFalse(filter.isKeywordFilterSet());
+  }
+
+  /*
+   * A news the filter judged once is remembered. If the feed edits the news, the
+   * verdict has to be reached again rather than taken from that memory.
+   *
+   * @throws Exception in case of an error.
+   */
+  @Test
+  public void testKeywordVerdictFollowsAnEditedNews() throws Exception {
+    IFeed feed = fFactory.createFeed(null, new URI("http://www.rssowl.org/keyword-edited")); //$NON-NLS-1$
+
+    INews item = named(feed, "Thoi tiet hom nay"); //$NON-NLS-1$
+    DynamicDAO.save(feed);
+
+    NewsFilter filter = filter();
+    filter.setNewsMark(bookmarkOn(feed, "chung khoan")); //$NON-NLS-1$
+
+    assertFalse(filter.isKeywordMatch(item));
+    assertFalse("nothing changed yet", filter.keywordMatchChanged(item)); //$NON-NLS-1$
+
+    /* The feed rewrites the headline */
+    item.setTitle("Chung khoan tang manh"); //$NON-NLS-1$
+
+    assertTrue(filter.keywordMatchChanged(item));
+    assertTrue(filter.isKeywordMatch(item));
+  }
+
+  /* A bookmark on the given feed, carrying the given keywords */
+  private IBookMark bookmarkOn(IFeed feed, String keywords) {
+    DynamicDAO.save(feed);
+
+    IFolder root = fFactory.createFolder(null, null, "Keyword Filters " + feed.getLink()); //$NON-NLS-1$
+    IBookMark bookmark = fFactory.createBookMark(null, root, new FeedLinkReference(feed.getLink()), "Feed"); //$NON-NLS-1$
+    ModelUtils.setKeywordFilter(bookmark, keywords);
+    DynamicDAO.save(root);
+
+    return bookmark;
   }
 
   private INews named(IFeed feed, String title) {

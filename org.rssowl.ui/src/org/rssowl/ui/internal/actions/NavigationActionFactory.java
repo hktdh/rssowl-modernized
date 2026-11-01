@@ -54,6 +54,7 @@ import org.rssowl.ui.internal.editors.feed.FeedView;
 import org.rssowl.ui.internal.editors.feed.FeedViewInput;
 import org.rssowl.ui.internal.editors.feed.PerformAfterInputSet;
 import org.rssowl.ui.internal.views.explorer.BookMarkExplorer;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -216,7 +217,7 @@ public class NavigationActionFactory implements IExecutableExtensionFactory, IEx
             /* Check for Unread news if required */
             if (data instanceof INewsMark) {
               INewsMark newsmark = (INewsMark) data;
-              if (fType.isUnread() && newsmark.getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED)) == 0)
+              if (fType.isUnread() && !VisibleNewsCounter.hasUnread(newsmark))
                 return false;
             }
 

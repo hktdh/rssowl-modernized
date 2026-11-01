@@ -166,6 +166,9 @@ public class Controller {
   /** Property to store info about a Realm in a Bookmark */
   public static final String BM_REALM_PROPERTY = "org.rssowl.ui.BMRealmProperty"; //$NON-NLS-1$
 
+  /** Property to store the keywords a news has to carry to be shown in a Bookmark */
+  public static final String BM_KEYWORD_FILTER_PROPERTY = "org.rssowl.ui.BMKeywordFilter"; //$NON-NLS-1$
+
   /** Prefix for dynamic Label Actions */
   public static final String LABEL_ACTION_PREFIX = "org.rssowl.ui.LabelAction"; //$NON-NLS-1$
 

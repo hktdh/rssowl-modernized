@@ -48,6 +48,7 @@ import org.rssowl.core.persist.INewsMark;
 import org.rssowl.core.persist.ISearchMark;
 import org.rssowl.ui.internal.EntityGroup;
 import org.rssowl.ui.internal.OwlUI;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -214,12 +215,11 @@ public class BookMarkLabelProvider extends CellLabelProvider {
     /* Create generic Label for instances of INewsMark */
     else if (element instanceof INewsMark) {
       boolean hasNew = false;
-      int stickyNewsCount = 0;
       INewsMark newsmark = (INewsMark) element;
 
       if (fIndicateState) {
-        unreadNewsCount = newsmark.getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED));
-        hasNew = newsmark.getNewsCount(EnumSet.of(INews.State.NEW)) != 0;
+        unreadNewsCount = VisibleNewsCounter.getUnreadCount(newsmark);
+        hasNew = VisibleNewsCounter.getNewCount(newsmark) != 0;
       }
 
       /* Font */
@@ -235,11 +235,12 @@ public class BookMarkLabelProvider extends CellLabelProvider {
         cell.setText(newsmark.getName());
 
       /* Background for IBookMark (TODO Support All News Marks) */
+      boolean hasSticky = false;
       if (newsmark instanceof IBookMark && fIndicateState)
-        stickyNewsCount = ((IBookMark) newsmark).getStickyNewsCount();
+        hasSticky = VisibleNewsCounter.hasSticky((IBookMark) newsmark);
 
       /* Background Color */
-      if (stickyNewsCount > 0 && !OwlUI.isHighContrast())
+      if (hasSticky && !OwlUI.isHighContrast())
         cell.setBackground(fStickyBgColor);
       else
         cell.setBackground(null);
@@ -360,9 +361,9 @@ public class BookMarkLabelProvider extends CellLabelProvider {
       if (child instanceof INewsMark) {
         INewsMark newsMark = (INewsMark) child;
         helper.fUnreadCount += getUnreadNewsCount(newsMark);
-        helper.fNewCount += newsMark.getNewsCount(EnumSet.of(INews.State.NEW));
+        helper.fNewCount += VisibleNewsCounter.getNewCount(newsMark);
 
-        if (!helper.fHasSticky && newsMark instanceof IBookMark && ((IBookMark) newsMark).getStickyNewsCount() > 0)
+        if (!helper.fHasSticky && newsMark instanceof IBookMark && VisibleNewsCounter.hasSticky((IBookMark) newsMark))
           helper.fHasSticky = true;
       }
 
@@ -373,7 +374,7 @@ public class BookMarkLabelProvider extends CellLabelProvider {
   }
 
   private int getUnreadNewsCount(INewsMark newsMark) {
-    return newsMark.getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED));
+    return VisibleNewsCounter.getUnreadCount(newsMark);
   }
 
   void erase(Event event, Object element) {

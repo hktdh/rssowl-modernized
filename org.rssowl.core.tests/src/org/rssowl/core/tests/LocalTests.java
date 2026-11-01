@@ -37,6 +37,7 @@ import org.rssowl.core.tests.model.ApplicationLayerTest;
 import org.rssowl.core.tests.model.ApplicationLayerTestLBS;
 import org.rssowl.core.tests.model.DBManagerTest;
 import org.rssowl.core.tests.model.DBManagerTestLBS;
+import org.rssowl.core.tests.model.KeywordFilterTest;
 import org.rssowl.core.tests.model.ModelSearchTest1;
 import org.rssowl.core.tests.model.ModelSearchTest2;
 import org.rssowl.core.tests.model.ModelSearchTest3;
@@ -89,6 +90,7 @@ import org.rssowl.core.tests.util.URIUtilsTest;
   PreferencesDAOTestLBS.class, //Running twice to test with large block size
   ApplicationLayerTest.class,
   ApplicationLayerTestLBS.class, //Running twice to test with large block size
+  KeywordFilterTest.class,
   NewsFilterTest.class,
   NewsFilterTestLBS.class, //Running twice to test with large block size
   ModelSearchTest1.class,

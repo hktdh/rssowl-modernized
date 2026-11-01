@@ -36,6 +36,7 @@ import org.rssowl.core.persist.ISearchMark;
 import org.rssowl.core.util.DateUtils;
 import org.rssowl.ui.internal.EntityGroup;
 import org.rssowl.ui.internal.EntityGroupItem;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -356,7 +357,7 @@ public class BookMarkGrouping {
           new EntityGroupItem(gNew, mark);
 
         /* Contains Unread */
-        else if (mark.getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED)) > 0)
+        else if (VisibleNewsCounter.hasUnread(mark))
           new EntityGroupItem(gUnread, mark);
 
         /* Other */

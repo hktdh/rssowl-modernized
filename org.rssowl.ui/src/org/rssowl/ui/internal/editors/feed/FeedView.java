@@ -42,6 +42,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
@@ -131,6 +132,7 @@ import org.rssowl.ui.internal.util.EditorUtils;
 import org.rssowl.ui.internal.util.JobRunner;
 import org.rssowl.ui.internal.util.LayoutUtils;
 import org.rssowl.ui.internal.util.UIBackgroundJob;
+import org.rssowl.ui.internal.util.VisibleNewsCounter;
 import org.rssowl.ui.internal.util.WidgetTreeNode;
 
 import java.io.FileNotFoundException;
@@ -558,6 +560,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
       @Override
       public void entitiesUpdated(Set<BookMarkEvent> events) {
         onNewsMarksUpdated(events);
+        onKeywordFilterMaybeChanged();
       }
     };
     DynamicDAO.addEntityListener(IBookMark.class, fBookMarkListener);
@@ -778,6 +781,34 @@ public class FeedView extends EditorPart implements IReusableEditor {
             break;
           }
         }
+      }
+    });
+  }
+
+  /*
+   * The keywords a bookmark filters its news by are stored on the bookmark, so
+   * they can change while the feed is open - from the properties dialog of this
+   * bookmark, or of one of the bookmarks of an open folder. Asking the filter
+   * to re-read them is cheap and tells us whether anything changed at all.
+   */
+  private void onKeywordFilterMaybeChanged() {
+    JobRunner.runInUIThread(fParent, new Runnable() {
+      public void run() {
+
+        /* Listeners are registered in init(), before the controls exist */
+        if (fParent == null || fParent.isDisposed() || fNewsFilter == null || fContentProvider == null)
+          return;
+
+        if (fInput == null || !fInput.exists() || !fNewsFilter.updateKeywordFilter())
+          return;
+
+        /* News that were hidden have to be resolved again before they can show */
+        BusyIndicator.showWhile(fParent.getDisplay(), new Runnable() {
+          public void run() {
+            revalidateCaches();
+            refresh(true, false);
+          }
+        });
       }
     });
   }
@@ -2294,7 +2325,7 @@ public class FeedView extends EditorPart implements IReusableEditor {
   public boolean navigate(boolean respectSelection, final boolean onInputSet, final boolean next, final boolean unread) {
 
     /* Check for unread counter */
-    if (unread && fInput.getMark().getNewsCount(EnumSet.of(INews.State.NEW, INews.State.UNREAD, INews.State.UPDATED)) == 0)
+    if (unread && !VisibleNewsCounter.hasUnread(fInput.getMark()))
       return false;
 
     /* Navigate in maximized Browser */
