@@ -2,7 +2,7 @@
 <feature
       id="org.rssowl"
       label="RSSOwl"
-      version="2.3.0.qualifier"
+      version="2.4.0.qualifier"
       provider-name="RSSOwl.org"
       plugin="org.rssowl.ui">
 
@@ -235,7 +235,7 @@ litigation.
 
    <requires>
       <import feature="org.eclipse.rcp" version="0.0.0"/>
-      <import feature="org.rssowl.dependencies" version="2.3.0"/>
+      <import feature="org.rssowl.dependencies" version="2.4.0"/>
    </requires>
 
    <plugin

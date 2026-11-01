@@ -1,5 +1,5 @@
 <#
-  Deploy RSSOwl 2.3 as a standalone Eclipse RCP runtime and launch it.
+  Deploy RSSOwl 2.4 as a standalone Eclipse RCP runtime and launch it.
 
   How it works: copy the bundles into plugins/, then write their names into
   bundles.info, the list org.eclipse.equinox.simpleconfigurator reads at

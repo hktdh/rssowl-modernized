@@ -1,5 +1,5 @@
 <#
-  Compile RSSOwl 2.3 with Eclipse's ecj, without opening the IDE.
+  Compile RSSOwl 2.4 with Eclipse's ecj, without opening the IDE.
 
   Why ecj and not javac: ecj is the compiler PDE uses, so the result matches
   an in-IDE build - same error/warning configuration, same way of reading
@@ -113,7 +113,7 @@ function Invoke-Ecj([string] $label, [string[]] $sources, [string] $dest, [strin
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-Write-Host "RSSOwl 2.3 | JDK $JavaHome | target $EclipseHome | compliance $Compliance"
+Write-Host "RSSOwl 2.4 | JDK $JavaHome | target $EclipseHome | compliance $Compliance"
 
 $main = Join-Path $OutDir "main"
 $ok = Invoke-Ecj "core+ui" @((Join-Path $root "org.rssowl.core\src"), (Join-Path $root "org.rssowl.ui\src")) $main @()

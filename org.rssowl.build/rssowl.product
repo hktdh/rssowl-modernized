@@ -8,7 +8,7 @@
       <text>
          RSSOwl
 
-Version: 2.3.0
+Version: 2.4.0
 Build Id: 2026-09-21
 
 RSSOwl is licensed under the terms of the Eclipse Public License version 1.0.
@@ -72,8 +72,8 @@ RSSOwl Development Team - initial API and implementation
 
    <features>
       <feature id="org.eclipse.rcp" version="0.0.0"/>
-      <feature id="org.rssowl.dependencies" version="2.3.0"/>
-      <feature id="org.rssowl" version="2.3.0.qualifier"/>
+      <feature id="org.rssowl.dependencies" version="2.4.0"/>
+      <feature id="org.rssowl" version="2.4.0.qualifier"/>
    </features>
 
 
